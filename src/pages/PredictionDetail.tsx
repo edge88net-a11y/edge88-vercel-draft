@@ -318,6 +318,7 @@ export default function PredictionDetail() {
               <div className="lg:col-span-2">
                 <div className="glass-card p-6">
                   <AnalysisSection
+                    predictionId={prediction.id}
                     reasoning={prediction.reasoning}
                     pick={prediction.prediction.pick}
                     confidence={confidencePercent}
@@ -366,6 +367,7 @@ export default function PredictionDetail() {
           <TabsContent value="stats" className="space-y-6">
             <div className="glass-card p-6">
               <SportSpecificStats
+                predictionId={prediction.id}
                 sport={prediction.sport}
                 homeTeam={prediction.homeTeam}
                 awayTeam={prediction.awayTeam}
@@ -502,6 +504,7 @@ export default function PredictionDetail() {
           {/* Mystical Tab - Numerology & Astrology */}
           <TabsContent value="mystical" className="space-y-6">
             <NumerologyTab
+              predictionId={prediction.id}
               homeTeam={prediction.homeTeam}
               awayTeam={prediction.awayTeam}
               gameTime={prediction.gameTime}

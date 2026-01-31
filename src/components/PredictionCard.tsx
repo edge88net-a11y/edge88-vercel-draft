@@ -235,6 +235,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         <div className="border-t border-border px-5 pt-4 pb-5 space-y-4">
           {/* Analysis Section */}
           <AnalysisSection
+            predictionId={prediction.id}
             reasoning={prediction.reasoning}
             pick={prediction.prediction.pick}
             confidence={confidencePercent}
