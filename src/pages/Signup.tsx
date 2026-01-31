@@ -4,12 +4,8 @@ import { Zap, Mail, Lock, Eye, EyeOff, User, CheckCircle, Loader2 } from 'lucide
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-
-const benefits = [
-  'AI-powered predictions across all sports',
-  'Verified accuracy, fully transparent',
-  'Start with 3 free picks daily',
-];
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -18,7 +14,20 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
+
+  const benefits = language === 'cz' 
+    ? [
+        'AI predikce pro všechny sporty',
+        'Ověřená přesnost, plně transparentní',
+        'Začněte se 3 tipy denně zdarma',
+      ]
+    : [
+        'AI-powered predictions across all sports',
+        'Verified accuracy, fully transparent',
+        'Start with 3 free picks daily',
+      ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +44,11 @@ const Signup = () => {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4">
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
+
       {/* Background Effects */}
       <div className="absolute inset-0 bg-hero-glow" />
       <div className="absolute left-1/4 top-1/3 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
@@ -54,9 +68,9 @@ const Signup = () => {
         {/* Card */}
         <div className="glass-card p-8">
           <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold">Create your account</h1>
+            <h1 className="text-2xl font-bold">{t.createFreeAccount}</h1>
             <p className="mt-2 text-muted-foreground">
-              Start making smarter predictions today
+              {t.startPredicting}
             </p>
           </div>
 
@@ -132,7 +146,7 @@ const Signup = () => {
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <span>Create Account</span>
+                <span>{t.createFreeAccount}</span>
               )}
             </Button>
           </form>
@@ -140,14 +154,14 @@ const Signup = () => {
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link to="/login" className="font-medium text-primary hover:underline">
-              Sign in
+              {t.login}
             </Link>
           </p>
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
             By signing up, you agree to our{' '}
-            <a href="#" className="underline hover:text-foreground">Terms</a> and{' '}
-            <a href="#" className="underline hover:text-foreground">Privacy Policy</a>
+            <a href="#" className="underline hover:text-foreground">{t.termsOfService}</a> and{' '}
+            <a href="#" className="underline hover:text-foreground">{t.privacyPolicy}</a>
           </p>
         </div>
       </div>

@@ -5,7 +5,48 @@ import { useEffect, useRef } from 'react';
 
 const API_BASE_URL = 'https://api.edge88.net/api/v1';
 
-// Types for external API
+// Bookmaker odds interface
+export interface BookmakerOdds {
+  bookmaker: string;
+  odds: string;
+  line?: string;
+}
+
+// Key factors interface
+export interface KeyFactors {
+  injuries?: string[];
+  weather?: {
+    conditions: string;
+    temperature: number;
+    impact: string;
+  };
+  sharpMoney?: {
+    direction: 'home' | 'away';
+    lineMovement: number;
+    percentage: number;
+  };
+  sentiment?: {
+    public: number;
+    sharp: number;
+  };
+  historicalH2H?: {
+    homeWins: number;
+    awayWins: number;
+    lastMeetings: string[];
+  };
+}
+
+// Confidence breakdown interface
+export interface ConfidenceBreakdown {
+  research: number;
+  odds: number;
+  historical: number;
+  sentiment?: number;
+  injuries?: number;
+  weather?: number;
+}
+
+// Types for external API with enriched data
 export interface APIPrediction {
   id: string;
   sport: string;
@@ -23,6 +64,12 @@ export interface APIPrediction {
   expectedValue: number | string;
   reasoning: string;
   result?: 'win' | 'loss' | 'push' | 'pending';
+  // Enriched data fields
+  bookmakerOdds?: BookmakerOdds[];
+  keyFactors?: KeyFactors;
+  confidenceBreakdown?: ConfidenceBreakdown;
+  modelVersion?: string;
+  dataSources?: number;
 }
 
 export interface DailyAccuracy {
@@ -58,6 +105,48 @@ export interface APIStats {
 
 // Transform snake_case API response to camelCase APIPrediction
 function transformPrediction(raw: Record<string, unknown>): APIPrediction {
+  const predObj = raw.prediction as Record<string, unknown> | undefined;
+  
+  // Parse bookmaker odds
+  let bookmakerOdds: BookmakerOdds[] | undefined;
+  const rawOdds = raw.bookmaker_odds || raw.bookmakerOdds || predObj?.bookmakerOdds;
+  if (Array.isArray(rawOdds)) {
+    bookmakerOdds = rawOdds.map((o: Record<string, unknown>) => ({
+      bookmaker: String(o.bookmaker || o.name || ''),
+      odds: String(o.odds || o.price || ''),
+      line: o.line ? String(o.line) : undefined,
+    }));
+  }
+  
+  // Parse key factors
+  let keyFactors: KeyFactors | undefined;
+  const rawFactors = raw.key_factors || raw.keyFactors || predObj?.keyFactors;
+  if (rawFactors && typeof rawFactors === 'object') {
+    const factors = rawFactors as Record<string, unknown>;
+    keyFactors = {
+      injuries: factors.injuries as string[] | undefined,
+      weather: factors.weather as KeyFactors['weather'] | undefined,
+      sharpMoney: (factors.sharp_money || factors.sharpMoney) as KeyFactors['sharpMoney'] | undefined,
+      sentiment: factors.sentiment as KeyFactors['sentiment'] | undefined,
+      historicalH2H: (factors.historical_h2h || factors.historicalH2H) as KeyFactors['historicalH2H'] | undefined,
+    };
+  }
+  
+  // Parse confidence breakdown
+  let confidenceBreakdown: ConfidenceBreakdown | undefined;
+  const rawBreakdown = raw.confidence_breakdown || raw.confidenceBreakdown || predObj?.confidenceBreakdown;
+  if (rawBreakdown && typeof rawBreakdown === 'object') {
+    const breakdown = rawBreakdown as Record<string, unknown>;
+    confidenceBreakdown = {
+      research: Number(breakdown.research || 50),
+      odds: Number(breakdown.odds || 30),
+      historical: Number(breakdown.historical || 20),
+      sentiment: breakdown.sentiment ? Number(breakdown.sentiment) : undefined,
+      injuries: breakdown.injuries ? Number(breakdown.injuries) : undefined,
+      weather: breakdown.weather ? Number(breakdown.weather) : undefined,
+    };
+  }
+
   return {
     id: String(raw.id || ''),
     sport: String(raw.sport || raw.sport_id || ''),
@@ -66,19 +155,24 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     awayTeam: String(raw.away_team || raw.awayTeam || ''),
     gameTime: String(raw.game_time || raw.gameTime || raw.commence_time || ''),
     prediction: {
-      type: String(raw.prediction_type || (raw.prediction as Record<string, unknown>)?.type || 'Moneyline'),
-      pick: String(raw.predicted_winner || (raw.prediction as Record<string, unknown>)?.pick || ''),
-      line: raw.predicted_spread ? String(raw.predicted_spread) : undefined,
-      odds: String((raw.prediction as Record<string, unknown>)?.odds || '-110'),
+      type: String(raw.prediction_type || predObj?.type || 'Moneyline'),
+      pick: String(raw.predicted_winner || predObj?.pick || ''),
+      line: raw.predicted_spread ? String(raw.predicted_spread) : (predObj?.line ? String(predObj.line) : undefined),
+      odds: String(predObj?.odds || raw.odds || '-110'),
     },
     confidence: Number(raw.confidence) || 0.65,
-    expectedValue: Number(raw.expected_value ?? (raw.prediction as Record<string, unknown>)?.expectedValue ?? 0),
-    reasoning: String(raw.reasoning || 'AI analysis based on historical data and current conditions.'),
-    result: raw.is_correct === null 
+    expectedValue: Number(raw.expected_value ?? predObj?.expectedValue ?? raw.ev ?? 0),
+    reasoning: String(raw.reasoning || raw.analysis || 'AI analysis based on historical data and current conditions.'),
+    result: raw.is_correct === null || raw.result === 'pending'
       ? 'pending' 
-      : raw.is_correct === true 
+      : raw.is_correct === true || raw.result === 'win'
         ? 'win' 
         : 'loss',
+    bookmakerOdds,
+    keyFactors,
+    confidenceBreakdown,
+    modelVersion: String(raw.model_version || raw.modelVersion || 'Edge88 v3.2'),
+    dataSources: Number(raw.data_sources || raw.dataSources || 12),
   };
 }
 
@@ -104,15 +198,15 @@ function extractPredictionsArray(data: unknown): APIPrediction[] {
   return rawArray.map((item) => transformPrediction(item as Record<string, unknown>));
 }
 
-// Fetch active predictions from API directly
+// Fetch active predictions from API with detailed data
 export function useActivePredictions() {
   const { toast } = useToast();
   const previousCount = useRef<number>(0);
   
   const query = useQuery({
-    queryKey: ['predictions', 'active'],
+    queryKey: ['predictions', 'active', 'detailed'],
     queryFn: async (): Promise<APIPrediction[]> => {
-      const response = await fetch(`${API_BASE_URL}/predictions/active`);
+      const response = await fetch(`${API_BASE_URL}/predictions/active?include_details=true&limit=50`);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
@@ -162,10 +256,20 @@ function extractStats(data: unknown): APIStats {
   
   const obj = data as Record<string, unknown>;
   // Handle nested data structures
-  const statsData = obj.stats || obj.data || obj;
+  const statsData = (obj.stats || obj.data || obj) as Record<string, unknown>;
   
   if (typeof statsData === 'object' && statsData !== null) {
-    return { ...defaultStats, ...(statsData as Partial<APIStats>) };
+    // Map snake_case to camelCase
+    return {
+      totalPredictions: Number(statsData.totalPredictions || statsData.total_predictions || 0),
+      accuracy: Number(statsData.accuracy || 0),
+      activePredictions: Number(statsData.activePredictions || statsData.active_predictions || 0),
+      roi: Number(statsData.roi || 0),
+      winStreak: Number(statsData.winStreak || statsData.win_streak || 0),
+      byConfidence: (statsData.byConfidence || statsData.by_confidence || defaultStats.byConfidence) as APIStats['byConfidence'],
+      bySport: (statsData.bySport || statsData.by_sport || []) as APIStats['bySport'],
+      dailyAccuracy: (statsData.dailyAccuracy || statsData.daily_accuracy) as DailyAccuracy[] | undefined,
+    };
   }
   
   return defaultStats;

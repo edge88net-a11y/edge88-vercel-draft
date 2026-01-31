@@ -4,6 +4,8 @@ import { Zap, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +13,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,6 +28,11 @@ const Login = () => {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4">
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
+
       {/* Background Effects */}
       <div className="absolute inset-0 bg-hero-glow" />
       <div className="absolute left-1/4 top-1/3 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
@@ -44,7 +52,7 @@ const Login = () => {
         {/* Card */}
         <div className="glass-card p-8">
           <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <h1 className="text-2xl font-bold">{t.welcomeBack}</h1>
             <p className="mt-2 text-muted-foreground">
               Sign in to access your predictions
             </p>
@@ -97,7 +105,7 @@ const Login = () => {
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <span>Sign In</span>
+                <span>{t.login}</span>
               )}
             </Button>
           </form>
@@ -105,7 +113,7 @@ const Login = () => {
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
             <Link to="/signup" className="font-medium text-primary hover:underline">
-              Sign up
+              {t.signUpFree}
             </Link>
           </p>
         </div>
