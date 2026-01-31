@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 import { PredictionCard } from '@/components/PredictionCard';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
@@ -376,6 +377,7 @@ const Predictions = () => {
       </main>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 };

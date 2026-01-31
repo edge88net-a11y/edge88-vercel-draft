@@ -1,18 +1,27 @@
 import { useState } from 'react';
-import { BarChart3, TrendingUp, Target, Award, Calendar, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Award, Calendar, Loader2, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 import { StatCard } from '@/components/StatCard';
 import { AccuracyChart } from '@/components/charts/AccuracyChart';
 import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
+import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
+import { ConfidenceAccuracyChart } from '@/components/charts/ConfidenceAccuracyChart';
+import { TeamLogo } from '@/components/TeamLogo';
 import { useActivePredictions, useStats, useAccuracyStats } from '@/hooks/usePredictions';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { sportIcons } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const timePeriods = ['Today', '7 Days', '30 Days', '90 Days', 'All Time'];
+const sportFilters = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
 
 const Results = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('30 Days');
+  const [selectedSport, setSelectedSport] = useState('All');
+  const { t } = useLanguage();
   
   const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
   const { data: stats, isLoading: statsLoading } = useStats();
@@ -20,19 +29,21 @@ const Results = () => {
 
   const isLoading = predictionsLoading || statsLoading || accuracyLoading;
 
-  const gradedPredictions = predictions?.filter((p) => p.result !== 'pending') || [];
+  // Filter graded predictions
+  const gradedPredictions = predictions?.filter((p) => {
+    if (p.result === 'pending') return false;
+    if (selectedSport !== 'All') {
+      const sportKey = p.sport?.toUpperCase();
+      if (sportKey !== selectedSport && p.sport !== selectedSport) return false;
+    }
+    return true;
+  }) || [];
+
   const wins = gradedPredictions.filter((p) => p.result === 'win').length;
   const losses = gradedPredictions.filter((p) => p.result === 'loss').length;
   const accuracy = wins + losses > 0 ? (wins / (wins + losses)) * 100 : stats?.accuracy || 0;
 
-  const getHeatmapColor = (acc: number) => {
-    if (acc >= 70) return 'bg-success';
-    if (acc >= 60) return 'bg-success/60';
-    if (acc >= 50) return 'bg-yellow-400/60';
-    if (acc >= 40) return 'bg-orange-400/60';
-    return 'bg-destructive/60';
-  };
-
+  // Confidence breakdown for chart
   const confidenceBreakdown = stats?.byConfidence ? [
     { label: 'Lock (75%+)', ...stats.byConfidence.lock, icon: '🔒' },
     { label: 'High (65-74%)', ...stats.byConfidence.high, icon: '🔥' },
@@ -47,28 +58,55 @@ const Results = () => {
       <main className="mx-auto max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Results</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.results || 'Results'}</h1>
           <p className="mt-2 text-muted-foreground">
-            Verified performance across all predictions
+            {t.verifiedPerformance || 'Verified performance across all predictions'}
           </p>
         </div>
 
-        {/* Time Period Tabs */}
-        <div className="mb-8 flex flex-wrap gap-2">
-          {timePeriods.map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition-all',
-                selectedPeriod === period
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-              )}
-            >
-              {period}
-            </button>
-          ))}
+        {/* Filters Row */}
+        <div className="mb-8 glass-card p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Time Period Tabs */}
+            <div className="flex flex-wrap gap-2">
+              {timePeriods.map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={cn(
+                    'rounded-lg px-4 py-2 text-sm font-medium transition-all',
+                    selectedPeriod === period
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                  )}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
+            
+            {/* Sport Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-wrap gap-1">
+                {sportFilters.map((sport) => (
+                  <button
+                    key={sport}
+                    onClick={() => setSelectedSport(sport)}
+                    className={cn(
+                      'rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
+                      selectedSport === sport
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    {sport !== 'All' && <span className="mr-1">{sportIcons[sport]}</span>}
+                    {sport}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {isLoading ? (
@@ -80,7 +118,7 @@ const Results = () => {
             {/* Stats Grid */}
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
-                title="Accuracy"
+                title={t.accuracyRate || "Accuracy"}
                 value={(stats?.accuracy ?? accuracy).toFixed(1)}
                 suffix="%"
                 icon={<Target className="h-5 w-5" />}
@@ -88,12 +126,12 @@ const Results = () => {
                 trendValue="+2.1%"
               />
               <StatCard
-                title="Win Rate"
-                value={`${stats?.byConfidence ? Object.values(stats.byConfidence).reduce((a, b) => a + b.wins, 0) : wins}W`}
+                title={t.winRate || "Win Rate"}
+                value={`${wins}W-${losses}L`}
                 icon={<Award className="h-5 w-5" />}
               />
               <StatCard
-                title="ROI"
+                title={t.roi || "ROI"}
                 value={stats?.roi ?? 0}
                 suffix="%"
                 prefix="+"
@@ -102,10 +140,24 @@ const Results = () => {
                 trendValue="+1.8%"
               />
               <StatCard
-                title="Total Graded"
+                title={t.totalGraded || "Total Graded"}
                 value={stats?.totalPredictions ?? wins + losses}
                 icon={<BarChart3 className="h-5 w-5" />}
               />
+            </div>
+
+            {/* Calendar Heatmap */}
+            <div className="mb-8 glass-card overflow-hidden">
+              <div className="border-b border-border p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">{t.dailyPerformance || 'Daily Performance'}</h3>
+                </div>
+                <span className="text-xs text-muted-foreground">GitHub-style accuracy heatmap</span>
+              </div>
+              <div className="p-6">
+                <CalendarHeatmap data={stats?.dailyAccuracy || []} days={90} />
+              </div>
             </div>
 
             {/* Charts Row */}
@@ -113,32 +165,32 @@ const Results = () => {
               {/* Accuracy Over Time Chart */}
               <div className="glass-card overflow-hidden">
                 <div className="border-b border-border p-4 flex items-center justify-between">
-                  <h3 className="font-semibold">Accuracy Trend</h3>
-                  <span className="text-xs text-muted-foreground">Last 30 days</span>
+                  <h3 className="font-semibold">{t.accuracyTrend || 'Accuracy Trend'}</h3>
+                  <span className="text-xs text-muted-foreground">{t.last30Days || 'Last 30 days'}</span>
                 </div>
                 <div className="p-4">
                   {stats?.dailyAccuracy ? (
                     <AccuracyChart data={stats.dailyAccuracy} />
                   ) : (
                     <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-                      No chart data available
+                      {t.noChartData || 'No chart data available'}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Sport Performance Chart */}
+              {/* Accuracy by Confidence */}
               <div className="glass-card overflow-hidden">
                 <div className="border-b border-border p-4 flex items-center justify-between">
-                  <h3 className="font-semibold">Performance by Sport</h3>
-                  <span className="text-xs text-muted-foreground">Accuracy %</span>
+                  <h3 className="font-semibold">{t.accuracyByConfidence || 'Accuracy by Confidence'}</h3>
+                  <span className="text-xs text-muted-foreground">Higher confidence = better accuracy</span>
                 </div>
                 <div className="p-4">
-                  {stats?.bySport && stats.bySport.length > 0 ? (
-                    <SportPerformanceChart data={stats.bySport} />
+                  {confidenceBreakdown.length > 0 ? (
+                    <ConfidenceAccuracyChart data={confidenceBreakdown} />
                   ) : (
                     <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-                      No sport data available
+                      No confidence data available
                     </div>
                   )}
                 </div>
@@ -146,62 +198,10 @@ const Results = () => {
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">
-              {/* Accuracy by Confidence */}
-              <div className="glass-card overflow-hidden">
-                <div className="border-b border-border p-4">
-                  <h3 className="font-semibold">Accuracy by Confidence Level</h3>
-                </div>
-                <div className="p-6">
-                  {confidenceBreakdown.length > 0 ? (
-                    <div className="space-y-6">
-                      {confidenceBreakdown.map((level) => {
-                        const levelAccuracy = level.total > 0 ? (level.wins / level.total) * 100 : 0;
-                        return (
-                          <div key={level.label}>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2">
-                                <span>{level.icon}</span>
-                                <span className="font-medium">{level.label}</span>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <span className="text-muted-foreground">
-                                  {level.wins}/{level.total}
-                                </span>
-                                <span className={cn(
-                                  'font-mono font-bold',
-                                  levelAccuracy >= 70 ? 'text-success' : levelAccuracy >= 60 ? 'text-yellow-400' : 'text-orange-400'
-                                )}>
-                                  {levelAccuracy.toFixed(1)}%
-                                </span>
-                              </div>
-                            </div>
-                            <div className="h-3 overflow-hidden rounded-full bg-muted">
-                              <div
-                                className={cn(
-                                  'h-full rounded-full transition-all duration-700',
-                                  levelAccuracy >= 70
-                                    ? 'bg-success'
-                                    : levelAccuracy >= 60
-                                    ? 'bg-yellow-400'
-                                    : 'bg-orange-400'
-                                )}
-                                style={{ width: `${levelAccuracy}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground">No confidence data available</p>
-                  )}
-                </div>
-              </div>
-
               {/* Sport Leaderboard */}
               <div className="glass-card overflow-hidden">
                 <div className="border-b border-border p-4">
-                  <h3 className="font-semibold">Sport Leaderboard</h3>
+                  <h3 className="font-semibold">{t.sportLeaderboard || 'Sport Leaderboard'}</h3>
                 </div>
                 <div className="overflow-x-auto">
                   {stats?.bySport && stats.bySport.length > 0 ? (
@@ -268,40 +268,21 @@ const Results = () => {
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Calendar Heatmap */}
-            <div className="mt-8 glass-card overflow-hidden">
-              <div className="border-b border-border p-4 flex items-center justify-between">
-                <h3 className="font-semibold">Daily Performance (Last 30 Days)</h3>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  GitHub-style accuracy heatmap
+              {/* Sport Performance Bar Chart */}
+              <div className="glass-card overflow-hidden">
+                <div className="border-b border-border p-4 flex items-center justify-between">
+                  <h3 className="font-semibold">{t.performanceBySport || 'Performance by Sport'}</h3>
+                  <span className="text-xs text-muted-foreground">Accuracy %</span>
                 </div>
-              </div>
-              <div className="p-6">
-                <div className="flex flex-wrap gap-1.5">
-                  {(stats?.dailyAccuracy || []).map((day, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        'h-8 w-8 rounded transition-all hover:scale-110 cursor-pointer',
-                        getHeatmapColor(day.accuracy)
-                      )}
-                      title={`${new Date(day.date).toLocaleDateString()}: ${day.accuracy.toFixed(0)}% (${day.predictions} picks)`}
-                    />
-                  ))}
-                </div>
-                <div className="mt-4 flex items-center justify-end gap-2 text-xs text-muted-foreground">
-                  <span>Less</span>
-                  <div className="flex gap-1">
-                    <div className="h-4 w-4 rounded bg-destructive/60" />
-                    <div className="h-4 w-4 rounded bg-orange-400/60" />
-                    <div className="h-4 w-4 rounded bg-yellow-400/60" />
-                    <div className="h-4 w-4 rounded bg-success/60" />
-                    <div className="h-4 w-4 rounded bg-success" />
-                  </div>
-                  <span>More</span>
+                <div className="p-4">
+                  {stats?.bySport && stats.bySport.length > 0 ? (
+                    <SportPerformanceChart data={stats.bySport} />
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                      No sport data available
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -309,12 +290,12 @@ const Results = () => {
             {/* Recent Results Feed */}
             <div className="mt-8 glass-card overflow-hidden">
               <div className="border-b border-border p-4 flex items-center justify-between">
-                <h3 className="font-semibold">Win/Loss Feed</h3>
+                <h3 className="font-semibold">{t.winLossFeed || 'Win/Loss Feed'}</h3>
                 <span className="text-xs text-muted-foreground">Most recent</span>
               </div>
-              <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+              <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
                 {gradedPredictions.length > 0 ? (
-                  gradedPredictions.slice(0, 15).map((prediction) => {
+                  gradedPredictions.slice(0, 20).map((prediction) => {
                     const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
                     return (
                       <div
@@ -330,6 +311,11 @@ const Results = () => {
                             prediction.result === 'win' ? 'bg-success/20' : 'bg-destructive/20'
                           )}>
                             {sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="sm" />
+                            <span className="text-sm text-muted-foreground">@</span>
+                            <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="sm" />
                           </div>
                           <div>
                             <p className="font-medium">
@@ -372,6 +358,7 @@ const Results = () => {
       </main>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 };

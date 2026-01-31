@@ -290,3 +290,52 @@
 .animate-ticker {
   animation: ticker 30s linear infinite;
 }
+
+/* Pull to refresh animation */
+@keyframes pull-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pull-to-refresh {
+  animation: pull-down 0.3s ease-out;
+}
+
+/* Smooth page transitions */
+.page-transition {
+  animation: fade-slide-in 0.3s ease-out;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Swipeable card hint */
+.swipe-hint {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-hint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, hsl(var(--background) / 0.5));
+  pointer-events: none;
+}
