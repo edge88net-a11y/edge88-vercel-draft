@@ -1,4 +1,4 @@
-import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, AlertCircle, RefreshCw } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, AlertCircle, RefreshCw, PieChart, Flame } from 'lucide-react';
 import { Navigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -8,6 +8,7 @@ import { PredictionCard } from '@/components/PredictionCard';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { AccuracyChart } from '@/components/charts/AccuracyChart';
 import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
+import { SportDistributionChart } from '@/components/charts/SportDistributionChart';
 import { TonightsGames } from '@/components/TonightsGames';
 import { TeamLogo } from '@/components/TeamLogo';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
@@ -34,6 +35,18 @@ const Dashboard = () => {
   const recentResults = predictions?.filter((p) => p.result !== 'pending').slice(0, 5) || [];
 
   const isLoading = authLoading || predictionsLoading || statsLoading;
+
+  // Calculate sport distribution for donut chart
+  const sportDistribution = predictions?.reduce((acc, pred) => {
+    const sport = pred.sport || 'Other';
+    const existing = acc.find(s => s.sport === sport);
+    if (existing) {
+      existing.count++;
+    } else {
+      acc.push({ sport, count: 1 });
+    }
+    return acc;
+  }, [] as { sport: string; count: number }[]) || [];
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -130,10 +143,10 @@ const Dashboard = () => {
               />
             </div>
 
-            {/* Charts Row */}
-            <div className="mb-8 grid gap-6 lg:grid-cols-2">
+            {/* Charts Row - 3 columns on desktop */}
+            <div className="mb-8 grid gap-6 lg:grid-cols-3">
               {/* Accuracy Over Time Chart */}
-              <div className="glass-card overflow-hidden">
+              <div className="glass-card overflow-hidden animate-fade-in">
                 <div className="border-b border-border p-4 flex items-center justify-between">
                   <h3 className="font-semibold">{t.accuracyOverTime}</h3>
                   <span className="text-xs text-muted-foreground">{t.last30Days}</span>
@@ -150,7 +163,7 @@ const Dashboard = () => {
               </div>
 
               {/* Sport Performance Chart */}
-              <div className="glass-card overflow-hidden">
+              <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '100ms' }}>
                 <div className="border-b border-border p-4 flex items-center justify-between">
                   <h3 className="font-semibold">{t.performanceBySport}</h3>
                   <span className="text-xs text-muted-foreground">{t.allTime}</span>
@@ -158,6 +171,26 @@ const Dashboard = () => {
                 <div className="p-4">
                   {stats?.bySport && stats.bySport.length > 0 ? (
                     <SportPerformanceChart data={stats.bySport} />
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                      {t.noSportData}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sport Distribution Donut Chart */}
+              <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
+                <div className="border-b border-border p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PieChart className="h-4 w-4 text-primary" />
+                    <h3 className="font-semibold">{t.sport} Distribution</h3>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{t.activePredictions}</span>
+                </div>
+                <div className="p-4">
+                  {sportDistribution.length > 0 ? (
+                    <SportDistributionChart data={sportDistribution} />
                   ) : (
                     <div className="flex items-center justify-center h-[200px] text-muted-foreground">
                       {t.noSportData}
@@ -201,8 +234,10 @@ const Dashboard = () => {
                   </div>
                 ) : activePredictions.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {activePredictions.map((prediction) => (
-                      <PredictionCard key={prediction.id} prediction={prediction} />
+                    {activePredictions.map((prediction, index) => (
+                      <div key={prediction.id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
+                        <PredictionCard prediction={prediction} />
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -217,9 +252,12 @@ const Dashboard = () => {
               {/* Sidebar */}
               <div className="space-y-6">
                 {/* Win Streak */}
-                <div className="glass-card overflow-hidden">
+                <div className="glass-card overflow-hidden animate-fade-in">
                   <div className="border-b border-border p-4">
-                    <h3 className="font-semibold">{t.currentStreak}</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-orange-400" />
+                      {t.currentStreak}
+                    </h3>
                   </div>
                   <div className="p-6 text-center">
                     <div className="mb-2 text-5xl">🔥</div>
@@ -231,16 +269,20 @@ const Dashboard = () => {
                 </div>
 
                 {/* Sport Breakdown */}
-                <div className="glass-card overflow-hidden">
+                <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '100ms' }}>
                   <div className="border-b border-border p-4">
                     <h3 className="font-semibold">{t.accuracyBySport}</h3>
                   </div>
                   <div className="p-4">
                     <div className="space-y-3">
-                      {(stats?.bySport || []).slice(0, 5).map((sport) => {
+                      {(stats?.bySport || []).slice(0, 5).map((sport, index) => {
                         const sportKey = sport.sport?.toUpperCase() || sport.sport;
                         return (
-                          <div key={sport.sport} className="flex items-center gap-3">
+                          <div 
+                            key={sport.sport} 
+                            className="flex items-center gap-3 animate-fade-in"
+                            style={{ animationDelay: `${(index + 1) * 100}ms` }}
+                          >
                             <span className="text-xl">{sportIcons[sportKey] || sportIcons[sport.sport] || '🏆'}</span>
                             <div className="flex-1">
                               <div className="flex items-center justify-between text-sm">
@@ -252,10 +294,13 @@ const Dashboard = () => {
                               <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
                                 <div
                                   className={cn(
-                                    'h-full rounded-full transition-all duration-500',
+                                    'h-full rounded-full transition-all duration-1000 ease-out',
                                     sport.accuracy >= 65 ? 'bg-success' : sport.accuracy >= 55 ? 'bg-yellow-400' : 'bg-orange-400'
                                   )}
-                                  style={{ width: `${sport.accuracy}%` }}
+                                  style={{ 
+                                    width: `${sport.accuracy}%`,
+                                    animation: 'grow-width 1s ease-out forwards'
+                                  }}
                                 />
                               </div>
                             </div>
@@ -267,14 +312,18 @@ const Dashboard = () => {
                 </div>
 
                 {/* Recent Results */}
-                <div className="glass-card overflow-hidden">
+                <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
                   <div className="border-b border-border p-4">
                     <h3 className="font-semibold">{t.recentResults}</h3>
                   </div>
                   <div className="divide-y divide-border">
                     {recentResults.length > 0 ? (
-                      recentResults.map((prediction) => (
-                        <div key={prediction.id} className="flex items-center justify-between p-4">
+                      recentResults.map((prediction, index) => (
+                        <div 
+                          key={prediction.id} 
+                          className="flex items-center justify-between p-4 animate-fade-in"
+                          style={{ animationDelay: `${(index + 1) * 50}ms` }}
+                        >
                           <div className="flex items-center gap-3">
                             <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="sm" />
                             <div>
