@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, LogOut, User } from 'lucide-react';
+import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, LogOut, User, Bookmark, Settings, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const navLinks = [
-  { href: '/dashboard', label: 'Dashboard', icon: TrendingUp },
-  { href: '/predictions', label: 'Predictions', icon: Zap },
-  { href: '/results', label: 'Results', icon: BarChart3 },
-  { href: '/pricing', label: 'Pricing', icon: DollarSign },
+  { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
+  { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
+  { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
+  { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
 ];
 
 export function Navbar() {
@@ -17,6 +19,7 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
+  const { t } = useLanguage();
 
   const handleSignOut = async () => {
     await signOut();
@@ -55,18 +58,28 @@ export function Navbar() {
                   )}
                 >
                   <link.icon className="h-4 w-4" />
-                  {link.label}
+                  {t[link.labelKey]}
                 </Link>
               );
             })}
           </div>
 
-          {/* Desktop Auth */}
+          {/* Desktop Auth & Settings */}
           <div className="hidden md:flex md:items-center md:gap-3">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+            
             {loading ? (
               <div className="h-9 w-24 animate-pulse rounded-lg bg-muted" />
             ) : user ? (
               <>
+                <Link 
+                  to="/saved-picks"
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  title={t.savedPicks}
+                >
+                  <Bookmark className="h-4 w-4" />
+                </Link>
                 <Link to="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                   <User className="h-4 w-4" />
                   <span>{profile?.display_name || user.email?.split('@')[0]}</span>
@@ -76,7 +89,7 @@ export function Navbar() {
                 </Link>
                 <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  {t.logout}
                 </Button>
               </>
             ) : (
@@ -84,12 +97,12 @@ export function Navbar() {
                 <Link to="/login">
                   <Button variant="ghost" size="sm" className="gap-2">
                     <LogIn className="h-4 w-4" />
-                    Login
+                    {t.login}
                   </Button>
                 </Link>
                 <Link to="/signup">
                   <Button size="sm" className="btn-gradient">
-                    <span>Get Started</span>
+                    <span>{t.getStarted}</span>
                   </Button>
                 </Link>
               </>
@@ -125,10 +138,29 @@ export function Navbar() {
                   )}
                 >
                   <link.icon className="h-5 w-5" />
-                  {link.label}
+                  {t[link.labelKey]}
                 </Link>
               );
             })}
+            
+            {/* Saved Picks link for mobile */}
+            {user && (
+              <Link
+                to="/saved-picks"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Bookmark className="h-5 w-5" />
+                {t.savedPicks}
+              </Link>
+            )}
+            
+            {/* Language switcher for mobile */}
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-muted-foreground">{t.language}</span>
+              <LanguageSwitcher />
+            </div>
+            
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
               {user ? (
                 <>
@@ -138,19 +170,19 @@ export function Navbar() {
                   </div>
                   <Button variant="outline" className="w-full" onClick={handleSignOut}>
                     <LogOut className="h-4 w-4 mr-2" />
-                    Logout
+                    {t.logout}
                   </Button>
                 </>
               ) : (
                 <>
                   <Link to="/login" onClick={() => setIsOpen(false)}>
                     <Button variant="outline" className="w-full">
-                      Login
+                      {t.login}
                     </Button>
                   </Link>
                   <Link to="/signup" onClick={() => setIsOpen(false)}>
                     <Button className="btn-gradient w-full">
-                      <span>Get Started</span>
+                      <span>{t.getStarted}</span>
                     </Button>
                   </Link>
                 </>

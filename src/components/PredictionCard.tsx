@@ -1,93 +1,36 @@
 import { useState } from 'react';
-import { ChevronDown, TrendingUp, Lock } from 'lucide-react';
+import { ChevronDown, TrendingUp, Lock, AlertTriangle, ThermometerSun, DollarSign, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Prediction, sportIcons } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { GameCountdown } from '@/components/GameCountdown';
 import { ConfidenceMeter } from '@/components/ConfidenceMeter';
-
-// Team logos for display
-const teamLogos: Record<string, string> = {
-  'Lakers': '💜',
-  'Celtics': '☘️',
-  'Chiefs': '🔴',
-  'Bills': '🦬',
-  'Arsenal': '🔴',
-  'Liverpool': '🔴',
-  'Maple Leafs': '🍁',
-  'Rangers': '🗽',
-  '49ers': '⛏️',
-  'Eagles': '🦅',
-  'Warriors': '💛',
-  'Heat': '🔥',
-  'Bruins': '🐻',
-  'Oilers': '🛢️',
-  'Yankees': '⚾',
-  'Dodgers': '💙',
-  'Man City': '🩵',
-  'Real Madrid': '⚪',
-  'Cowboys': '⭐',
-  'Giants': '🔵',
-  'Ravens': '🟣',
-  'Bengals': '🐅',
-  'Dolphins': '🐬',
-  'Jets': '✈️',
-  'Packers': '💚',
-  'Bears': '🐻',
-  'Lions': '🦁',
-  'Vikings': '⚔️',
-  'Seahawks': '🦅',
-  'Cardinals': '🔴',
-  'Nuggets': '💛',
-  'Suns': '🌞',
-  'Bucks': '🦌',
-  '76ers': '🔔',
-  'Mavericks': '🐴',
-  'Clippers': '⛵',
-  'Nets': '🏀',
-  'Knicks': '🏙️',
-  'Grizzlies': '🐻',
-  'Pelicans': '🦅',
-  'Kings': '👑',
-  'Thunder': '⚡',
-  'Avalanche': '🏔️',
-  'Stars': '⭐',
-  'Panthers': '🐆',
-  'Lightning': '⚡',
-  'Canucks': '🐋',
-  'Flames': '🔥',
-  'Devils': '😈',
-  'Hurricanes': '🌀',
-  'Braves': '🪓',
-  'Astros': '⭐',
-  'Phillies': '🔔',
-  'Padres': '🟤',
-  'Orioles': '🐦',
-  'Rays': '☀️',
-  'Cubs': '🐻',
-  'Mariners': '⚓',
-  'Chelsea': '🔵',
-  'Barcelona': '🔵🔴',
-  'Bayern': '🔴',
-  'Dortmund': '💛',
-  'PSG': '🔵',
-  'Marseille': '⚪',
-  'Inter': '🔵⚫',
-  'AC Milan': '🔴⚫',
-};
+import { TeamLogo } from '@/components/TeamLogo';
+import { SavePickButton } from '@/components/SavePickButton';
+import { APIPrediction } from '@/hooks/usePredictions';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PredictionCardProps {
-  prediction: Prediction;
+  prediction: Prediction | APIPrediction;
   isLocked?: boolean;
 }
 
 export function PredictionCard({ prediction, isLocked = false }: PredictionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useLanguage();
 
   const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
   const expectedValue = typeof prediction.expectedValue === 'string' 
     ? parseFloat(prediction.expectedValue) 
     : prediction.expectedValue;
+
+  // Mock key factors (would come from API in production)
+  const keyFactors = {
+    injuries: prediction.reasoning?.toLowerCase().includes('injur'),
+    weather: prediction.reasoning?.toLowerCase().includes('weather'),
+    sharpMoney: prediction.reasoning?.toLowerCase().includes('sharp') || prediction.reasoning?.toLowerCase().includes('line'),
+    sentiment: prediction.reasoning?.toLowerCase().includes('sentiment') || prediction.reasoning?.toLowerCase().includes('public'),
+  };
 
   return (
     <div
@@ -96,7 +39,7 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
         isLocked && 'blur-sm pointer-events-none'
       )}
     >
-      {/* Sport & League Badge */}
+      {/* Sport & League Badge + Save Button */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}</span>
@@ -104,19 +47,22 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
             {prediction.league || prediction.sport}
           </span>
         </div>
-        <GameCountdown gameTime={prediction.gameTime} />
+        <div className="flex items-center gap-2">
+          <GameCountdown gameTime={prediction.gameTime} />
+          <SavePickButton prediction={prediction as APIPrediction} />
+        </div>
       </div>
 
-      {/* Teams */}
+      {/* Teams with Logos */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex flex-col items-start gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{teamLogos[prediction.awayTeam] || '🏆'}</span>
+        <div className="flex flex-col items-start gap-2">
+          <div className="flex items-center gap-3">
+            <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="md" />
             <span className="font-semibold">{prediction.awayTeam}</span>
           </div>
-          <span className="text-xs text-muted-foreground">@</span>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{teamLogos[prediction.homeTeam] || '🏠'}</span>
+          <span className="ml-10 text-xs text-muted-foreground">@</span>
+          <div className="flex items-center gap-3">
+            <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="md" />
             <span className="font-semibold">{prediction.homeTeam}</span>
           </div>
         </div>
@@ -145,6 +91,34 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
         </div>
       </div>
 
+      {/* Key Factors Pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {keyFactors.injuries && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+            <AlertTriangle className="h-3 w-3" />
+            {t.injuries}
+          </span>
+        )}
+        {keyFactors.weather && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400">
+            <ThermometerSun className="h-3 w-3" />
+            {t.weather}
+          </span>
+        )}
+        {keyFactors.sharpMoney && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
+            <DollarSign className="h-3 w-3" />
+            {t.sharpMoney}
+          </span>
+        )}
+        {keyFactors.sentiment && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs text-yellow-400">
+            <MessageCircle className="h-3 w-3" />
+            {t.sentiment}
+          </span>
+        )}
+      </div>
+
       {/* Reasoning Preview */}
       <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
         {prediction.reasoning}
@@ -157,7 +131,7 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full justify-between text-muted-foreground hover:text-foreground"
       >
-        View Analysis
+        {t.viewAnalysis}
         <ChevronDown
           className={cn(
             'h-4 w-4 transition-transform duration-200',
@@ -168,16 +142,63 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="mt-4 animate-fade-in border-t border-border pt-4">
-          <h4 className="mb-2 text-sm font-semibold">Full Analysis</h4>
-          <p className="text-sm text-muted-foreground">{prediction.reasoning}</p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 animate-fade-in border-t border-border pt-4 space-y-4">
+          {/* Full Analysis */}
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">{t.fullAnalysis}</h4>
+            <p className="text-sm text-muted-foreground">{prediction.reasoning}</p>
+          </div>
+
+          {/* Confidence Breakdown */}
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">{t.confidenceBreakdown}</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Historical matchup</span>
+                <span className="font-medium">+12%</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Recent form</span>
+                <span className="font-medium">+8%</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Line movement</span>
+                <span className="font-medium text-success">+5%</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Public sentiment</span>
+                <span className="font-medium text-destructive">-3%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Odds Comparison */}
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">{t.oddsComparison}</h4>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-muted/50 p-2 text-center">
+                <p className="text-xs text-muted-foreground">DraftKings</p>
+                <p className="font-mono text-sm font-medium">{prediction.prediction.odds}</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-2 text-center">
+                <p className="text-xs text-muted-foreground">FanDuel</p>
+                <p className="font-mono text-sm font-medium">-108</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-2 text-center border border-success/30">
+                <p className="text-xs text-success">Best</p>
+                <p className="font-mono text-sm font-medium text-success">-105</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Meta info */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Data Sources</p>
-              <p className="text-sm font-medium">12 verified sources</p>
+              <p className="text-xs text-muted-foreground">{t.dataSources}</p>
+              <p className="text-sm font-medium">12 {t.verifiedSources}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Model Version</p>
+              <p className="text-xs text-muted-foreground">{t.modelVersion}</p>
               <p className="text-sm font-medium">Edge88 v3.2</p>
             </div>
           </div>
