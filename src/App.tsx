@@ -16,6 +16,9 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import SavedPicks from "./pages/SavedPicks";
 import Settings from "./pages/Settings";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import ResponsibleGambling from "./pages/ResponsibleGambling";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +42,9 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/saved-picks" element={<SavedPicks />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
