@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown, AlertCircle } from 'lucide-react';
+import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
 import { PredictionCard } from '@/components/PredictionCard';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
+import { MaintenanceState } from '@/components/MaintenanceState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useActivePredictions } from '@/hooks/usePredictions';
@@ -42,7 +43,7 @@ const Predictions = () => {
   
   const { user, profile } = useAuth();
   const { t } = useLanguage();
-  const { data: predictions, isLoading, isError, refetch, isFetching } = useActivePredictions();
+  const { data: predictions, isLoading, isError, refetch, isFetching, isMaintenanceMode } = useActivePredictions();
 
   const isPro = profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'elite';
 
@@ -305,28 +306,27 @@ const Predictions = () => {
           </div>
         </div>
 
-        {/* Error State */}
-        {isError && (
-          <div className="glass-card py-12 text-center mb-6">
-            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-            <h3 className="mt-4 text-lg font-semibold">{t.somethingWentWrong}</h3>
-            <p className="mt-2 text-muted-foreground">Failed to load predictions</p>
-            <Button onClick={handleRefresh} className="mt-4 gap-2">
-              <RefreshCw className="h-4 w-4" />
-              {t.retry}
-            </Button>
+        {/* Maintenance State */}
+        {isMaintenanceMode && (
+          <div className="py-8">
+            <MaintenanceState 
+              onRetry={() => refetch()}
+              title="Crunching the Latest Data"
+              subtitle="Our AI is analyzing real-time odds, injury reports, and sharp money movements. Predictions will be available shortly."
+              autoRetrySeconds={30}
+            />
           </div>
         )}
 
         {/* Predictions Grid */}
-        {isLoading ? (
+        {isLoading && !isMaintenanceMode ? (
           <div className={cn(
             'grid gap-6',
             viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
           )}>
             <PredictionCardSkeletonList count={6} />
           </div>
-        ) : filteredAndSortedPredictions.length > 0 ? (
+        ) : !isMaintenanceMode && filteredAndSortedPredictions.length > 0 ? (
           <div className={cn(
             'grid gap-6',
             viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
@@ -343,7 +343,7 @@ const Predictions = () => {
               );
             })}
           </div>
-        ) : (
+        ) : !isMaintenanceMode ? (
           <div className="glass-card py-16 text-center">
             <Zap className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <h3 className="mt-4 text-lg font-semibold">{t.noPredictions}</h3>
@@ -363,10 +363,10 @@ const Predictions = () => {
               {t.adjustFilters}
             </Button>
           </div>
-        )}
+        ) : null}
 
         {/* Subscription Gate Notice */}
-        {!isPro && filteredAndSortedPredictions.length > (user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT) && (
+        {!isPro && !isMaintenanceMode && filteredAndSortedPredictions.length > (user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT) && (
           <div className="mt-8 glass-card p-6 text-center bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
             <div className="flex items-center justify-center gap-2 text-primary mb-2">
               <Zap className="h-5 w-5" />

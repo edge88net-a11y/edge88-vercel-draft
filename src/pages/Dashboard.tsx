@@ -1,4 +1,4 @@
-import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, AlertCircle, RefreshCw, PieChart, Flame } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, RefreshCw, PieChart, Flame } from 'lucide-react';
 import { Navigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -11,6 +11,7 @@ import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart
 import { SportDistributionChart } from '@/components/charts/SportDistributionChart';
 import { TonightsGames } from '@/components/TonightsGames';
 import { TeamLogo } from '@/components/TeamLogo';
+import { MaintenanceState } from '@/components/MaintenanceState';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { sportIcons } from '@/lib/types';
@@ -22,8 +23,8 @@ import { Button } from '@/components/ui/button';
 const Dashboard = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { t } = useLanguage();
-  const { data: predictions, isLoading: predictionsLoading, isError, refetch } = useActivePredictions();
-  const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: predictions, isLoading: predictionsLoading, isError, refetch, isMaintenanceMode } = useActivePredictions();
+  const { data: stats, isLoading: statsLoading, isMaintenanceMode: statsMaintenanceMode } = useStats();
   const { stats: savedStats } = useSavedPicks();
 
   // Redirect to login if not authenticated
@@ -34,7 +35,8 @@ const Dashboard = () => {
   const activePredictions = predictions?.filter((p) => p.result === 'pending').slice(0, 6) || [];
   const recentResults = predictions?.filter((p) => p.result !== 'pending').slice(0, 5) || [];
 
-  const isLoading = authLoading || predictionsLoading || statsLoading;
+  const isLoading = authLoading || (predictionsLoading && !isMaintenanceMode);
+  const showMaintenanceState = isMaintenanceMode || statsMaintenanceMode;
 
   // Calculate sport distribution for donut chart
   const sportDistribution = predictions?.reduce((acc, pred) => {
@@ -97,15 +99,14 @@ const Dashboard = () => {
           <div className="flex items-center justify-center py-32">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : isError ? (
-          <div className="glass-card py-16 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-            <h3 className="mt-4 text-lg font-semibold">{t.somethingWentWrong}</h3>
-            <p className="mt-2 text-muted-foreground">Failed to load dashboard data</p>
-            <Button onClick={() => refetch()} className="mt-4 gap-2">
-              <RefreshCw className="h-4 w-4" />
-              {t.retry}
-            </Button>
+        ) : showMaintenanceState ? (
+          <div className="py-8">
+            <MaintenanceState 
+              onRetry={() => refetch()}
+              title="Crunching the Latest Data"
+              subtitle="Our AI is analyzing real-time odds, injury reports, and sharp money movements. Your dashboard will be ready shortly."
+              autoRetrySeconds={30}
+            />
           </div>
         ) : (
           <>
