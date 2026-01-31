@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Globe, TrendingUp, BarChart3, Target, Users, CheckCircle, Loader2, Mail, Sparkles, Star, Quote, Play } from 'lucide-react';
+import { ArrowRight, Zap, TrendingUp, BarChart3, Target, Users, Loader2, Mail, Sparkles, Star, Quote, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/Navbar';
@@ -8,10 +8,8 @@ import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
 import { LiveTicker } from '@/components/LiveTicker';
 import { PredictionCard } from '@/components/PredictionCard';
-import { StatCard } from '@/components/StatCard';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
-import { pricingPlans } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 // Animated Counter Hook
@@ -105,7 +103,7 @@ const HOW_IT_WORKS = [
 
 const Index = () => {
   const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
-  const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: stats } = useStats();
   const { t } = useLanguage();
   const { subscribe, isLoading: isSubscribing } = useNewsletter();
   const [email, setEmail] = useState('');
@@ -119,37 +117,12 @@ const Index = () => {
     })
     .slice(0, 3) || [];
 
-  const displayStats = [
-    { label: t.overallAccuracy, value: stats?.accuracy ?? 64.8, suffix: '%', icon: Target },
-    { label: t.totalPredictions, value: stats?.totalPredictions ?? 12847, icon: BarChart3 },
-    { label: t.averageROI, value: stats?.roi ?? 8.7, suffix: '%', prefix: '+', icon: TrendingUp },
-    { label: t.activeAnalysts, value: 10432, icon: Users },
-  ];
-
   const predictionsMadeToday = stats?.activePredictions || predictions?.length || 127;
 
   // Animated counters for social proof
   const analystsCounter = useAnimatedCounter(10000);
   const picksCounter = useAnimatedCounter(142);
   const accuracyCounter = useAnimatedCounter(73);
-
-  const features = [
-    {
-      icon: Zap,
-      title: t.aiPowered,
-      description: t.aiPoweredDesc,
-    },
-    {
-      icon: Shield,
-      title: t.transparent,
-      description: t.transparentDesc,
-    },
-    {
-      icon: Globe,
-      title: t.multiMarket,
-      description: t.multiMarketDesc,
-    },
-  ];
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,27 +202,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Live Accuracy Banner */}
-      <section className="py-4 bg-gradient-to-r from-success/10 via-primary/5 to-success/10 border-y border-border/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div ref={analystsCounter.ref} className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-center">
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-success" />
-              <span className="text-sm md:text-base">
-                This week: <span className="font-bold text-success">{accuracyCounter.count}% accuracy</span> across <span className="font-bold">{picksCounter.count} picks</span>
-              </span>
-            </div>
-            <div className="hidden md:block h-4 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-sm md:text-base">
-                <span className="font-bold text-primary">{analystsCounter.count.toLocaleString()}+</span> analysts winning with AI
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Live Ticker */}
       <LiveTicker />
 
@@ -301,37 +253,82 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Testimonials Section */}
       <section className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto max-w-2xl text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {t.whyEdge88}
+              What Our Users Say
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              {t.whyEdge88Subtitle}
+              Join thousands of analysts already winning with Edge88
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {features.map((feature, index) => (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {TESTIMONIALS.map((testimonial) => (
               <div
-                key={feature.title}
-                className="glass-card-hover p-8 text-center"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                key={testimonial.name}
+                className="glass-card p-6 relative overflow-hidden hover:border-primary/30 transition-all"
               >
-                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10">
-                  <feature.icon className="h-7 w-7 text-primary" />
+                <Quote className="absolute top-4 right-4 h-8 w-8 text-primary/10" />
+                
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-2xl">
+                    {testimonial.image}
+                  </div>
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                  </div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-4">
+                  "{testimonial.quote}"
+                </p>
+
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                    {testimonial.tier} Member
+                  </span>
+                  <span className="text-sm font-bold text-success">
+                    {testimonial.stats}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Featured Predictions */}
+      {/* Live Accuracy Banner */}
+      <section className="py-6 bg-gradient-to-r from-success/10 via-primary/5 to-success/10 border-y border-border/50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div ref={analystsCounter.ref} className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-center">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-success" />
+              <span className="text-sm md:text-base">
+                This week: <span className="font-bold text-success">{accuracyCounter.count}% accuracy</span> across <span className="font-bold">{picksCounter.count} picks</span>
+              </span>
+            </div>
+            <div className="hidden md:block h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span className="text-sm md:text-base">
+                <span className="font-bold text-primary">{analystsCounter.count.toLocaleString()}+</span> analysts winning with AI
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Predictions + Newsletter Signup */}
       <section className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 flex items-end justify-between">
@@ -395,139 +392,6 @@ const Index = () => {
                 </Button>
               </form>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 md:py-28 bg-gradient-to-b from-transparent via-muted/20 to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              What Our Users Say
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Join thousands of analysts already winning with Edge88
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {TESTIMONIALS.map((testimonial, index) => (
-              <div
-                key={testimonial.name}
-                className="glass-card p-6 relative overflow-hidden hover:border-primary/30 transition-all"
-              >
-                <Quote className="absolute top-4 right-4 h-8 w-8 text-primary/10" />
-                
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-2xl">
-                    {testimonial.image}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-4">
-                  "{testimonial.quote}"
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                    {testimonial.tier} Member
-                  </span>
-                  <span className="text-sm font-bold text-success">
-                    {testimonial.stats}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 md:py-28">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {t.provenResults}
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              {t.realTimeStats}
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {displayStats.map((stat) => (
-              <StatCard
-                key={stat.label}
-                title={stat.label}
-                value={stat.value}
-                suffix={stat.suffix}
-                prefix={stat.prefix}
-                icon={<stat.icon className="h-5 w-5" />}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Preview */}
-      <section className="py-20 md:py-28">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {t.simplePricing}
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              {t.startFreeUpgrade}
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {pricingPlans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`glass-card relative overflow-hidden p-6 transition-all duration-300 hover:border-primary/30 ${
-                  plan.popular ? 'border-primary ring-1 ring-primary' : ''
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                    {t.popular}
-                  </div>
-                )}
-                <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="font-mono text-4xl font-bold">${plan.price}</span>
-                  {plan.price > 0 && (
-                    <span className="text-muted-foreground">/{plan.period}</span>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-                <ul className="mt-6 space-y-2">
-                  {plan.features.slice(0, 4).map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-success" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Link to="/pricing" className="mt-6 block">
-                  <Button variant={plan.popular ? 'default' : 'outline'} className="w-full">
-                    {plan.cta}
-                  </Button>
-                </Link>
-              </div>
-            ))}
           </div>
         </div>
       </section>
