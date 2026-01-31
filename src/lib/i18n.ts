@@ -243,6 +243,29 @@ export interface Translations {
   alreadyHaveAccount: string;
   continueWithGoogle: string;
   orContinueWith: string;
+  
+  // Settings Page Extra
+  applicationLanguage: string;
+  chooseLanguage: string;
+  enablePush: string;
+  instantNotifications: string;
+  alertHighConfidence: string;
+  toggleTheme: string;
+  connectedAccounts: string;
+  telegram: string;
+  telegramDesc: string;
+  connect: string;
+  connected: string;
+  dangerZone: string;
+  deleteAccount: string;
+  deleteAccountDesc: string;
+  deleteConfirm: string;
+  deleteWarning: string;
+  cancel: string;
+  yesDelete: string;
+  saveChanges: string;
+  saving: string;
+  savedSuccess: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -487,6 +510,29 @@ export const translations: Record<Language, Translations> = {
     alreadyHaveAccount: 'Already have an account?',
     continueWithGoogle: 'Continue with Google',
     orContinueWith: 'Or continue with',
+    
+    // Settings Page Extra
+    applicationLanguage: 'Application Language',
+    chooseLanguage: 'Choose your preferred language',
+    enablePush: 'Enable Push Notifications',
+    instantNotifications: 'Receive instant notifications in your browser',
+    alertHighConfidence: 'Alert when new high-confidence predictions drop',
+    toggleTheme: 'Toggle between dark and light mode',
+    connectedAccounts: 'Connected Accounts',
+    telegram: 'Telegram',
+    telegramDesc: 'Get picks directly in Telegram',
+    connect: 'Connect',
+    connected: 'Connected',
+    dangerZone: 'Danger Zone',
+    deleteAccount: 'Delete Account',
+    deleteAccountDesc: 'Permanently delete your account and all data',
+    deleteConfirm: 'Are you sure you want to delete your account?',
+    deleteWarning: 'This action cannot be undone. All your data will be permanently deleted.',
+    cancel: 'Cancel',
+    yesDelete: 'Yes, delete account',
+    saveChanges: 'Save Changes',
+    saving: 'Saving...',
+    savedSuccess: 'Saved!',
   },
   
   cz: {
@@ -730,6 +776,29 @@ export const translations: Record<Language, Translations> = {
     alreadyHaveAccount: 'Již máte účet?',
     continueWithGoogle: 'Pokračovat přes Google',
     orContinueWith: 'Nebo pokračovat pomocí',
+    
+    // Settings Page Extra
+    applicationLanguage: 'Jazyk aplikace',
+    chooseLanguage: 'Vyberte preferovaný jazyk',
+    enablePush: 'Povolit push oznámení',
+    instantNotifications: 'Dostávejte okamžitá upozornění v prohlížeči',
+    alertHighConfidence: 'Upozornění na nové predikce s vysokou jistotou',
+    toggleTheme: 'Přepnout mezi tmavým a světlým režimem',
+    connectedAccounts: 'Propojené účty',
+    telegram: 'Telegram',
+    telegramDesc: 'Dostávejte tipy přímo do Telegramu',
+    connect: 'Propojit',
+    connected: 'Propojeno',
+    dangerZone: 'Nebezpečná zóna',
+    deleteAccount: 'Smazat účet',
+    deleteAccountDesc: 'Trvale smazat váš účet a všechna data',
+    deleteConfirm: 'Opravdu chcete smazat svůj účet?',
+    deleteWarning: 'Tato akce je nevratná. Všechna vaše data budou trvale odstraněna.',
+    cancel: 'Zrušit',
+    yesDelete: 'Ano, smazat účet',
+    saveChanges: 'Uložit změny',
+    saving: 'Ukládání...',
+    savedSuccess: 'Uloženo!',
   },
 };
 

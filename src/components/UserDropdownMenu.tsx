@@ -132,7 +132,7 @@ export function UserDropdownMenu() {
 
               {/* Settings */}
               <MenuLink 
-                to="/dashboard" 
+                to="/settings" 
                 icon={Settings} 
                 label={t.settings}
                 onClick={() => setIsOpen(false)}
@@ -190,7 +190,7 @@ export function UserDropdownMenu() {
               </button>
 
               <MenuLink 
-                to="/dashboard" 
+                to="/settings" 
                 icon={Bell} 
                 label={t.notificationPreferences}
                 onClick={() => setIsOpen(false)}
