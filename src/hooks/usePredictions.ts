@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef } from 'react';
 
+const API_BASE_URL = 'https://api.edge88.net/api/v1';
+
 // Types for external API
 export interface APIPrediction {
   id: string;
@@ -102,7 +104,7 @@ function extractPredictionsArray(data: unknown): APIPrediction[] {
   return rawArray.map((item) => transformPrediction(item as Record<string, unknown>));
 }
 
-// Fetch active predictions via edge function proxy
+// Fetch active predictions from API directly
 export function useActivePredictions() {
   const { toast } = useToast();
   const previousCount = useRef<number>(0);
@@ -110,11 +112,11 @@ export function useActivePredictions() {
   const query = useQuery({
     queryKey: ['predictions', 'active'],
     queryFn: async (): Promise<APIPrediction[]> => {
-      const { data, error } = await supabase.functions.invoke('predictions-proxy', {
-        body: {},
-      });
-      
-      if (error) throw error;
+      const response = await fetch(`${API_BASE_URL}/predictions/active`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
       return extractPredictionsArray(data);
     },
     staleTime: 30 * 1000,
@@ -169,14 +171,16 @@ function extractStats(data: unknown): APIStats {
   return defaultStats;
 }
 
-// Fetch stats via edge function proxy
+// Fetch stats from API directly
 export function useStats() {
   return useQuery({
     queryKey: ['predictions', 'stats'],
     queryFn: async (): Promise<APIStats> => {
-      const { data, error } = await supabase.functions.invoke('predictions-proxy?endpoint=stats');
-      
-      if (error) throw error;
+      const response = await fetch(`${API_BASE_URL}/predictions/stats`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
       return extractStats(data);
     },
     staleTime: 60 * 1000,
