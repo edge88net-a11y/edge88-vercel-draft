@@ -13,7 +13,7 @@ export interface Prediction {
     odds: string;
   };
   confidence: number;
-  expectedValue: number;
+  expectedValue: number | string;
   reasoning: string;
   result?: 'win' | 'loss' | 'push' | 'pending';
 }
