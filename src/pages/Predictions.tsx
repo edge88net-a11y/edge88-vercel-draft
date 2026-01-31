@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -24,9 +24,9 @@ const confidenceLevels = [
 ];
 const predictionTypes = ['All', 'Moneyline', 'Spread', 'Over/Under', 'Prop'];
 const sortOptions = [
-  { value: 'confidence', label: 'Confidence' },
-  { value: 'gameTime', label: 'Game Time' },
-  { value: 'sport', label: 'Sport' },
+  { value: 'confidence', labelKey: 'confidence' },
+  { value: 'gameTime', labelKey: 'type' },
+  { value: 'sport', labelKey: 'sport' },
 ];
 
 const FREE_PICKS_LIMIT = 3;
@@ -56,9 +56,15 @@ const Predictions = () => {
 
   const activePredictions = predictions?.filter((p) => p.result === 'pending') || [];
 
+  // Helper to normalize confidence to 0-100 range
+  const normalizeConfidence = (confidence: number) => {
+    return confidence <= 1 ? confidence * 100 : confidence;
+  };
+
   const filteredAndSortedPredictions = useMemo(() => {
     let filtered = activePredictions.filter((prediction) => {
       const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+      const normalizedConfidence = normalizeConfidence(prediction.confidence);
       
       // Sport filter
       if (selectedSport !== 'All' && sportKey !== selectedSport && prediction.sport !== selectedSport) {
@@ -67,7 +73,7 @@ const Predictions = () => {
       
       // Confidence filter
       const confidenceFilter = confidenceLevels.find((c) => c.label === selectedConfidence);
-      if (confidenceFilter && prediction.confidence < confidenceFilter.min) {
+      if (confidenceFilter && normalizedConfidence < confidenceFilter.min) {
         return false;
       }
       
@@ -95,7 +101,7 @@ const Predictions = () => {
       let comparison = 0;
       switch (sortBy) {
         case 'confidence':
-          comparison = a.confidence - b.confidence;
+          comparison = normalizeConfidence(a.confidence) - normalizeConfidence(b.confidence);
           break;
         case 'gameTime':
           comparison = new Date(a.gameTime).getTime() - new Date(b.gameTime).getTime();
@@ -104,7 +110,7 @@ const Predictions = () => {
           comparison = a.sport.localeCompare(b.sport);
           break;
         default:
-          comparison = b.confidence - a.confidence;
+          comparison = normalizeConfidence(b.confidence) - normalizeConfidence(a.confidence);
       }
       return sortOrder === 'desc' ? -comparison : comparison;
     });
@@ -117,6 +123,13 @@ const Predictions = () => {
     if (user) return index >= FREE_PICKS_LIMIT * 2; // Logged in users get 6
     return index >= FREE_PICKS_LIMIT; // Non-logged in get 3
   };
+
+  // Get translated sort options
+  const translatedSortOptions = [
+    { value: 'confidence', label: t.confidence },
+    { value: 'gameTime', label: 'Game Time' },
+    { value: 'sport', label: t.sport },
+  ];
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -185,9 +198,9 @@ const Predictions = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-lg border border-border bg-muted px-3 py-2 text-sm"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
             >
-              {sortOptions.map((option) => (
+              {translatedSortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -322,7 +335,10 @@ const Predictions = () => {
               const isLocked = shouldLockPrediction(index);
               return (
                 <SubscriptionGate key={prediction.id} isLocked={isLocked}>
-                  <PredictionCard prediction={prediction} />
+                  <PredictionCard 
+                    prediction={prediction} 
+                    gameNumber={index + 1}
+                  />
                 </SubscriptionGate>
               );
             })}
@@ -357,7 +373,7 @@ const Predictions = () => {
               <span className="font-bold">{t.unlockAll} {filteredAndSortedPredictions.length} {t.predictions}</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              {user ? t.upgradeToPro : t.signUpFree} to see all predictions and maximize your edge.
+              {user ? t.upgradeToSeeAll : t.signUpToSeeMore}
             </p>
             <div className="flex items-center justify-center gap-3">
               {!user && (

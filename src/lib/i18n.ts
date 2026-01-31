@@ -13,6 +13,7 @@ export interface Translations {
   login: string;
   logout: string;
   getStarted: string;
+  signUp: string;
   
   // Common
   loading: string;
@@ -25,6 +26,9 @@ export interface Translations {
   search: string;
   filter: string;
   sortBy: string;
+  or: string;
+  and: string;
+  of: string;
   
   // Home Page
   heroTitle: string;
@@ -44,6 +48,11 @@ export interface Translations {
   startPredictingToday: string;
   joinThousands: string;
   createFreeAccount: string;
+  predictionsMadeToday: string;
+  getDailyPicks: string;
+  enterEmail: string;
+  subscribeToNewsletter: string;
+  checkInbox: string;
   
   // Features
   aiPowered: string;
@@ -63,6 +72,7 @@ export interface Translations {
   roi: string;
   currentStreak: string;
   wins: string;
+  losses: string;
   keepItGoing: string;
   accuracyBySport: string;
   recentResults: string;
@@ -92,10 +102,15 @@ export interface Translations {
   unlockAll: string;
   upgradeToPro: string;
   signUpFree: string;
+  signUpToSeeMore: string;
+  upgradeToSeeAll: string;
+  gameNumber: string;
   
   // Analysis
   viewAnalysis: string;
+  hideAnalysis: string;
   fullAnalysis: string;
+  whyThisPick: string;
   dataSources: string;
   verifiedSources: string;
   modelVersion: string;
@@ -104,8 +119,34 @@ export interface Translations {
   weather: string;
   sharpMoney: string;
   sentiment: string;
+  headToHead: string;
   oddsComparison: string;
   confidenceBreakdown: string;
+  analyzedAt: string;
+  researchSources: string;
+  analyzedSources: string;
+  bestOdds: string;
+  bestValue: string;
+  ago: string;
+  minutes: string;
+  hours: string;
+  research: string;
+  odds: string;
+  historical: string;
+  
+  // Event Detail Page
+  vs: string;
+  ourPick: string;
+  venue: string;
+  analysis: string;
+  timeline: string;
+  similarPredictions: string;
+  researchStats: string;
+  scannedArticles: string;
+  expertOpinions: string;
+  injuryReports: string;
+  analyzedUpdated: string;
+  lineMoved: string;
   
   // Dashboard
   welcomeBack: string;
@@ -137,6 +178,18 @@ export interface Translations {
   noSavedPicks: string;
   savePredictions: string;
   trackRecord: string;
+  mySavedPicks: string;
+  
+  // User Menu
+  myProfile: string;
+  billingSubscription: string;
+  currentTier: string;
+  paymentMethod: string;
+  manageSubscription: string;
+  helpFaq: string;
+  emailAlerts: string;
+  dailyPicksEmail: string;
+  notificationPreferences: string;
   
   // Settings
   settings: string;
@@ -158,7 +211,12 @@ export interface Translations {
   enterprise: string;
   popular: string;
   perMonth: string;
+  perYear: string;
   features: string;
+  monthly: string;
+  annual: string;
+  savePercent: string;
+  moneyBackGuarantee: string;
   
   // Footer
   footerTagline: string;
@@ -173,6 +231,18 @@ export interface Translations {
   error: string;
   retry: string;
   somethingWentWrong: string;
+  
+  // Auth
+  email: string;
+  password: string;
+  confirmPassword: string;
+  fullName: string;
+  forgotPassword: string;
+  rememberMe: string;
+  dontHaveAccount: string;
+  alreadyHaveAccount: string;
+  continueWithGoogle: string;
+  orContinueWith: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -187,6 +257,7 @@ export const translations: Record<Language, Translations> = {
     login: 'Login',
     logout: 'Logout',
     getStarted: 'Get Started',
+    signUp: 'Sign Up',
     
     // Common
     loading: 'Loading...',
@@ -199,6 +270,9 @@ export const translations: Record<Language, Translations> = {
     search: 'Search',
     filter: 'Filters',
     sortBy: 'Sort by',
+    or: 'or',
+    and: 'and',
+    of: 'of',
     
     // Home Page
     heroTitle: 'The Future of Predictions',
@@ -218,6 +292,11 @@ export const translations: Record<Language, Translations> = {
     startPredictingToday: 'Start Predicting Today',
     joinThousands: 'Join thousands of analysts using AI to gain an edge. Start free, no credit card required.',
     createFreeAccount: 'Create Free Account',
+    predictionsMadeToday: 'predictions made today',
+    getDailyPicks: 'Get daily picks free',
+    enterEmail: 'Enter your email',
+    subscribeToNewsletter: 'Subscribe',
+    checkInbox: "Check your inbox for today's picks!",
     
     // Features
     aiPowered: 'AI-Powered',
@@ -237,6 +316,7 @@ export const translations: Record<Language, Translations> = {
     roi: 'ROI',
     currentStreak: 'Current Streak',
     wins: 'Wins',
+    losses: 'Losses',
     keepItGoing: 'Keep it going!',
     accuracyBySport: 'Accuracy by Sport',
     recentResults: 'Recent Results',
@@ -266,10 +346,15 @@ export const translations: Record<Language, Translations> = {
     unlockAll: 'Unlock All',
     upgradeToPro: 'Upgrade to Pro',
     signUpFree: 'Sign Up Free',
+    signUpToSeeMore: 'Sign up free to see more',
+    upgradeToSeeAll: 'Upgrade to Pro to see all predictions',
+    gameNumber: 'Game',
     
     // Analysis
     viewAnalysis: 'View Analysis',
+    hideAnalysis: 'Hide Analysis',
     fullAnalysis: 'Full Analysis',
+    whyThisPick: 'Why This Pick',
     dataSources: 'Data Sources',
     verifiedSources: 'verified sources',
     modelVersion: 'Model Version',
@@ -278,8 +363,34 @@ export const translations: Record<Language, Translations> = {
     weather: 'Weather',
     sharpMoney: 'Sharp Money',
     sentiment: 'Sentiment',
+    headToHead: 'Head to Head',
     oddsComparison: 'Odds Comparison',
     confidenceBreakdown: 'Confidence Breakdown',
+    analyzedAt: 'Analyzed at',
+    researchSources: 'Research Sources',
+    analyzedSources: 'Analyzed',
+    bestOdds: 'Best Odds',
+    bestValue: 'Best Value',
+    ago: 'ago',
+    minutes: 'min',
+    hours: 'hours',
+    research: 'Research',
+    odds: 'Odds',
+    historical: 'Historical',
+    
+    // Event Detail Page
+    vs: 'vs',
+    ourPick: 'Our Pick',
+    venue: 'Venue',
+    analysis: 'Analysis',
+    timeline: 'Timeline',
+    similarPredictions: 'Similar Past Predictions',
+    researchStats: 'Research Stats',
+    scannedArticles: 'Scanned articles',
+    expertOpinions: 'Expert opinions',
+    injuryReports: 'Injury reports',
+    analyzedUpdated: 'Updated',
+    lineMoved: 'Line moved',
     
     // Dashboard
     welcomeBack: 'Welcome back',
@@ -311,6 +422,18 @@ export const translations: Record<Language, Translations> = {
     noSavedPicks: 'No saved picks yet',
     savePredictions: 'Save predictions to track your performance',
     trackRecord: 'Track Record',
+    mySavedPicks: 'My Saved Picks',
+    
+    // User Menu
+    myProfile: 'My Profile',
+    billingSubscription: 'Billing & Subscription',
+    currentTier: 'Current tier',
+    paymentMethod: 'Payment method',
+    manageSubscription: 'Manage Subscription',
+    helpFaq: 'Help & FAQ',
+    emailAlerts: 'Email Alerts',
+    dailyPicksEmail: 'Daily picks email',
+    notificationPreferences: 'Notification Preferences',
     
     // Settings
     settings: 'Settings',
@@ -332,7 +455,12 @@ export const translations: Record<Language, Translations> = {
     enterprise: 'Enterprise',
     popular: 'Most Popular',
     perMonth: '/month',
+    perYear: '/year',
     features: 'Features',
+    monthly: 'Monthly',
+    annual: 'Annual',
+    savePercent: 'Save 20%',
+    moneyBackGuarantee: '30-day money-back guarantee',
     
     // Footer
     footerTagline: 'The most advanced sports predictions platform, powered by AI.',
@@ -347,6 +475,18 @@ export const translations: Record<Language, Translations> = {
     error: 'Error',
     retry: 'Retry',
     somethingWentWrong: 'Something went wrong',
+    
+    // Auth
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    fullName: 'Full Name',
+    forgotPassword: 'Forgot password?',
+    rememberMe: 'Remember me',
+    dontHaveAccount: "Don't have an account?",
+    alreadyHaveAccount: 'Already have an account?',
+    continueWithGoogle: 'Continue with Google',
+    orContinueWith: 'Or continue with',
   },
   
   cz: {
@@ -360,6 +500,7 @@ export const translations: Record<Language, Translations> = {
     login: 'Přihlášení',
     logout: 'Odhlásit',
     getStarted: 'Začít',
+    signUp: 'Registrace',
     
     // Common
     loading: 'Načítání...',
@@ -372,6 +513,9 @@ export const translations: Record<Language, Translations> = {
     search: 'Hledat',
     filter: 'Filtry',
     sortBy: 'Řadit podle',
+    or: 'nebo',
+    and: 'a',
+    of: 'z',
     
     // Home Page
     heroTitle: 'Budoucnost predikcí',
@@ -391,6 +535,11 @@ export const translations: Record<Language, Translations> = {
     startPredictingToday: 'Začněte predikovat ještě dnes',
     joinThousands: 'Připojte se k tisícům analytiků využívajících AI pro získání výhody. Začněte zdarma, bez platební karty.',
     createFreeAccount: 'Vytvořit účet zdarma',
+    predictionsMadeToday: 'predikcí dnes',
+    getDailyPicks: 'Získejte denní tipy zdarma',
+    enterEmail: 'Zadejte svůj email',
+    subscribeToNewsletter: 'Přihlásit',
+    checkInbox: 'Zkontrolujte si email pro dnešní tipy!',
     
     // Features
     aiPowered: 'Poháněno AI',
@@ -410,6 +559,7 @@ export const translations: Record<Language, Translations> = {
     roi: 'Návratnost',
     currentStreak: 'Aktuální série',
     wins: 'Výher',
+    losses: 'Proher',
     keepItGoing: 'Pokračujte!',
     accuracyBySport: 'Přesnost podle sportu',
     recentResults: 'Poslední výsledky',
@@ -439,10 +589,15 @@ export const translations: Record<Language, Translations> = {
     unlockAll: 'Odemknout vše',
     upgradeToPro: 'Upgradovat na Pro',
     signUpFree: 'Registrace zdarma',
+    signUpToSeeMore: 'Registrujte se zdarma pro více',
+    upgradeToSeeAll: 'Upgradujte na Pro pro všechny predikce',
+    gameNumber: 'Zápas',
     
     // Analysis
     viewAnalysis: 'Zobrazit analýzu',
+    hideAnalysis: 'Skrýt analýzu',
     fullAnalysis: 'Kompletní analýza',
+    whyThisPick: 'Proč tento tip',
     dataSources: 'Zdroje dat',
     verifiedSources: 'ověřených zdrojů',
     modelVersion: 'Verze modelu',
@@ -451,8 +606,34 @@ export const translations: Record<Language, Translations> = {
     weather: 'Počasí',
     sharpMoney: 'Sharp peníze',
     sentiment: 'Sentiment',
+    headToHead: 'Vzájemné zápasy',
     oddsComparison: 'Porovnání kurzů',
     confidenceBreakdown: 'Rozklad jistoty',
+    analyzedAt: 'Analyzováno v',
+    researchSources: 'Zdroje výzkumu',
+    analyzedSources: 'Analyzováno',
+    bestOdds: 'Nejlepší kurzy',
+    bestValue: 'Nejlepší hodnota',
+    ago: 'před',
+    minutes: 'min',
+    hours: 'hod',
+    research: 'Výzkum',
+    odds: 'Kurzy',
+    historical: 'Historie',
+    
+    // Event Detail Page
+    vs: 'vs',
+    ourPick: 'Náš tip',
+    venue: 'Místo',
+    analysis: 'Analýza',
+    timeline: 'Časová osa',
+    similarPredictions: 'Podobné minulé predikce',
+    researchStats: 'Statistiky výzkumu',
+    scannedArticles: 'Prohledaných článků',
+    expertOpinions: 'Názorů expertů',
+    injuryReports: 'Zpráv o zraněních',
+    analyzedUpdated: 'Aktualizováno',
+    lineMoved: 'Linka se posunula',
     
     // Dashboard
     welcomeBack: 'Vítejte zpět',
@@ -484,6 +665,18 @@ export const translations: Record<Language, Translations> = {
     noSavedPicks: 'Zatím žádné uložené tipy',
     savePredictions: 'Ukládejte predikce pro sledování výkonu',
     trackRecord: 'Bilance',
+    mySavedPicks: 'Moje uložené tipy',
+    
+    // User Menu
+    myProfile: 'Můj profil',
+    billingSubscription: 'Fakturace a předplatné',
+    currentTier: 'Aktuální úroveň',
+    paymentMethod: 'Platební metoda',
+    manageSubscription: 'Spravovat předplatné',
+    helpFaq: 'Nápověda a FAQ',
+    emailAlerts: 'E-mailová upozornění',
+    dailyPicksEmail: 'Denní tipy emailem',
+    notificationPreferences: 'Nastavení oznámení',
     
     // Settings
     settings: 'Nastavení',
@@ -505,7 +698,12 @@ export const translations: Record<Language, Translations> = {
     enterprise: 'Enterprise',
     popular: 'Nejpopulárnější',
     perMonth: '/měsíc',
+    perYear: '/rok',
     features: 'Funkce',
+    monthly: 'Měsíčně',
+    annual: 'Ročně',
+    savePercent: 'Ušetřete 20%',
+    moneyBackGuarantee: '30denní záruka vrácení peněz',
     
     // Footer
     footerTagline: 'Nejpokročilejší platforma pro sportovní predikce, poháněná AI.',
@@ -520,6 +718,18 @@ export const translations: Record<Language, Translations> = {
     error: 'Chyba',
     retry: 'Zkusit znovu',
     somethingWentWrong: 'Něco se pokazilo',
+    
+    // Auth
+    email: 'E-mail',
+    password: 'Heslo',
+    confirmPassword: 'Potvrdit heslo',
+    fullName: 'Celé jméno',
+    forgotPassword: 'Zapomněli jste heslo?',
+    rememberMe: 'Zapamatovat si mě',
+    dontHaveAccount: 'Nemáte účet?',
+    alreadyHaveAccount: 'Již máte účet?',
+    continueWithGoogle: 'Pokračovat přes Google',
+    orContinueWith: 'Nebo pokračovat pomocí',
   },
 };
 

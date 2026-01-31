@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Globe, TrendingUp, BarChart3, Target, Users, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Globe, TrendingUp, BarChart3, Target, Users, CheckCircle, Loader2, Mail, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -9,40 +11,78 @@ import { PredictionCard } from '@/components/PredictionCard';
 import { StatCard } from '@/components/StatCard';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { pricingPlans } from '@/lib/mockData';
-
-const features = [
-  {
-    icon: Zap,
-    title: 'AI-Powered',
-    description: 'Our models analyze millions of data points per prediction, including player stats, weather, injuries, and market sentiment.',
-  },
-  {
-    icon: Shield,
-    title: 'Transparent',
-    description: 'Every prediction is timestamped before game start. Track our historical accuracy and verify every pick.',
-  },
-  {
-    icon: Globe,
-    title: 'Multi-Market',
-    description: 'Coverage across NFL, NBA, NHL, MLB, Soccer, UFC, and prediction markets like Polymarket and Kalshi.',
-  },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
   const { data: stats, isLoading: statsLoading } = useStats();
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const featuredPredictions = predictions
     ?.filter((p) => p.result === 'pending')
-    .sort((a, b) => b.confidence - a.confidence)
+    .sort((a, b) => {
+      // Normalize confidence to 0-100
+      const confA = a.confidence <= 1 ? a.confidence * 100 : a.confidence;
+      const confB = b.confidence <= 1 ? b.confidence * 100 : b.confidence;
+      return confB - confA;
+    })
     .slice(0, 3) || [];
 
   const displayStats = [
-    { label: 'Overall Accuracy', value: stats?.accuracy ?? 64.8, suffix: '%', icon: Target },
-    { label: 'Total Predictions', value: stats?.totalPredictions ?? 12847, icon: BarChart3 },
-    { label: 'Average ROI', value: stats?.roi ?? 8.7, suffix: '%', prefix: '+', icon: TrendingUp },
-    { label: 'Active Analysts', value: 10432, icon: Users },
+    { label: t.overallAccuracy, value: stats?.accuracy ?? 64.8, suffix: '%', icon: Target },
+    { label: t.totalPredictions, value: stats?.totalPredictions ?? 12847, icon: BarChart3 },
+    { label: t.averageROI, value: stats?.roi ?? 8.7, suffix: '%', prefix: '+', icon: TrendingUp },
+    { label: t.activeAnalysts, value: 10432, icon: Users },
   ];
+
+  // Calculate predictions made today (mock or from API)
+  const predictionsMadeToday = stats?.activePredictions || predictions?.length || 127;
+
+  const features = [
+    {
+      icon: Zap,
+      title: t.aiPowered,
+      description: t.aiPoweredDesc,
+    },
+    {
+      icon: Shield,
+      title: t.transparent,
+      description: t.transparentDesc,
+    },
+    {
+      icon: Globe,
+      title: t.multiMarket,
+      description: t.multiMarketDesc,
+    },
+  ];
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setIsSubscribing(true);
+    try {
+      // For now, just show success - you can add Supabase table later
+      toast({
+        title: '✅ ' + t.subscribeToNewsletter,
+        description: t.checkInbox,
+      });
+      setEmail('');
+    } catch (error) {
+      toast({
+        title: t.error,
+        description: t.somethingWentWrong,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -54,6 +94,22 @@ const Index = () => {
         <div className="absolute inset-0 bg-hero-glow" />
         <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
         <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-accent/10 blur-[100px]" />
+        
+        {/* Particle animation placeholder */}
+        <div className="absolute inset-0 opacity-30">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute h-1 w-1 rounded-full bg-primary animate-pulse"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 3}s`,
+              }}
+            />
+          ))}
+        </div>
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
@@ -61,34 +117,40 @@ const Index = () => {
             <div className="mb-8 inline-flex animate-fade-in items-center gap-2 rounded-full border border-border/50 bg-muted/50 px-4 py-2 backdrop-blur-sm">
               <Users className="h-4 w-4 text-primary" />
               <span className="text-sm text-muted-foreground">
-                Trusted by <span className="font-semibold text-foreground">10,000+</span> analysts
+                {t.trustedBy} <span className="font-semibold text-foreground">10,000+</span> {t.analysts}
               </span>
             </div>
 
             {/* Main Headline */}
             <h1 className="animate-slide-up text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              The Future of{' '}
-              <span className="gradient-text-animated">Predictions</span>
+              {t.heroTitle.split(' ').slice(0, -1).join(' ')}{' '}
+              <span className="gradient-text-animated">{t.heroTitle.split(' ').slice(-1)}</span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl animate-slide-up text-lg text-muted-foreground sm:text-xl" style={{ animationDelay: '0.1s' }}>
-              AI-powered predictions across sports, crypto, and world events. 
-              Built for analysts who demand transparency and accuracy.
+              {t.heroSubtitle}
             </p>
+
+            {/* Live Counter */}
+            <div className="mt-6 animate-slide-up inline-flex items-center gap-2 rounded-full bg-success/10 px-4 py-2 text-success" style={{ animationDelay: '0.15s' }}>
+              <Sparkles className="h-4 w-4 animate-pulse" />
+              <span className="font-mono font-bold">{predictionsMadeToday}</span>
+              <span className="text-sm">{t.predictionsMadeToday}</span>
+            </div>
 
             {/* CTA Buttons */}
             <div className="mt-10 flex animate-slide-up flex-col items-center gap-4 sm:flex-row sm:justify-center" style={{ animationDelay: '0.2s' }}>
               <Link to="/signup">
                 <Button size="xl" className="btn-gradient group w-full sm:w-auto">
                   <span className="flex items-center gap-2">
-                    Start Predicting
+                    {t.startPredicting}
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </span>
                 </Button>
               </Link>
               <Link to="/predictions">
                 <Button size="xl" variant="outline" className="w-full sm:w-auto">
-                  View Predictions
+                  {t.viewPredictions}
                 </Button>
               </Link>
             </div>
@@ -104,10 +166,10 @@ const Index = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Why Edge88?
+              {t.whyEdge88}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Cutting-edge technology meets transparent tracking
+              {t.whyEdge88Subtitle}
             </p>
           </div>
 
@@ -135,15 +197,15 @@ const Index = () => {
           <div className="mb-12 flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Today's Top Picks
+                {t.todaysTopPicks}
               </h2>
               <p className="mt-2 text-muted-foreground">
-                Highest confidence predictions for today
+                {t.highestConfidence}
               </p>
             </div>
             <Link to="/predictions">
               <Button variant="ghost" className="gap-2">
-                View All
+                {t.viewAll}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -155,17 +217,45 @@ const Index = () => {
             </div>
           ) : featuredPredictions.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featuredPredictions.map((prediction) => (
-                <PredictionCard key={prediction.id} prediction={prediction} />
+              {featuredPredictions.map((prediction, index) => (
+                <PredictionCard key={prediction.id} prediction={prediction} gameNumber={index + 1} />
               ))}
             </div>
           ) : (
             <div className="glass-card py-16 text-center">
               <Zap className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-semibold">No active predictions</h3>
-              <p className="mt-2 text-muted-foreground">Check back soon for new picks</p>
+              <h3 className="mt-4 text-lg font-semibold">{t.noActivePredictions}</h3>
+              <p className="mt-2 text-muted-foreground">{t.checkBackSoon}</p>
             </div>
           )}
+
+          {/* Newsletter Signup */}
+          <div className="mt-12 glass-card p-6 bg-gradient-to-r from-primary/5 to-accent/5">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold">{t.getDailyPicks}</h3>
+                  <p className="text-sm text-muted-foreground">Free daily predictions in your inbox</p>
+                </div>
+              </div>
+              <form onSubmit={handleNewsletterSubmit} className="flex w-full md:w-auto gap-2">
+                <Input
+                  type="email"
+                  placeholder={t.enterEmail}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full md:w-64"
+                  required
+                />
+                <Button type="submit" className="btn-gradient" disabled={isSubscribing}>
+                  {isSubscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : t.subscribeToNewsletter}
+                </Button>
+              </form>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -174,10 +264,10 @@ const Index = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Proven Results
+              {t.provenResults}
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Real-time stats from our verified predictions
+              {t.realTimeStats}
             </p>
           </div>
 
@@ -201,10 +291,10 @@ const Index = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Simple Pricing
+              {t.simplePricing}
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Start free, upgrade when you're ready
+              {t.startFreeUpgrade}
             </p>
           </div>
 
@@ -218,7 +308,7 @@ const Index = () => {
               >
                 {plan.popular && (
                   <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                    Most Popular
+                    {t.popular}
                   </div>
                 )}
                 <h3 className="text-lg font-semibold">{plan.name}</h3>
@@ -255,17 +345,16 @@ const Index = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
             <div className="relative">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                Start Predicting Today
+                {t.startPredictingToday}
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-                Join thousands of analysts using AI to gain an edge.
-                Start free, no credit card required.
+                {t.joinThousands}
               </p>
               <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                 <Link to="/signup">
                   <Button size="xl" className="btn-gradient group">
                     <span className="flex items-center gap-2">
-                      Create Free Account
+                      {t.createFreeAccount}
                       <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>

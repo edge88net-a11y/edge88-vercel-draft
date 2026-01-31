@@ -1,18 +1,12 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, LogOut, User, Bookmark, Settings, Moon, Sun } from 'lucide-react';
+import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { UserDropdownMenu } from '@/components/UserDropdownMenu';
 import { useLanguage } from '@/contexts/LanguageContext';
-
-const navLinks = [
-  { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
-  { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
-  { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
-  { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
-];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,6 +14,30 @@ export function Navbar() {
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const { t } = useLanguage();
+
+  // Define nav links based on auth state
+  const getNavLinks = () => {
+    const baseLinks = [
+      { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
+      { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
+    ];
+
+    if (user) {
+      return [
+        { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
+        ...baseLinks,
+        { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
+      ];
+    }
+
+    return [
+      { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
+      ...baseLinks,
+      { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
+    ];
+  };
+
+  const navLinks = getNavLinks();
 
   const handleSignOut = async () => {
     await signOut();
@@ -66,8 +84,8 @@ export function Navbar() {
 
           {/* Desktop Auth & Settings */}
           <div className="hidden md:flex md:items-center md:gap-3">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* Language Switcher - Only show when logged out */}
+            {!user && <LanguageSwitcher />}
             
             {loading ? (
               <div className="h-9 w-24 animate-pulse rounded-lg bg-muted" />
@@ -80,17 +98,7 @@ export function Navbar() {
                 >
                   <Bookmark className="h-4 w-4" />
                 </Link>
-                <Link to="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-                  <User className="h-4 w-4" />
-                  <span>{profile?.display_name || user.email?.split('@')[0]}</span>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                    {profile?.subscription_tier || 'Free'}
-                  </span>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
-                  <LogOut className="h-4 w-4" />
-                  {t.logout}
-                </Button>
+                <UserDropdownMenu />
               </>
             ) : (
               <>
@@ -102,7 +110,7 @@ export function Navbar() {
                 </Link>
                 <Link to="/signup">
                   <Button size="sm" className="btn-gradient">
-                    <span>{t.getStarted}</span>
+                    <span>{t.signUp}</span>
                   </Button>
                 </Link>
               </>
@@ -165,11 +173,9 @@ export function Navbar() {
               {user ? (
                 <>
                   <div className="flex items-center gap-2 px-4 py-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
                     <span>{profile?.display_name || user.email}</span>
                   </div>
                   <Button variant="outline" className="w-full" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
                     {t.logout}
                   </Button>
                 </>
@@ -182,7 +188,7 @@ export function Navbar() {
                   </Link>
                   <Link to="/signup" onClick={() => setIsOpen(false)}>
                     <Button className="btn-gradient w-full">
-                      <span>{t.getStarted}</span>
+                      <span>{t.signUp}</span>
                     </Button>
                   </Link>
                 </>

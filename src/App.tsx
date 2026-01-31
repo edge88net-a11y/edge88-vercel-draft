@@ -9,6 +9,7 @@ import { MobileNav } from "@/components/MobileNav";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Predictions from "./pages/Predictions";
+import PredictionDetail from "./pages/PredictionDetail";
 import Results from "./pages/Results";
 import Pricing from "./pages/Pricing";
 import Login from "./pages/Login";
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/predictions" element={<Predictions />} />
+              <Route path="/predictions/:id" element={<PredictionDetail />} />
               <Route path="/results" element={<Results />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/login" element={<Login />} />

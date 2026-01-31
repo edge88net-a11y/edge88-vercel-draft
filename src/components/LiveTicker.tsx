@@ -27,6 +27,13 @@ export function LiveTicker() {
 
   const duplicatedItems = [...tickerItems, ...tickerItems];
 
+  // Helper to format confidence as percentage
+  const formatConfidence = (confidence: number) => {
+    // Handle both 0-1 and 0-100 ranges
+    const percent = confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence);
+    return percent;
+  };
+
   return (
     <div className="relative overflow-hidden border-y border-border/50 bg-muted/30 py-3">
       <div className="absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-background to-transparent" />
@@ -35,6 +42,8 @@ export function LiveTicker() {
       <div className="flex animate-ticker">
         {duplicatedItems.map((prediction, index) => {
           const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+          const confidencePercent = formatConfidence(prediction.confidence);
+          
           return (
             <div
               key={`${prediction.id}-${index}`}
@@ -52,14 +61,14 @@ export function LiveTicker() {
                     </span>
                     <span
                       className={`font-mono text-xs font-bold ${
-                        prediction.confidence >= 75
+                        confidencePercent >= 70
                           ? 'text-success'
-                          : prediction.confidence >= 65
+                          : confidencePercent >= 55
                           ? 'text-yellow-400'
                           : 'text-orange-400'
                       }`}
                     >
-                      {prediction.confidence}%
+                      {confidencePercent}%
                     </span>
                   </div>
                 </div>
