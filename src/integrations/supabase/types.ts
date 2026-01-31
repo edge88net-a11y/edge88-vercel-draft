@@ -58,6 +58,92 @@ export type Database = {
           },
         ]
       }
+      comment_votes: {
+        Row: {
+          comment_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_votes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "event_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_comments: {
+        Row: {
+          comment_text: string
+          created_at: string | null
+          downvotes: number | null
+          id: string
+          parent_id: string | null
+          prediction_id: string
+          updated_at: string | null
+          upvotes: number | null
+          user_id: string
+          user_pick: string | null
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string | null
+          downvotes?: number | null
+          id?: string
+          parent_id?: string | null
+          prediction_id: string
+          updated_at?: string | null
+          upvotes?: number | null
+          user_id: string
+          user_pick?: string | null
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string | null
+          downvotes?: number | null
+          id?: string
+          parent_id?: string | null
+          prediction_id?: string
+          updated_at?: string | null
+          upvotes?: number | null
+          user_id?: string
+          user_pick?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "event_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_comments_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_research: {
         Row: {
           content: string
