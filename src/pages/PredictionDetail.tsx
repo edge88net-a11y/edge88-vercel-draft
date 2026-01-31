@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History, Sparkles } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -14,6 +14,8 @@ import { LiveGameBadge, WinProbabilityBar } from '@/components/LiveGameBadge';
 import { AnalysisSection } from '@/components/AnalysisSection';
 import { OddsComparison } from '@/components/OddsComparison';
 import { BankrollCalculator } from '@/components/BankrollCalculator';
+import { SportSpecificStats } from '@/components/SportSpecificStats';
+import { NumerologyTab } from '@/components/NumerologyTab';
 import { useActivePredictions } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -288,7 +290,7 @@ export default function PredictionDetail() {
 
         {/* Analysis Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <TabsList className="w-full justify-start mb-6 bg-muted/50">
+          <TabsList className="w-full justify-start mb-6 bg-muted/50 overflow-x-auto">
             <TabsTrigger value="overview" className="flex-1 md:flex-initial">
               {language === 'cz' ? 'Přehled' : 'Overview'}
             </TabsTrigger>
@@ -303,6 +305,10 @@ export default function PredictionDetail() {
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex-1 md:flex-initial">
               {language === 'cz' ? 'Časová osa' : 'Timeline'}
+            </TabsTrigger>
+            <TabsTrigger value="mystical" className="flex-1 md:flex-initial gap-1">
+              <Sparkles className="h-3 w-3" />
+              {language === 'cz' ? 'Mystika' : 'Mystical'}
             </TabsTrigger>
           </TabsList>
 
@@ -356,8 +362,18 @@ export default function PredictionDetail() {
             </div>
           </TabsContent>
 
-          {/* Stats Tab */}
+          {/* Stats Tab - Sport Specific */}
           <TabsContent value="stats" className="space-y-6">
+            <div className="glass-card p-6">
+              <SportSpecificStats
+                sport={prediction.sport}
+                homeTeam={prediction.homeTeam}
+                awayTeam={prediction.awayTeam}
+                confidence={confidencePercent}
+              />
+            </div>
+            
+            {/* Additional Team Comparison */}
             <div className="glass-card p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
@@ -481,6 +497,16 @@ export default function PredictionDetail() {
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          {/* Mystical Tab - Numerology & Astrology */}
+          <TabsContent value="mystical" className="space-y-6">
+            <NumerologyTab
+              homeTeam={prediction.homeTeam}
+              awayTeam={prediction.awayTeam}
+              gameTime={prediction.gameTime}
+              pick={prediction.prediction.pick}
+            />
           </TabsContent>
         </Tabs>
       </main>
