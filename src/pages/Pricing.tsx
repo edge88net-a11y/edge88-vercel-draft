@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Check, X, Zap, Shield, Star, Award } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Check, X, Zap, Shield, Star, Award, Loader2 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
 import { pricingPlans } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCheckout } from '@/hooks/useCheckout';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
 const faqs = [
   {
     question: 'How does the free plan work?',
@@ -77,7 +79,35 @@ const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const { t } = useLanguage();
+  const { user, profile } = useAuth();
+  const { checkout, isLoading } = useCheckout();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
+  // Handle checkout result from URL
+  useEffect(() => {
+    const checkoutResult = searchParams.get('checkout');
+    if (checkoutResult === 'cancelled') {
+      toast({
+        title: 'Checkout Cancelled',
+        description: 'Your subscription was not processed.',
+      });
+    }
+  }, [searchParams, toast]);
+
+  const currentTier = profile?.subscription_tier || 'free';
+
+  const handleSubscribe = (planName: string) => {
+    const tier = planName.toLowerCase();
+    if (tier === currentTier) {
+      toast({
+        title: 'Current Plan',
+        description: `You're already on the ${planName} plan.`,
+      });
+      return;
+    }
+    checkout(tier);
+  };
   const getPrice = (monthlyPrice: number) => {
     if (monthlyPrice === 0) return 0;
     return isAnnual ? Math.round(monthlyPrice * 0.8) : monthlyPrice;
@@ -198,15 +228,33 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <Link to="/signup">
+              {plan.price === 0 ? (
+                <Link to="/signup">
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    size="lg"
+                  >
+                    {user ? 'Current Plan' : plan.cta}
+                  </Button>
+                </Link>
+              ) : (
                 <Button
                   className={cn('w-full', plan.popular && 'btn-gradient')}
                   variant={plan.popular ? 'default' : 'outline'}
                   size="lg"
+                  onClick={() => handleSubscribe(plan.name)}
+                  disabled={isLoading === plan.name.toLowerCase() || currentTier === plan.name.toLowerCase()}
                 >
-                  {plan.cta}
+                  {isLoading === plan.name.toLowerCase() ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : currentTier === plan.name.toLowerCase() ? (
+                    'Current Plan'
+                  ) : (
+                    `Subscribe to ${plan.name}`
+                  )}
                 </Button>
-              </Link>
+              )}
             </div>
           ))}
         </div>

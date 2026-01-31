@@ -10,6 +10,10 @@ interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   subscription_tier: string | null;
+  onboarding_completed: boolean | null;
+  favorite_sports: string[] | null;
+  odds_format: string | null;
+  notifications_enabled: boolean | null;
 }
 
 interface AuthContextType {

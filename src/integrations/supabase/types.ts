@@ -291,6 +291,30 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean
+          source: string | null
+          subscribed_at: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean
+          source?: string | null
+          subscribed_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean
+          source?: string | null
+          subscribed_at?: string
+        }
+        Relationships: []
+      }
       odds_history: {
         Row: {
           away_odds: number | null
@@ -411,7 +435,11 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           display_name: string | null
+          favorite_sports: string[] | null
           id: string
+          notifications_enabled: boolean | null
+          odds_format: string | null
+          onboarding_completed: boolean | null
           subscription_tier: string | null
           updated_at: string | null
           user_id: string
@@ -420,7 +448,11 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          favorite_sports?: string[] | null
           id?: string
+          notifications_enabled?: boolean | null
+          odds_format?: string | null
+          onboarding_completed?: boolean | null
           subscription_tier?: string | null
           updated_at?: string | null
           user_id: string
@@ -429,7 +461,11 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          favorite_sports?: string[] | null
           id?: string
+          notifications_enabled?: boolean | null
+          odds_format?: string | null
+          onboarding_completed?: boolean | null
           subscription_tier?: string | null
           updated_at?: string | null
           user_id?: string
