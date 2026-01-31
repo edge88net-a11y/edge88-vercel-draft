@@ -7,9 +7,12 @@ interface ConfidenceMeterProps {
 }
 
 export function ConfidenceMeter({ value, size = 'md', showLabel = true }: ConfidenceMeterProps) {
+  // Handle both 0-1 and 0-100 ranges
+  const normalizedValue = value <= 1 ? Math.round(value * 100) : Math.round(value);
+  
   const getColor = () => {
-    if (value >= 75) return { stroke: 'stroke-success', text: 'text-success', bg: 'bg-success/20' };
-    if (value >= 65) return { stroke: 'stroke-yellow-400', text: 'text-yellow-400', bg: 'bg-yellow-400/20' };
+    if (normalizedValue >= 70) return { stroke: 'stroke-success', text: 'text-success', bg: 'bg-success/20' };
+    if (normalizedValue >= 55) return { stroke: 'stroke-yellow-400', text: 'text-yellow-400', bg: 'bg-yellow-400/20' };
     return { stroke: 'stroke-orange-400', text: 'text-orange-400', bg: 'bg-orange-400/20' };
   };
 
@@ -25,7 +28,7 @@ export function ConfidenceMeter({ value, size = 'md', showLabel = true }: Confid
 
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
+  const offset = circumference - (normalizedValue / 100) * circumference;
 
   return (
     <div className={cn('relative flex items-center justify-center', container)}>
@@ -54,7 +57,7 @@ export function ConfidenceMeter({ value, size = 'md', showLabel = true }: Confid
       </svg>
       {showLabel && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn('font-mono font-bold', text, colors.text)}>{value}%</span>
+          <span className={cn('font-mono font-bold', text, colors.text)}>{normalizedValue}%</span>
         </div>
       )}
     </div>
