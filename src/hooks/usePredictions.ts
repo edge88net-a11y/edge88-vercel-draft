@@ -54,6 +54,19 @@ export interface APIStats {
   dailyAccuracy?: DailyAccuracy[];
 }
 
+// Helper to safely extract predictions array from API response
+function extractPredictionsArray(data: unknown): APIPrediction[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.predictions)) return obj.predictions as APIPrediction[];
+    if (Array.isArray(obj.data)) return obj.data as APIPrediction[];
+    if (Array.isArray(obj.items)) return obj.items as APIPrediction[];
+  }
+  console.warn('Could not extract predictions array from response:', data);
+  return [];
+}
+
 // Fetch active predictions via edge function proxy
 export function useActivePredictions() {
   const { toast } = useToast();
@@ -67,7 +80,7 @@ export function useActivePredictions() {
       });
       
       if (error) throw error;
-      return data;
+      return extractPredictionsArray(data);
     },
     staleTime: 30 * 1000,
     refetchInterval: 30 * 1000,
@@ -91,22 +104,45 @@ export function useActivePredictions() {
   return query;
 }
 
+// Helper to safely extract stats from API response
+function extractStats(data: unknown): APIStats {
+  const defaultStats: APIStats = {
+    totalPredictions: 0,
+    accuracy: 0,
+    activePredictions: 0,
+    roi: 0,
+    winStreak: 0,
+    byConfidence: {
+      lock: { total: 0, wins: 0 },
+      high: { total: 0, wins: 0 },
+      medium: { total: 0, wins: 0 },
+      low: { total: 0, wins: 0 },
+    },
+    bySport: [],
+  };
+
+  if (!data || typeof data !== 'object') return defaultStats;
+  
+  const obj = data as Record<string, unknown>;
+  // Handle nested data structures
+  const statsData = obj.stats || obj.data || obj;
+  
+  if (typeof statsData === 'object' && statsData !== null) {
+    return { ...defaultStats, ...(statsData as Partial<APIStats>) };
+  }
+  
+  return defaultStats;
+}
+
 // Fetch stats via edge function proxy
 export function useStats() {
   return useQuery({
     queryKey: ['predictions', 'stats'],
     queryFn: async (): Promise<APIStats> => {
-      const { data, error } = await supabase.functions.invoke('predictions-proxy', {
-        body: {},
-        headers: { 'x-endpoint': 'stats' },
-      });
+      const { data, error } = await supabase.functions.invoke('predictions-proxy?endpoint=stats');
       
       if (error) throw error;
-      
-      // Parse the endpoint from query params workaround
-      const response = await supabase.functions.invoke('predictions-proxy?endpoint=stats');
-      if (response.error) throw response.error;
-      return response.data;
+      return extractStats(data);
     },
     staleTime: 60 * 1000,
   });
