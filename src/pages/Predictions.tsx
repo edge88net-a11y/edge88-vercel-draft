@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Filter, RefreshCw, Zap } from 'lucide-react';
+import { Filter, RefreshCw, Zap, Loader2 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PredictionCard } from '@/components/PredictionCard';
 import { Button } from '@/components/ui/button';
-import { mockPredictions, sportIcons } from '@/lib/mockData';
+import { useActivePredictions } from '@/hooks/usePredictions';
+import { sportIcons } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
 const confidenceLevels = [
@@ -19,17 +22,19 @@ const Predictions = () => {
   const [selectedSport, setSelectedSport] = useState('All');
   const [selectedConfidence, setSelectedConfidence] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
-  const [refreshing, setRefreshing] = useState(false);
+  
+  const { user } = useAuth();
+  const { data: predictions, isLoading, refetch, isFetching } = useActivePredictions();
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    refetch();
   };
 
-  const activePredictions = mockPredictions.filter((p) => p.result === 'pending');
+  const activePredictions = predictions?.filter((p) => p.result === 'pending') || [];
 
   const filteredPredictions = activePredictions.filter((prediction) => {
-    if (selectedSport !== 'All' && prediction.sport !== selectedSport) return false;
+    const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+    if (selectedSport !== 'All' && sportKey !== selectedSport && prediction.sport !== selectedSport) return false;
     const confidenceFilter = confidenceLevels.find((c) => c.label === selectedConfidence);
     if (confidenceFilter && prediction.confidence < confidenceFilter.min) return false;
     if (selectedType !== 'All' && prediction.prediction.type !== selectedType) return false;
@@ -52,11 +57,11 @@ const Predictions = () => {
           <Button
             variant="outline"
             onClick={handleRefresh}
-            disabled={refreshing}
+            disabled={isFetching}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
 
@@ -84,7 +89,7 @@ const Predictions = () => {
                         : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                     }`}
                   >
-                    {sport !== 'All' && <span>{sportIcons[sport]}</span>}
+                    {sport !== 'All' && <span>{sportIcons[sport] || sportIcons[sport.toUpperCase()]}</span>}
                     {sport}
                   </button>
                 ))}
@@ -149,13 +154,17 @@ const Predictions = () => {
         </div>
 
         {/* Predictions Grid */}
-        {filteredPredictions.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-32">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filteredPredictions.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredPredictions.map((prediction, index) => (
               <PredictionCard
                 key={prediction.id}
                 prediction={prediction}
-                isLocked={index > 2} // Lock after first 3 for free users demo
+                isLocked={!user && index > 2} // Lock after first 3 for non-logged-in users
               />
             ))}
           </div>
@@ -170,11 +179,21 @@ const Predictions = () => {
         )}
 
         {/* Subscription Gate Notice */}
-        <div className="mt-8 glass-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Free users see 3 predictions. <span className="text-primary font-medium cursor-pointer hover:underline">Upgrade to Pro</span> for unlimited access.
-          </p>
-        </div>
+        {!user && (
+          <div className="mt-8 glass-card p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Free users see 3 predictions.{' '}
+              <Link to="/signup" className="text-primary font-medium hover:underline">
+                Sign up free
+              </Link>{' '}
+              for more access or{' '}
+              <Link to="/pricing" className="text-primary font-medium hover:underline">
+                upgrade to Pro
+              </Link>{' '}
+              for unlimited.
+            </p>
+          </div>
+        )}
       </main>
 
       <Footer />
