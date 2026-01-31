@@ -1,8 +1,11 @@
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Target, Zap, Clock, Award, Crosshair, Shield, TrendingUp, Users } from 'lucide-react';
+import { usePredictionStats, SportSpecificStatsData } from '@/hooks/usePredictions';
+import { Target, Zap, Clock, Award, Crosshair, Shield, TrendingUp, Users, Loader2, Sparkles } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SportSpecificStatsProps {
+  predictionId: string;
   sport: string;
   homeTeam: string;
   awayTeam: string;
@@ -35,459 +38,255 @@ function StatCard({ label, value, subLabel, confidence, icon: Icon, variant = 'd
   }[variant];
 
   return (
-    <div className={cn('rounded-xl border p-4', bgColor)}>
+    <div className={cn('rounded-xl border p-3 md:p-4', bgColor)}>
       <div className="flex items-start justify-between mb-2">
-        {Icon && <Icon className={cn('h-5 w-5', textColor)} />}
+        {Icon && <Icon className={cn('h-4 w-4 md:h-5 md:w-5', textColor)} />}
         {confidence !== undefined && (
-          <span className="text-xs text-muted-foreground">{confidence}% conf</span>
+          <span className="text-xs text-muted-foreground">{confidence}%</span>
         )}
       </div>
-      <p className={cn('text-2xl font-mono font-bold', textColor)}>{value}</p>
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className={cn('text-lg md:text-2xl font-mono font-bold', textColor)}>{value}</p>
+      <p className="text-xs md:text-sm text-muted-foreground">{label}</p>
       {subLabel && <p className="text-xs text-muted-foreground mt-1">{subLabel}</p>}
     </div>
   );
 }
 
-// Generate sport-specific predicted stats
-function generatePredictedStats(sport: string, homeTeam: string, awayTeam: string, confidence: number) {
-  const hash = (homeTeam + awayTeam + sport).split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
-  const baseConfidence = Math.round(confidence * 0.9);
-
-  const sportLower = sport.toLowerCase();
-
-  if (sportLower.includes('hockey') || sportLower.includes('nhl') || sportLower.includes('ice')) {
-    return {
-      type: 'hockey',
-      stats: {
-        totalGoals: { value: 5 + (hash % 3), confidence: baseConfidence + 5 },
-        homeGoals: { value: 2 + (hash % 3), confidence: baseConfidence },
-        awayGoals: { value: 2 + ((hash >> 1) % 3), confidence: baseConfidence },
-        shotsOnGoal: { value: 58 + (hash % 12), confidence: baseConfidence - 5 },
-        period1Goals: { value: 1 + (hash % 2), confidence: baseConfidence - 10 },
-        period2Goals: { value: 2 + ((hash >> 2) % 2), confidence: baseConfidence - 10 },
-        period3Goals: { value: 1 + ((hash >> 3) % 2), confidence: baseConfidence - 10 },
-        powerPlayGoals: { value: 1 + (hash % 2), confidence: baseConfidence - 15 },
-      }
-    };
-  }
-
-  if (sportLower.includes('soccer') || sportLower.includes('football') || sportLower.includes('premier')) {
-    return {
-      type: 'soccer',
-      stats: {
-        totalGoals: { value: 2 + (hash % 2), confidence: baseConfidence + 5 },
-        homeGoals: { value: 1 + (hash % 2), confidence: baseConfidence },
-        awayGoals: { value: (hash >> 1) % 2, confidence: baseConfidence },
-        xG: { value: (2.1 + (hash % 10) / 10).toFixed(2), confidence: baseConfidence - 5 },
-        corners: { value: 9 + (hash % 5), confidence: baseConfidence - 10 },
-        cards: { value: 3 + (hash % 3), confidence: baseConfidence - 15 },
-        possession: { value: 52 + (hash % 10), confidence: baseConfidence - 8 },
-        shotsOnTarget: { value: 8 + (hash % 6), confidence: baseConfidence - 10 },
-      }
-    };
-  }
-
-  if (sportLower.includes('basket') || sportLower.includes('nba')) {
-    return {
-      type: 'basketball',
-      stats: {
-        totalPoints: { value: 210 + (hash % 30), confidence: baseConfidence + 5 },
-        homePoints: { value: 105 + (hash % 15), confidence: baseConfidence },
-        awayPoints: { value: 102 + ((hash >> 2) % 15), confidence: baseConfidence },
-        q1Points: { value: 52 + (hash % 10), confidence: baseConfidence - 10 },
-        q2Points: { value: 54 + ((hash >> 1) % 10), confidence: baseConfidence - 10 },
-        q3Points: { value: 53 + ((hash >> 2) % 10), confidence: baseConfidence - 10 },
-        q4Points: { value: 55 + ((hash >> 3) % 10), confidence: baseConfidence - 10 },
-        threePointers: { value: 22 + (hash % 8), confidence: baseConfidence - 15 },
-      }
-    };
-  }
-
-  if (sportLower.includes('ufc') || sportLower.includes('mma') || sportLower.includes('fight')) {
-    const methods = ['KO/TKO', 'Submission', 'Decision', 'Split Decision'];
-    const rounds = ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5', 'Goes to Decision'];
-    
-    return {
-      type: 'ufc',
-      stats: {
-        method: { value: methods[hash % methods.length], confidence: baseConfidence },
-        round: { value: rounds[(hash >> 1) % rounds.length], confidence: baseConfidence - 10 },
-        significantStrikes: { value: 85 + (hash % 60), confidence: baseConfidence - 15 },
-        takedownAttempts: { value: 3 + (hash % 5), confidence: baseConfidence - 12 },
-        takedownSuccess: { value: 40 + (hash % 40), confidence: baseConfidence - 15 },
-        controlTime: { value: `${2 + (hash % 6)}:${String((hash % 60)).padStart(2, '0')}`, confidence: baseConfidence - 18 },
-      }
-    };
-  }
-
-  // Default for other sports
-  return {
-    type: 'default',
-    stats: {
-      homeScore: { value: 3 + (hash % 3), confidence: baseConfidence },
-      awayScore: { value: 2 + ((hash >> 1) % 3), confidence: baseConfidence },
-      totalScore: { value: 5 + (hash % 4), confidence: baseConfidence + 5 },
-    }
-  };
+// Skeleton loader for stats
+function StatsSkeletonLoader() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <Skeleton className="h-6 w-48" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-xl border border-border p-3 md:p-4 space-y-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-xl border border-border p-3 md:p-4 space-y-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-export function SportSpecificStats({ sport, homeTeam, awayTeam, confidence, className }: SportSpecificStatsProps) {
+// Coming soon placeholder
+function ComingSoonPlaceholder({ sport }: { sport: string }) {
   const { language } = useLanguage();
-  const predicted = generatePredictedStats(sport, homeTeam, awayTeam, confidence);
+  
+  const sportIcon = sport.toLowerCase().includes('hockey') ? '🏒' :
+    sport.toLowerCase().includes('soccer') || sport.toLowerCase().includes('football') ? '⚽' :
+    sport.toLowerCase().includes('basket') || sport.toLowerCase().includes('nba') ? '🏀' :
+    sport.toLowerCase().includes('ufc') || sport.toLowerCase().includes('mma') ? '🥊' : '📊';
 
-  if (predicted.type === 'hockey') {
-    const { stats } = predicted;
+  return (
+    <div className="flex flex-col items-center justify-center py-12 md:py-16">
+      <div className="relative mb-6">
+        <div className="text-6xl md:text-7xl">{sportIcon}</div>
+        <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-primary animate-pulse" />
+      </div>
+      <h3 className="text-lg md:text-xl font-bold mb-2 text-center">
+        {language === 'cz' ? 'Statistiky se připravují' : 'Stats Coming Soon'}
+      </h3>
+      <p className="text-sm md:text-base text-muted-foreground text-center max-w-md">
+        {language === 'cz' 
+          ? 'Naše AI analyzuje data pro tento zápas. Podrobné statistiky budou brzy k dispozici.'
+          : 'Our AI is analyzing data for this match. Detailed stats will be available shortly.'}
+      </p>
+      <div className="mt-6 flex items-center gap-2 text-primary">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="text-sm">{language === 'cz' ? 'Načítání...' : 'Loading...'}</span>
+      </div>
+    </div>
+  );
+}
+
+// Render stats based on sport type from API
+function RenderStats({ data, homeTeam, awayTeam }: { data: SportSpecificStatsData; homeTeam: string; awayTeam: string }) {
+  const { language } = useLanguage();
+  const { type, stats } = data;
+
+  if (type === 'hockey') {
     return (
-      <div className={cn('space-y-6', className)}>
+      <div className="space-y-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           🏒 {language === 'cz' ? 'Hokejové predikce' : 'Hockey Predictions'}
         </h3>
 
-        {/* Goals Prediction */}
         <div>
           <h4 className="text-sm font-medium text-muted-foreground mb-3">
             {language === 'cz' ? 'Predikce gólů' : 'Goals Prediction'}
           </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Target}
-              label={language === 'cz' ? 'Celkem gólů' : 'Total Goals'}
-              value={stats.totalGoals.value}
-              confidence={stats.totalGoals.confidence}
-              variant="primary"
-            />
-            <StatCard
-              icon={Award}
-              label={`${homeTeam}`}
-              value={stats.homeGoals.value}
-              confidence={stats.homeGoals.confidence}
-            />
-            <StatCard
-              icon={Award}
-              label={`${awayTeam}`}
-              value={stats.awayGoals.value}
-              confidence={stats.awayGoals.confidence}
-            />
-            <StatCard
-              icon={Crosshair}
-              label={language === 'cz' ? 'Střely na branku' : 'Shots on Goal'}
-              value={stats.shotsOnGoal.value}
-              confidence={stats.shotsOnGoal.confidence}
-            />
-          </div>
-        </div>
-
-        {/* Period Breakdown */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Rozložení po třetinách' : 'Period Breakdown'}
-          </h4>
-          <div className="grid grid-cols-3 gap-4">
-            <StatCard
-              icon={Clock}
-              label={language === 'cz' ? '1. třetina' : '1st Period'}
-              value={stats.period1Goals.value}
-              subLabel={language === 'cz' ? 'predikované góly' : 'predicted goals'}
-              confidence={stats.period1Goals.confidence}
-            />
-            <StatCard
-              icon={Clock}
-              label={language === 'cz' ? '2. třetina' : '2nd Period'}
-              value={stats.period2Goals.value}
-              subLabel={language === 'cz' ? 'predikované góly' : 'predicted goals'}
-              confidence={stats.period2Goals.confidence}
-            />
-            <StatCard
-              icon={Clock}
-              label={language === 'cz' ? '3. třetina' : '3rd Period'}
-              value={stats.period3Goals.value}
-              subLabel={language === 'cz' ? 'predikované góly' : 'predicted goals'}
-              confidence={stats.period3Goals.confidence}
-            />
-          </div>
-        </div>
-
-        {/* Special Teams */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Speciální formace' : 'Special Teams'}
-          </h4>
-          <div className="grid grid-cols-2 gap-4">
-            <StatCard
-              icon={Zap}
-              label={language === 'cz' ? 'Góly v přesilovce' : 'Power Play Goals'}
-              value={stats.powerPlayGoals.value}
-              confidence={stats.powerPlayGoals.confidence}
-              variant="warning"
-            />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {stats.totalGoals && (
+              <StatCard
+                icon={Target}
+                label={language === 'cz' ? 'Celkem gólů' : 'Total Goals'}
+                value={stats.totalGoals.value}
+                confidence={stats.totalGoals.confidence}
+                variant="primary"
+              />
+            )}
+            {stats.homeGoals && (
+              <StatCard icon={Award} label={homeTeam} value={stats.homeGoals.value} confidence={stats.homeGoals.confidence} />
+            )}
+            {stats.awayGoals && (
+              <StatCard icon={Award} label={awayTeam} value={stats.awayGoals.value} confidence={stats.awayGoals.confidence} />
+            )}
+            {stats.shotsOnGoal && (
+              <StatCard icon={Crosshair} label={language === 'cz' ? 'Střely' : 'Shots'} value={stats.shotsOnGoal.value} confidence={stats.shotsOnGoal.confidence} />
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  if (predicted.type === 'soccer') {
-    const { stats } = predicted;
+  if (type === 'soccer') {
     return (
-      <div className={cn('space-y-6', className)}>
+      <div className="space-y-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           ⚽ {language === 'cz' ? 'Fotbalové predikce' : 'Soccer Predictions'}
         </h3>
 
-        {/* Goals & xG */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Góly & xG' : 'Goals & xG'}
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Target}
-              label={language === 'cz' ? 'Celkem gólů' : 'Total Goals'}
-              value={stats.totalGoals.value}
-              confidence={stats.totalGoals.confidence}
-              variant="primary"
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="xG"
-              value={stats.xG.value}
-              subLabel="Expected Goals"
-              confidence={stats.xG.confidence}
-              variant="success"
-            />
-            <StatCard
-              icon={Award}
-              label={`${homeTeam}`}
-              value={stats.homeGoals.value}
-              confidence={stats.homeGoals.confidence}
-            />
-            <StatCard
-              icon={Award}
-              label={`${awayTeam}`}
-              value={stats.awayGoals.value}
-              confidence={stats.awayGoals.confidence}
-            />
-          </div>
-        </div>
-
-        {/* Match Stats */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Statistiky zápasu' : 'Match Stats'}
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Shield}
-              label={language === 'cz' ? 'Rohy' : 'Corners'}
-              value={stats.corners.value}
-              confidence={stats.corners.confidence}
-            />
-            <StatCard
-              icon={Users}
-              label={language === 'cz' ? 'Karty' : 'Cards'}
-              value={stats.cards.value}
-              confidence={stats.cards.confidence}
-              variant="warning"
-            />
-            <StatCard
-              label={language === 'cz' ? 'Držení míče' : 'Possession'}
-              value={`${stats.possession.value}%`}
-              subLabel={homeTeam}
-              confidence={stats.possession.confidence}
-            />
-            <StatCard
-              icon={Crosshair}
-              label={language === 'cz' ? 'Střely na branku' : 'Shots on Target'}
-              value={stats.shotsOnTarget.value}
-              confidence={stats.shotsOnTarget.confidence}
-            />
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {stats.totalGoals && (
+            <StatCard icon={Target} label={language === 'cz' ? 'Celkem gólů' : 'Total Goals'} value={stats.totalGoals.value} confidence={stats.totalGoals.confidence} variant="primary" />
+          )}
+          {stats.xG && (
+            <StatCard icon={TrendingUp} label="xG" value={stats.xG.value} subLabel="Expected Goals" confidence={stats.xG.confidence} variant="success" />
+          )}
+          {stats.corners && (
+            <StatCard icon={Shield} label={language === 'cz' ? 'Rohy' : 'Corners'} value={stats.corners.value} confidence={stats.corners.confidence} />
+          )}
+          {stats.cards && (
+            <StatCard icon={Users} label={language === 'cz' ? 'Karty' : 'Cards'} value={stats.cards.value} confidence={stats.cards.confidence} variant="warning" />
+          )}
         </div>
       </div>
     );
   }
 
-  if (predicted.type === 'basketball') {
-    const { stats } = predicted;
+  if (type === 'basketball') {
     return (
-      <div className={cn('space-y-6', className)}>
+      <div className="space-y-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           🏀 {language === 'cz' ? 'Basketbalové predikce' : 'Basketball Predictions'}
         </h3>
 
-        {/* Points Prediction */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Predikce bodů' : 'Points Prediction'}
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Target}
-              label={language === 'cz' ? 'Celkem bodů' : 'Total Points'}
-              value={stats.totalPoints.value}
-              confidence={stats.totalPoints.confidence}
-              variant="primary"
-            />
-            <StatCard
-              icon={Award}
-              label={`${homeTeam}`}
-              value={stats.homePoints.value}
-              confidence={stats.homePoints.confidence}
-            />
-            <StatCard
-              icon={Award}
-              label={`${awayTeam}`}
-              value={stats.awayPoints.value}
-              confidence={stats.awayPoints.confidence}
-            />
-            <StatCard
-              icon={Crosshair}
-              label={language === 'cz' ? 'Trojky celkem' : 'Total 3-Pointers'}
-              value={stats.threePointers.value}
-              confidence={stats.threePointers.confidence}
-              variant="success"
-            />
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {stats.totalPoints && (
+            <StatCard icon={Target} label={language === 'cz' ? 'Celkem bodů' : 'Total Points'} value={stats.totalPoints.value} confidence={stats.totalPoints.confidence} variant="primary" />
+          )}
+          {stats.homePoints && (
+            <StatCard icon={Award} label={homeTeam} value={stats.homePoints.value} confidence={stats.homePoints.confidence} />
+          )}
+          {stats.awayPoints && (
+            <StatCard icon={Award} label={awayTeam} value={stats.awayPoints.value} confidence={stats.awayPoints.confidence} />
+          )}
+          {stats.threePointers && (
+            <StatCard icon={Crosshair} label={language === 'cz' ? 'Trojky' : '3-Pointers'} value={stats.threePointers.value} confidence={stats.threePointers.confidence} variant="success" />
+          )}
         </div>
 
-        {/* Quarter Breakdown */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Rozložení po čtvrtinách' : 'Quarter Breakdown'}
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Clock}
-              label="Q1"
-              value={stats.q1Points.value}
-              subLabel={language === 'cz' ? 'celkem bodů' : 'total points'}
-              confidence={stats.q1Points.confidence}
-            />
-            <StatCard
-              icon={Clock}
-              label="Q2"
-              value={stats.q2Points.value}
-              subLabel={language === 'cz' ? 'celkem bodů' : 'total points'}
-              confidence={stats.q2Points.confidence}
-            />
-            <StatCard
-              icon={Clock}
-              label="Q3"
-              value={stats.q3Points.value}
-              subLabel={language === 'cz' ? 'celkem bodů' : 'total points'}
-              confidence={stats.q3Points.confidence}
-            />
-            <StatCard
-              icon={Clock}
-              label="Q4"
-              value={stats.q4Points.value}
-              subLabel={language === 'cz' ? 'celkem bodů' : 'total points'}
-              confidence={stats.q4Points.confidence}
-            />
+        {(stats.q1Points || stats.q2Points || stats.q3Points || stats.q4Points) && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-3">
+              {language === 'cz' ? 'Po čtvrtinách' : 'Quarter Breakdown'}
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {stats.q1Points && <StatCard icon={Clock} label="Q1" value={stats.q1Points.value} confidence={stats.q1Points.confidence} />}
+              {stats.q2Points && <StatCard icon={Clock} label="Q2" value={stats.q2Points.value} confidence={stats.q2Points.confidence} />}
+              {stats.q3Points && <StatCard icon={Clock} label="Q3" value={stats.q3Points.value} confidence={stats.q3Points.confidence} />}
+              {stats.q4Points && <StatCard icon={Clock} label="Q4" value={stats.q4Points.value} confidence={stats.q4Points.confidence} />}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
 
-  if (predicted.type === 'ufc') {
-    const { stats } = predicted;
+  if (type === 'ufc') {
     return (
-      <div className={cn('space-y-6', className)}>
+      <div className="space-y-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           🥊 {language === 'cz' ? 'UFC predikce' : 'UFC Predictions'}
         </h3>
 
-        {/* Fight Outcome */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Výsledek zápasu' : 'Fight Outcome'}
-          </h4>
-          <div className="grid grid-cols-2 gap-4">
-            <StatCard
-              icon={Target}
-              label={language === 'cz' ? 'Způsob výhry' : 'Method of Victory'}
-              value={stats.method.value}
-              confidence={stats.method.confidence}
-              variant="primary"
-            />
-            <StatCard
-              icon={Clock}
-              label={language === 'cz' ? 'Predikce kola' : 'Round Prediction'}
-              value={stats.round.value}
-              confidence={stats.round.confidence}
-              variant="success"
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-3 md:gap-4">
+          {stats.method && (
+            <StatCard icon={Target} label={language === 'cz' ? 'Způsob výhry' : 'Method of Victory'} value={stats.method.value} confidence={stats.method.confidence} variant="primary" />
+          )}
+          {stats.round && (
+            <StatCard icon={Clock} label={language === 'cz' ? 'Kolo' : 'Round'} value={stats.round.value} confidence={stats.round.confidence} variant="success" />
+          )}
         </div>
 
-        {/* Fight Stats */}
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-3">
-            {language === 'cz' ? 'Statistiky zápasu' : 'Fight Stats'}
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Zap}
-              label={language === 'cz' ? 'Významné údery' : 'Significant Strikes'}
-              value={stats.significantStrikes.value}
-              subLabel={language === 'cz' ? 'celkem' : 'total'}
-              confidence={stats.significantStrikes.confidence}
-            />
-            <StatCard
-              icon={Users}
-              label={language === 'cz' ? 'Pokusy o stržení' : 'Takedown Attempts'}
-              value={stats.takedownAttempts.value}
-              confidence={stats.takedownAttempts.confidence}
-            />
-            <StatCard
-              label={language === 'cz' ? 'Úspěšnost stržení' : 'Takedown Success'}
-              value={`${stats.takedownSuccess.value}%`}
-              confidence={stats.takedownSuccess.confidence}
-              variant="warning"
-            />
-            <StatCard
-              icon={Clock}
-              label={language === 'cz' ? 'Čas kontroly' : 'Control Time'}
-              value={stats.controlTime.value}
-              subLabel={language === 'cz' ? 'minuty' : 'minutes'}
-              confidence={stats.controlTime.confidence}
-            />
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {stats.significantStrikes && (
+            <StatCard icon={Zap} label={language === 'cz' ? 'Údery' : 'Strikes'} value={stats.significantStrikes.value} confidence={stats.significantStrikes.confidence} />
+          )}
+          {stats.takedownAttempts && (
+            <StatCard icon={Users} label={language === 'cz' ? 'Stržení' : 'Takedowns'} value={stats.takedownAttempts.value} confidence={stats.takedownAttempts.confidence} />
+          )}
+          {stats.takedownSuccess && (
+            <StatCard label={language === 'cz' ? 'Úspěšnost' : 'TD Success'} value={`${stats.takedownSuccess.value}%`} confidence={stats.takedownSuccess.confidence} variant="warning" />
+          )}
+          {stats.controlTime && (
+            <StatCard icon={Clock} label={language === 'cz' ? 'Kontrola' : 'Control'} value={stats.controlTime.value} confidence={stats.controlTime.confidence} />
+          )}
         </div>
       </div>
     );
   }
 
-  // Default stats for other sports
-  const { stats } = predicted;
+  // Default stats
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className="space-y-6">
       <h3 className="text-lg font-bold flex items-center gap-2">
-        📊 {language === 'cz' ? 'Predikce statistik' : 'Stats Predictions'}
+        📊 {language === 'cz' ? 'Predikce' : 'Predictions'}
       </h3>
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard
-          icon={Award}
-          label={`${homeTeam}`}
-          value={stats.homeScore.value}
-          confidence={stats.homeScore.confidence}
-        />
-        <StatCard
-          icon={Target}
-          label={language === 'cz' ? 'Celkem' : 'Total'}
-          value={stats.totalScore.value}
-          confidence={stats.totalScore.confidence}
-          variant="primary"
-        />
-        <StatCard
-          icon={Award}
-          label={`${awayTeam}`}
-          value={stats.awayScore.value}
-          confidence={stats.awayScore.confidence}
-        />
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
+        {stats.homeScore && <StatCard icon={Award} label={homeTeam} value={stats.homeScore.value} confidence={stats.homeScore.confidence} />}
+        {stats.totalScore && <StatCard icon={Target} label={language === 'cz' ? 'Celkem' : 'Total'} value={stats.totalScore.value} confidence={stats.totalScore.confidence} variant="primary" />}
+        {stats.awayScore && <StatCard icon={Award} label={awayTeam} value={stats.awayScore.value} confidence={stats.awayScore.confidence} />}
       </div>
+    </div>
+  );
+}
+
+export function SportSpecificStats({ predictionId, sport, homeTeam, awayTeam, confidence, className }: SportSpecificStatsProps) {
+  const { data: statsData, isLoading, error } = usePredictionStats(predictionId);
+
+  if (isLoading) {
+    return (
+      <div className={className}>
+        <StatsSkeletonLoader />
+      </div>
+    );
+  }
+
+  // Show coming soon if no data from API
+  if (!statsData || error) {
+    return (
+      <div className={className}>
+        <ComingSoonPlaceholder sport={sport} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <RenderStats data={statsData} homeTeam={homeTeam} awayTeam={awayTeam} />
     </div>
   );
 }

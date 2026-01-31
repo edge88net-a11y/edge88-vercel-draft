@@ -1,8 +1,11 @@
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Star, Moon, Sun, Sparkles, Calendar, Eye, Triangle, CircleDot } from 'lucide-react';
+import { usePredictionNumerology, NumerologyData } from '@/hooks/usePredictions';
+import { Star, Moon, Sun, Sparkles, Calendar, Eye, Triangle, CircleDot, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface NumerologyTabProps {
+  predictionId: string;
   homeTeam: string;
   awayTeam: string;
   gameTime: string | Date;
@@ -10,223 +13,224 @@ interface NumerologyTabProps {
   className?: string;
 }
 
-// Zodiac signs with their symbols
-const zodiacSigns = [
-  { sign: 'Aries', symbol: '♈', element: 'Fire', dates: 'Mar 21 - Apr 19' },
-  { sign: 'Taurus', symbol: '♉', element: 'Earth', dates: 'Apr 20 - May 20' },
-  { sign: 'Gemini', symbol: '♊', element: 'Air', dates: 'May 21 - Jun 20' },
-  { sign: 'Cancer', symbol: '♋', element: 'Water', dates: 'Jun 21 - Jul 22' },
-  { sign: 'Leo', symbol: '♌', element: 'Fire', dates: 'Jul 23 - Aug 22' },
-  { sign: 'Virgo', symbol: '♍', element: 'Earth', dates: 'Aug 23 - Sep 22' },
-  { sign: 'Libra', symbol: '♎', element: 'Air', dates: 'Sep 23 - Oct 22' },
-  { sign: 'Scorpio', symbol: '♏', element: 'Water', dates: 'Oct 23 - Nov 21' },
-  { sign: 'Sagittarius', symbol: '♐', element: 'Fire', dates: 'Nov 22 - Dec 21' },
-  { sign: 'Capricorn', symbol: '♑', element: 'Earth', dates: 'Dec 22 - Jan 19' },
-  { sign: 'Aquarius', symbol: '♒', element: 'Air', dates: 'Jan 20 - Feb 18' },
-  { sign: 'Pisces', symbol: '♓', element: 'Water', dates: 'Feb 19 - Mar 20' }
-];
-
-const planets = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'];
-
-// Calculate numerology number from string
-function calculateNumerologyNumber(str: string): number {
-  const sum = str.split('').reduce((acc, char) => {
-    const code = char.toLowerCase().charCodeAt(0);
-    if (code >= 97 && code <= 122) {
-      return acc + (code - 96);
-    }
-    return acc;
-  }, 0);
-  
-  // Reduce to single digit
-  let num = sum;
-  while (num > 9 && num !== 11 && num !== 22) {
-    num = String(num).split('').reduce((a, b) => a + parseInt(b), 0);
-  }
-  return num;
-}
-
-// Get numerology meaning
-function getNumerologyMeaning(num: number, language: string): string {
-  const meanings: Record<number, { en: string; cz: string }> = {
-    1: { en: 'Leadership, independence, new beginnings', cz: 'Vedení, nezávislost, nové začátky' },
-    2: { en: 'Balance, partnership, diplomacy', cz: 'Rovnováha, partnerství, diplomacie' },
-    3: { en: 'Creativity, expression, optimism', cz: 'Kreativita, vyjádření, optimismus' },
-    4: { en: 'Stability, foundation, hard work', cz: 'Stabilita, základ, tvrdá práce' },
-    5: { en: 'Change, adventure, freedom', cz: 'Změna, dobrodružství, svoboda' },
-    6: { en: 'Harmony, responsibility, nurturing', cz: 'Harmonie, zodpovědnost, péče' },
-    7: { en: 'Wisdom, intuition, spiritual insight', cz: 'Moudrost, intuice, duchovní vhled' },
-    8: { en: 'Power, abundance, manifestation', cz: 'Síla, hojnost, manifestace' },
-    9: { en: 'Completion, compassion, universal love', cz: 'Dokončení, soucit, univerzální láska' },
-    11: { en: 'Master number - spiritual awakening', cz: 'Mistrovské číslo - duchovní probuzení' },
-    22: { en: 'Master builder - infinite potential', cz: 'Mistr stavitel - nekonečný potenciál' },
-  };
-  
-  return meanings[num]?.[language === 'cz' ? 'cz' : 'en'] || meanings[9][language === 'cz' ? 'cz' : 'en'];
-}
-
-export function NumerologyTab({ homeTeam, awayTeam, gameTime, pick, className }: NumerologyTabProps) {
+// Beautiful coming soon placeholder
+function NumerologyComingSoon() {
   const { language } = useLanguage();
-  
-  const gameDate = new Date(gameTime);
-  const hash = (homeTeam + awayTeam).split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
-  
-  // Calculate various numerology values
-  const homeNum = calculateNumerologyNumber(homeTeam);
-  const awayNum = calculateNumerologyNumber(awayTeam);
-  const dateNum = calculateNumerologyNumber(gameDate.toISOString().split('T')[0]);
-  const combinedNum = calculateNumerologyNumber(homeTeam + awayTeam);
-  
-  // Get zodiac for game date
-  const month = gameDate.getMonth();
-  const day = gameDate.getDate();
-  const gameZodiac = zodiacSigns[(month + (day > 21 ? 1 : 0)) % 12];
-  
-  // Get zodiac for teams (fictional player zodiac based on team hash)
-  const homeZodiac = zodiacSigns[Math.abs(hash) % 12];
-  const awayZodiac = zodiacSigns[Math.abs(hash >> 3) % 12];
-  
-  // Planet alignment
-  const activePlanet = planets[Math.abs(hash) % planets.length];
-  const retrograde = (hash % 4) === 0;
-  
-  // Calculate numerology score
-  const numerologyScore = Math.round(50 + ((homeNum + dateNum) % 40));
-  const favoredTeam = pick;
-  
-  // Element compatibility
-  const elements = ['Fire', 'Earth', 'Air', 'Water'];
-  const homeElement = elements[Math.abs(hash) % 4];
-  const awayElement = elements[Math.abs(hash >> 2) % 4];
-  const elementCompatibility = homeElement === awayElement ? 'harmonious' : 
-    ((homeElement === 'Fire' && awayElement === 'Air') || 
-     (homeElement === 'Air' && awayElement === 'Fire') ||
-     (homeElement === 'Earth' && awayElement === 'Water') ||
-     (homeElement === 'Water' && awayElement === 'Earth')) ? 'supportive' : 'challenging';
 
   return (
-    <div className={cn('space-y-8', className)}>
+    <div className="space-y-8">
+      {/* Mystical Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/40 via-indigo-900/30 to-violet-900/40 border border-purple-500/20 p-8 md:p-12">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ic3RhcnMiIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIi8+PGNpcmNsZSBjeD0iMTAiIGN5PSI0MCIgcj0iMC41IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjEwIiByPSIwLjUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNzdGFycykiLz48L3N2Zz4=')] opacity-50" />
+        
+        <div className="relative flex flex-col items-center text-center">
+          <div className="flex items-center gap-3 mb-6">
+            <Star className="h-8 w-8 text-purple-400 animate-pulse" />
+            <Moon className="h-10 w-10 text-indigo-300" />
+            <Star className="h-8 w-8 text-purple-400 animate-pulse" />
+          </div>
+          
+          <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent mb-4">
+            {language === 'cz' ? 'Numerologie & Astrologie' : 'Numerology & Astrology'}
+          </h3>
+          
+          <p className="text-purple-200/80 text-sm md:text-base max-w-md mb-6">
+            {language === 'cz' 
+              ? 'Mystická analýza kosmických energií pro tento zápas se připravuje'
+              : 'Mystical analysis of cosmic energies for this match is being prepared'}
+          </p>
+
+          <div className="flex items-center gap-2 text-purple-300">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm">
+              {language === 'cz' ? 'Čtení hvězd...' : 'Reading the stars...'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Placeholder cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl bg-muted/30 border border-border p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-20 w-full" />
+        </div>
+
+        <div className="rounded-xl bg-muted/30 border border-border p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </div>
+
+      {/* Coming soon message */}
+      <div className="rounded-xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-6 text-center">
+        <Sparkles className="h-8 w-8 text-purple-400 mx-auto mb-4" />
+        <h4 className="font-semibold text-purple-300 mb-2">
+          {language === 'cz' ? 'Již brzy' : 'Coming Soon'}
+        </h4>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          {language === 'cz'
+            ? 'Naše mystické analýzy budou brzy k dispozici. Zatím se spoléhejte na naši datově řízenou AI predikci.'
+            : 'Our mystical analysis will be available soon. For now, rely on our data-driven AI prediction.'}
+        </p>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="rounded-xl bg-gradient-to-r from-purple-500/5 to-indigo-500/5 border border-purple-500/10 p-4">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-purple-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-purple-300">
+              {language === 'cz' ? 'Upozornění:' : 'Disclaimer:'}
+            </span>{' '}
+            {language === 'cz'
+              ? 'Tato sekce je pouze pro zábavu. Naše hlavní predikce využívá datově řízenou AI analýzu.'
+              : 'This section is for entertainment purposes only. Our main prediction uses data-driven AI analysis.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Render numerology data from API
+function RenderNumerologyData({ data, homeTeam, awayTeam }: { data: NumerologyData; homeTeam: string; awayTeam: string }) {
+  const { language } = useLanguage();
+
+  return (
+    <div className="space-y-8">
       {/* Mystical Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/40 via-indigo-900/30 to-violet-900/40 border border-purple-500/20 p-6">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ic3RhcnMiIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjMpIi8+PGNpcmNsZSBjeD0iMTAiIGN5PSI0MCIgcj0iMC41IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjEwIiByPSIwLjUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNzdGFycykiLz48L3N2Zz4=')] opacity-50" />
         
         <div className="relative flex items-center justify-center gap-3 mb-4">
-          <Star className="h-6 w-6 text-purple-400" />
-          <h3 className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+          <Star className="h-5 w-5 md:h-6 md:w-6 text-purple-400" />
+          <h3 className="text-lg md:text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
             {language === 'cz' ? 'Numerologie & Astrologie' : 'Numerology & Astrology'}
           </h3>
-          <Moon className="h-6 w-6 text-indigo-400" />
+          <Moon className="h-5 w-5 md:h-6 md:w-6 text-indigo-400" />
         </div>
         
-        <p className="text-center text-sm text-purple-200/70">
+        <p className="text-center text-xs md:text-sm text-purple-200/70">
           {language === 'cz' 
-            ? 'Mystická analýza kosmických energií ovlivňujících tento zápas'
-            : 'Mystical analysis of cosmic energies influencing this match'}
+            ? 'Mystická analýza kosmických energií'
+            : 'Mystical analysis of cosmic energies'}
         </p>
       </div>
 
       {/* Numerology Score */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-lg font-semibold text-purple-300 flex items-center gap-2">
-              <CircleDot className="h-5 w-5" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-4 md:p-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-center md:text-left">
+            <h4 className="text-base md:text-lg font-semibold text-purple-300 flex items-center justify-center md:justify-start gap-2">
+              <CircleDot className="h-4 w-4 md:h-5 md:w-5" />
               {language === 'cz' ? 'Numerologické skóre' : 'Numerology Score'}
             </h4>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
               {language === 'cz' 
-                ? `Kosmická energie favorizuje: ${favoredTeam}`
-                : `Cosmic energy favors: ${favoredTeam}`}
+                ? `Kosmická energie favorizuje: ${data.favoredTeam}`
+                : `Cosmic energy favors: ${data.favoredTeam}`}
             </p>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-mono font-bold text-purple-400">{numerologyScore}%</div>
+            <div className="text-3xl md:text-4xl font-mono font-bold text-purple-400">{data.numerologyScore}%</div>
             <p className="text-xs text-purple-300/70">
               {language === 'cz' ? 'Mystické skóre' : 'Mystical Score'}
             </p>
           </div>
         </div>
         
-        {/* Progress bar */}
         <div className="mt-4 h-2 w-full rounded-full bg-purple-900/50 overflow-hidden">
           <div 
             className="h-full rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 transition-all duration-1000"
-            style={{ width: `${numerologyScore}%` }}
+            style={{ width: `${data.numerologyScore}%` }}
           />
         </div>
       </div>
 
-      {/* Date Significance */}
-      <div className="rounded-xl bg-muted/30 border border-border p-6">
-        <h4 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-indigo-400" />
+      {/* Date & Zodiac */}
+      <div className="rounded-xl bg-muted/30 border border-border p-4 md:p-6">
+        <h4 className="text-base md:text-lg font-semibold flex items-center gap-2 mb-4">
+          <Calendar className="h-4 w-4 md:h-5 md:w-5 text-indigo-400" />
           {language === 'cz' ? 'Význam data' : 'Date Significance'}
         </h4>
         
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 p-4">
+          <div className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{gameZodiac.symbol}</span>
-              <span className="font-medium text-indigo-300">{gameZodiac.sign}</span>
+              <span className="text-2xl">{data.gameZodiac.symbol}</span>
+              <span className="font-medium text-indigo-300">{data.gameZodiac.sign}</span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs md:text-sm text-muted-foreground">
               {language === 'cz' 
-                ? `Zápas se koná v období ${gameZodiac.sign} (${gameZodiac.element}). Toto znamení přináší energii ${gameZodiac.element === 'Fire' ? 'vášně a akce' : gameZodiac.element === 'Earth' ? 'stability a vytrvalosti' : gameZodiac.element === 'Air' ? 'komunikace a flexibility' : 'intuice a emocí'}.`
-                : `Match takes place during ${gameZodiac.sign} season (${gameZodiac.element}). This sign brings energy of ${gameZodiac.element === 'Fire' ? 'passion and action' : gameZodiac.element === 'Earth' ? 'stability and perseverance' : gameZodiac.element === 'Air' ? 'communication and flexibility' : 'intuition and emotions'}.`}
+                ? `Element: ${data.gameZodiac.element}`
+                : `Element: ${data.gameZodiac.element}`}
             </p>
           </div>
           
-          <div className="rounded-lg bg-purple-500/10 border border-purple-500/20 p-4">
+          <div className="rounded-lg bg-purple-500/10 border border-purple-500/20 p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl font-mono text-purple-400">{dateNum}</span>
+              <span className="text-2xl font-mono text-purple-400">{data.dateNumber}</span>
               <span className="font-medium text-purple-300">
                 {language === 'cz' ? 'Číslo dne' : 'Day Number'}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {getNumerologyMeaning(dateNum, language)}
-            </p>
+            <p className="text-xs md:text-sm text-muted-foreground">{data.dateMeaning}</p>
           </div>
         </div>
       </div>
 
       {/* Team Numerology */}
-      <div className="rounded-xl bg-muted/30 border border-border p-6">
-        <h4 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Triangle className="h-5 w-5 text-pink-400" />
+      <div className="rounded-xl bg-muted/30 border border-border p-4 md:p-6">
+        <h4 className="text-base md:text-lg font-semibold flex items-center gap-2 mb-4">
+          <Triangle className="h-4 w-4 md:h-5 md:w-5 text-pink-400" />
           {language === 'cz' ? 'Numerologie týmů' : 'Team Numerology'}
         </h4>
         
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-medium">{homeTeam}</span>
-              <span className="text-3xl font-mono font-bold text-purple-400">{homeNum}</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              {getNumerologyMeaning(homeNum, language)}
-            </p>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-lg">{homeZodiac.symbol}</span>
-              <span className="text-muted-foreground">
-                {language === 'cz' ? 'Energie:' : 'Energy:'} {homeZodiac.sign} ({homeElement})
+          <div className="rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 p-3 md:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium text-sm">{homeTeam}</span>
+              <span className="text-2xl md:text-3xl font-mono font-bold text-purple-400">
+                {data.teamNumerology.home.number}
               </span>
+            </div>
+            <p className="text-xs md:text-sm text-muted-foreground mb-2">
+              {data.teamNumerology.home.meaning}
+            </p>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span>{data.teamNumerology.home.zodiac}</span>
+              <span>•</span>
+              <span>{data.teamNumerology.home.element}</span>
             </div>
           </div>
           
-          <div className="rounded-lg bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-medium">{awayTeam}</span>
-              <span className="text-3xl font-mono font-bold text-indigo-400">{awayNum}</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              {getNumerologyMeaning(awayNum, language)}
-            </p>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-lg">{awayZodiac.symbol}</span>
-              <span className="text-muted-foreground">
-                {language === 'cz' ? 'Energie:' : 'Energy:'} {awayZodiac.sign} ({awayElement})
+          <div className="rounded-lg bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 p-3 md:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium text-sm">{awayTeam}</span>
+              <span className="text-2xl md:text-3xl font-mono font-bold text-indigo-400">
+                {data.teamNumerology.away.number}
               </span>
+            </div>
+            <p className="text-xs md:text-sm text-muted-foreground mb-2">
+              {data.teamNumerology.away.meaning}
+            </p>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span>{data.teamNumerology.away.zodiac}</span>
+              <span>•</span>
+              <span>{data.teamNumerology.away.element}</span>
             </div>
           </div>
         </div>
@@ -236,22 +240,22 @@ export function NumerologyTab({ homeTeam, awayTeam, gameTime, pick, className }:
           <div className="flex items-center gap-2">
             <Sparkles className={cn(
               'h-4 w-4',
-              elementCompatibility === 'harmonious' ? 'text-success' :
-              elementCompatibility === 'supportive' ? 'text-yellow-400' :
+              data.elementCompatibility === 'harmonious' ? 'text-success' :
+              data.elementCompatibility === 'supportive' ? 'text-yellow-400' :
               'text-orange-400'
             )} />
-            <span className="text-sm">
-              {language === 'cz' ? 'Kompatibilita elementů:' : 'Element Compatibility:'}{' '}
+            <span className="text-xs md:text-sm">
+              {language === 'cz' ? 'Kompatibilita:' : 'Compatibility:'}{' '}
               <span className={cn(
                 'font-medium capitalize',
-                elementCompatibility === 'harmonious' ? 'text-success' :
-                elementCompatibility === 'supportive' ? 'text-yellow-400' :
+                data.elementCompatibility === 'harmonious' ? 'text-success' :
+                data.elementCompatibility === 'supportive' ? 'text-yellow-400' :
                 'text-orange-400'
               )}>
                 {language === 'cz' 
-                  ? (elementCompatibility === 'harmonious' ? 'Harmonická' : 
-                     elementCompatibility === 'supportive' ? 'Podpůrná' : 'Vyzývající')
-                  : elementCompatibility}
+                  ? (data.elementCompatibility === 'harmonious' ? 'Harmonická' : 
+                     data.elementCompatibility === 'supportive' ? 'Podpůrná' : 'Vyzývající')
+                  : data.elementCompatibility}
               </span>
             </span>
           </div>
@@ -259,64 +263,64 @@ export function NumerologyTab({ homeTeam, awayTeam, gameTime, pick, className }:
       </div>
 
       {/* Planetary Alignment */}
-      <div className="rounded-xl bg-muted/30 border border-border p-6">
-        <h4 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Sun className="h-5 w-5 text-yellow-400" />
+      <div className="rounded-xl bg-muted/30 border border-border p-4 md:p-6">
+        <h4 className="text-base md:text-lg font-semibold flex items-center gap-2 mb-4">
+          <Sun className="h-4 w-4 md:h-5 md:w-5 text-yellow-400" />
           {language === 'cz' ? 'Planetární uspořádání' : 'Planetary Alignment'}
         </h4>
         
-        <div className="flex items-center gap-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-4">
-          <div className="text-4xl">
-            {activePlanet === 'Mercury' ? '☿' : 
-             activePlanet === 'Venus' ? '♀' :
-             activePlanet === 'Mars' ? '♂' :
-             activePlanet === 'Jupiter' ? '♃' :
-             activePlanet === 'Saturn' ? '♄' :
-             activePlanet === 'Uranus' ? '♅' : '♆'}
+        <div className="flex items-center gap-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 md:p-4">
+          <div className="text-3xl md:text-4xl">
+            {data.planetaryAlignment.planet === 'Mercury' ? '☿' : 
+             data.planetaryAlignment.planet === 'Venus' ? '♀' :
+             data.planetaryAlignment.planet === 'Mars' ? '♂' :
+             data.planetaryAlignment.planet === 'Jupiter' ? '♃' :
+             data.planetaryAlignment.planet === 'Saturn' ? '♄' :
+             data.planetaryAlignment.planet === 'Uranus' ? '♅' : '♆'}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-yellow-300">{activePlanet}</span>
-              {retrograde && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-yellow-300 text-sm md:text-base">
+                {data.planetaryAlignment.planet}
+              </span>
+              {data.planetaryAlignment.retrograde && (
                 <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-400">
                   {language === 'cz' ? 'Retrográdní' : 'Retrograde'}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {language === 'cz'
-                ? `${activePlanet} je nyní aktivní a ovlivňuje energii tohoto zápasu. ${retrograde ? 'Retrográdní pohyb naznačuje možné neočekávané zvraty.' : 'Přímý pohyb podporuje jasný průběh.'}`
-                : `${activePlanet} is currently active and influencing this match's energy. ${retrograde ? 'Retrograde motion suggests possible unexpected turns.' : 'Direct motion supports clear progression.'}`}
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
+              {data.planetaryAlignment.impact}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Historical Date Patterns */}
-      <div className="rounded-xl bg-muted/30 border border-border p-6">
-        <h4 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Eye className="h-5 w-5 text-cyan-400" />
-          {language === 'cz' ? 'Historické vzorce dat' : 'Historical Date Patterns'}
+      {/* Historical Patterns */}
+      <div className="rounded-xl bg-muted/30 border border-border p-4 md:p-6">
+        <h4 className="text-base md:text-lg font-semibold flex items-center gap-2 mb-4">
+          <Eye className="h-4 w-4 md:h-5 md:w-5 text-cyan-400" />
+          {language === 'cz' ? 'Historické vzorce' : 'Historical Patterns'}
         </h4>
         
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
-            <span className="text-sm text-muted-foreground">
-              {language === 'cz' ? 'Zápasy v tento den měsíce' : 'Games on this day of month'}
+            <span className="text-xs md:text-sm text-muted-foreground">
+              {language === 'cz' ? 'Zápasy v tento den' : 'Games on this day'}
             </span>
-            <span className="font-mono font-bold">{12 + (hash % 8)}</span>
+            <span className="font-mono font-bold">{data.historicalPatterns.gamesOnDay}</span>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs md:text-sm text-muted-foreground">
               {language === 'cz' ? 'Úspěšnost favoritů' : 'Favorite win rate'}
             </span>
-            <span className="font-mono font-bold text-success">{58 + (hash % 12)}%</span>
+            <span className="font-mono font-bold text-success">{data.historicalPatterns.favoriteWinRate}%</span>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
-            <span className="text-sm text-muted-foreground">
-              {language === 'cz' ? 'Průměr Over/Under' : 'Over/Under trend'}
+            <span className="text-xs md:text-sm text-muted-foreground">
+              {language === 'cz' ? 'Over/Under trend' : 'Over/Under trend'}
             </span>
-            <span className="font-mono font-bold">{(hash % 2 === 0) ? 'Over' : 'Under'} 54%</span>
+            <span className="font-mono font-bold">{data.historicalPatterns.overUnderTrend}</span>
           </div>
         </div>
       </div>
@@ -330,11 +334,39 @@ export function NumerologyTab({ homeTeam, awayTeam, gameTime, pick, className }:
               {language === 'cz' ? 'Upozornění:' : 'Disclaimer:'}
             </span>{' '}
             {language === 'cz'
-              ? 'Tato sekce je určena pouze pro zábavu. Naše hlavní predikce je založena na datově řízené AI analýze, statistikách a tržních datech. Numerologie a astrologie by neměly být základem pro sázkové rozhodnutí.'
-              : 'This section is for entertainment purposes only. Our main prediction uses data-driven AI analysis, statistics, and market data. Numerology and astrology should not be the basis for betting decisions.'}
+              ? 'Tato sekce je pouze pro zábavu. Naše hlavní predikce využívá datově řízenou AI analýzu, statistiky a tržní data.'
+              : 'This section is for entertainment purposes only. Our main prediction uses data-driven AI analysis, statistics, and market data.'}
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function NumerologyTab({ predictionId, homeTeam, awayTeam, gameTime, pick, className }: NumerologyTabProps) {
+  const { data: numerologyData, isLoading, error } = usePredictionNumerology(predictionId);
+
+  // Show loading or coming soon if no API data
+  if (isLoading) {
+    return (
+      <div className={className}>
+        <NumerologyComingSoon />
+      </div>
+    );
+  }
+
+  // Show coming soon placeholder if API not ready
+  if (!numerologyData || error) {
+    return (
+      <div className={className}>
+        <NumerologyComingSoon />
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <RenderNumerologyData data={numerologyData} homeTeam={homeTeam} awayTeam={awayTeam} />
     </div>
   );
 }

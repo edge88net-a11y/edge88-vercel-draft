@@ -364,3 +364,144 @@ export function useSports() {
     },
   });
 }
+
+// Sport-specific stats interface
+export interface SportSpecificStatsData {
+  type: 'hockey' | 'soccer' | 'basketball' | 'ufc' | 'default';
+  stats: Record<string, { value: string | number; confidence: number }>;
+}
+
+// Numerology data interface
+export interface NumerologyData {
+  numerologyScore: number;
+  favoredTeam: string;
+  dateNumber: number;
+  dateMeaning: string;
+  gameZodiac: {
+    sign: string;
+    symbol: string;
+    element: string;
+  };
+  teamNumerology: {
+    home: { number: number; meaning: string; zodiac: string; element: string };
+    away: { number: number; meaning: string; zodiac: string; element: string };
+  };
+  elementCompatibility: 'harmonious' | 'supportive' | 'challenging';
+  planetaryAlignment: {
+    planet: string;
+    retrograde: boolean;
+    impact: string;
+  };
+  historicalPatterns: {
+    gamesOnDay: number;
+    favoriteWinRate: number;
+    overUnderTrend: string;
+  };
+}
+
+// Detailed analysis interface
+export interface DetailedAnalysis {
+  reasoning: string;
+  keyStats: { label: string; homeValue: string; awayValue: string }[];
+  formGuide: {
+    home: { opponent: string; result: 'W' | 'L' | 'D'; score: string; date: string }[];
+    away: { opponent: string; result: 'W' | 'L' | 'D'; score: string; date: string }[];
+  };
+  h2h: { date: string; homeTeam: string; awayTeam: string; homeScore: number; awayScore: number }[];
+  injuries: {
+    home: { player: string; status: string; impact: string }[];
+    away: { player: string; status: string; impact: string }[];
+  };
+  sharpMoney: {
+    direction: string;
+    lineMovement: string;
+    percentage: number;
+    analysis: string;
+  };
+  conditions: {
+    venue: string;
+    weather: string;
+    impact: string;
+    restDays: { home: number; away: number };
+  };
+  riskFactors: { risk: string; severity: 'low' | 'medium' | 'high' }[];
+}
+
+// Fetch detailed prediction by ID
+export function usePredictionDetail(predictionId: string | undefined) {
+  return useQuery({
+    queryKey: ['prediction', 'detail', predictionId],
+    queryFn: async (): Promise<DetailedAnalysis | null> => {
+      if (!predictionId) return null;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}`);
+        if (!response.ok) {
+          // Return null for 404s - API endpoint may not exist yet
+          if (response.status === 404) return null;
+          throw new Error(`API error: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.analysis || data.details || null;
+      } catch (error) {
+        console.warn('Prediction detail API not available:', error);
+        return null;
+      }
+    },
+    enabled: !!predictionId,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+}
+
+// Fetch sport-specific stats for a prediction
+export function usePredictionStats(predictionId: string | undefined) {
+  return useQuery({
+    queryKey: ['prediction', 'stats', predictionId],
+    queryFn: async (): Promise<SportSpecificStatsData | null> => {
+      if (!predictionId) return null;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/stats`);
+        if (!response.ok) {
+          if (response.status === 404) return null;
+          throw new Error(`API error: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.warn('Prediction stats API not available:', error);
+        return null;
+      }
+    },
+    enabled: !!predictionId,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+}
+
+// Fetch numerology data for a prediction
+export function usePredictionNumerology(predictionId: string | undefined) {
+  return useQuery({
+    queryKey: ['prediction', 'numerology', predictionId],
+    queryFn: async (): Promise<NumerologyData | null> => {
+      if (!predictionId) return null;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/numerology`);
+        if (!response.ok) {
+          if (response.status === 404) return null;
+          throw new Error(`API error: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.warn('Numerology API not available:', error);
+        return null;
+      }
+    },
+    enabled: !!predictionId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: false,
+  });
+}
