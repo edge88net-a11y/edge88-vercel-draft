@@ -4,10 +4,12 @@ export type Language = 'en' | 'cz';
 
 export interface Translations {
   // Navigation
+  home: string;
   dashboard: string;
   predictions: string;
   results: string;
   pricing: string;
+  profile: string;
   login: string;
   logout: string;
   getStarted: string;
@@ -117,6 +119,17 @@ export interface Translations {
   liveUpdates: string;
   noActivePredictions: string;
   checkBackSoon: string;
+  tonightsGames: string;
+  
+  // Results
+  verifiedPerformance: string;
+  winRate: string;
+  totalGraded: string;
+  dailyPerformance: string;
+  accuracyTrend: string;
+  accuracyByConfidence: string;
+  sportLeaderboard: string;
+  winLossFeed: string;
   
   // Saved Picks
   savedPicks: string;
@@ -165,10 +178,12 @@ export interface Translations {
 export const translations: Record<Language, Translations> = {
   en: {
     // Navigation
+    home: 'Home',
     dashboard: 'Dashboard',
     predictions: 'Predictions',
     results: 'Results',
     pricing: 'Pricing',
+    profile: 'Profile',
     login: 'Login',
     logout: 'Logout',
     getStarted: 'Get Started',
@@ -278,6 +293,17 @@ export const translations: Record<Language, Translations> = {
     liveUpdates: 'Live Updates',
     noActivePredictions: 'No active predictions',
     checkBackSoon: 'Check back soon for new picks',
+    tonightsGames: "Tonight's Games",
+    
+    // Results
+    verifiedPerformance: 'Verified performance across all predictions',
+    winRate: 'Win Rate',
+    totalGraded: 'Total Graded',
+    dailyPerformance: 'Daily Performance',
+    accuracyTrend: 'Accuracy Trend',
+    accuracyByConfidence: 'Accuracy by Confidence',
+    sportLeaderboard: 'Sport Leaderboard',
+    winLossFeed: 'Win/Loss Feed',
     
     // Saved Picks
     savedPicks: 'Saved Picks',
@@ -325,10 +351,12 @@ export const translations: Record<Language, Translations> = {
   
   cz: {
     // Navigation
+    home: 'Domů',
     dashboard: 'Přehled',
     predictions: 'Predikce',
     results: 'Výsledky',
     pricing: 'Ceník',
+    profile: 'Profil',
     login: 'Přihlášení',
     logout: 'Odhlásit',
     getStarted: 'Začít',
@@ -438,6 +466,17 @@ export const translations: Record<Language, Translations> = {
     liveUpdates: 'Živé aktualizace',
     noActivePredictions: 'Žádné aktivní predikce',
     checkBackSoon: 'Brzy se vraťte pro nové tipy',
+    tonightsGames: 'Dnešní zápasy',
+    
+    // Results
+    verifiedPerformance: 'Ověřený výkon napříč všemi predikcemi',
+    winRate: 'Míra výher',
+    totalGraded: 'Celkem hodnoceno',
+    dailyPerformance: 'Denní výkon',
+    accuracyTrend: 'Trend přesnosti',
+    accuracyByConfidence: 'Přesnost podle jistoty',
+    sportLeaderboard: 'Žebříček sportů',
+    winLossFeed: 'Přehled výher/proher',
     
     // Saved Picks
     savedPicks: 'Uložené tipy',

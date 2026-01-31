@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, Zap, Shield } from 'lucide-react';
+import { Check, X, Zap, Shield, Star, Award } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
 import { pricingPlans } from '@/lib/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 const faqs = [
@@ -30,17 +32,70 @@ const faqs = [
   },
 ];
 
+// Feature comparison for the table
+const featureCategories = [
+  {
+    name: 'Predictions',
+    features: [
+      { name: 'Daily picks', free: '3', starter: 'Unlimited', pro: 'Unlimited', elite: 'Unlimited' },
+      { name: 'Sports coverage', free: 'Basic', starter: 'All sports', pro: 'All sports', elite: 'All + Markets' },
+      { name: 'Confidence levels', free: 'High only', starter: 'All levels', pro: 'All levels', elite: 'All levels' },
+      { name: 'Live predictions', free: false, starter: true, pro: true, elite: true },
+    ],
+  },
+  {
+    name: 'Analysis',
+    features: [
+      { name: 'Basic reasoning', free: true, starter: true, pro: true, elite: true },
+      { name: 'Detailed analysis', free: false, starter: false, pro: true, elite: true },
+      { name: 'Odds comparison', free: false, starter: true, pro: true, elite: true },
+      { name: 'Sharp money alerts', free: false, starter: false, pro: true, elite: true },
+      { name: 'Weather impact', free: false, starter: false, pro: true, elite: true },
+    ],
+  },
+  {
+    name: 'Alerts & Support',
+    features: [
+      { name: 'Email notifications', free: 'Daily digest', starter: 'Per pick', pro: 'Instant', elite: 'Instant' },
+      { name: 'Telegram alerts', free: false, starter: false, pro: true, elite: true },
+      { name: 'Priority support', free: false, starter: true, pro: true, elite: true },
+      { name: '1-on-1 calls', free: false, starter: false, pro: false, elite: true },
+    ],
+  },
+  {
+    name: 'Data & API',
+    features: [
+      { name: 'Pick history', free: '7 days', starter: '90 days', pro: 'Unlimited', elite: 'Unlimited' },
+      { name: 'Export data', free: false, starter: false, pro: true, elite: true },
+      { name: 'API access', free: false, starter: false, pro: true, elite: true },
+      { name: 'Custom models', free: false, starter: false, pro: false, elite: true },
+    ],
+  },
+];
+
 const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const { t } = useLanguage();
 
   const getPrice = (monthlyPrice: number) => {
     if (monthlyPrice === 0) return 0;
     return isAnnual ? Math.round(monthlyPrice * 0.8) : monthlyPrice;
   };
 
+  const renderFeatureValue = (value: string | boolean) => {
+    if (typeof value === 'boolean') {
+      return value ? (
+        <Check className="h-4 w-4 text-success mx-auto" />
+      ) : (
+        <X className="h-4 w-4 text-muted-foreground/50 mx-auto" />
+      );
+    }
+    return <span className="text-sm">{value}</span>;
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
@@ -50,7 +105,7 @@ const Pricing = () => {
             Choose Your <span className="gradient-text">Edge</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Start free, upgrade when you're ready for unlimited predictions
+            {t.startFreeUpgrade || 'Start free, upgrade when you\'re ready for unlimited predictions'}
           </p>
         </div>
 
@@ -77,32 +132,40 @@ const Pricing = () => {
             Annual
           </span>
           {isAnnual && (
-            <span className="rounded-full bg-success/10 px-2 py-1 text-xs font-medium text-success">
+            <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success flex items-center gap-1">
+              <Zap className="h-3 w-3" />
               Save 20%
             </span>
           )}
         </div>
 
         {/* Pricing Cards */}
-        <div className="mt-12 grid gap-8 lg:grid-cols-4">
-          {pricingPlans.map((plan) => (
+        <div className="mt-12 grid gap-6 lg:grid-cols-4">
+          {pricingPlans.map((plan, index) => (
             <div
               key={plan.name}
               className={cn(
                 'glass-card relative overflow-hidden p-6 transition-all duration-300',
                 plan.popular
-                  ? 'border-primary ring-2 ring-primary lg:scale-105'
+                  ? 'border-primary ring-2 ring-primary lg:scale-105 z-10'
                   : 'hover:border-primary/30'
               )}
             >
+              {/* Most Popular Badge */}
               {plan.popular && (
-                <div className="absolute -right-12 top-6 rotate-45 bg-primary px-12 py-1 text-xs font-semibold text-primary-foreground">
-                  Most Popular
+                <div className="absolute -right-12 top-6 rotate-45 bg-gradient-to-r from-primary to-accent px-12 py-1.5 text-xs font-bold text-white shadow-lg">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-3 w-3" />
+                    Most Popular
+                  </div>
                 </div>
               )}
 
               <div className="mb-6">
-                <h3 className="text-xl font-bold">{plan.name}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-bold">{plan.name}</h3>
+                  {plan.name === 'Elite' && <Award className="h-5 w-5 text-yellow-400" />}
+                </div>
                 <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
               </div>
 
@@ -139,6 +202,7 @@ const Pricing = () => {
                 <Button
                   className={cn('w-full', plan.popular && 'btn-gradient')}
                   variant={plan.popular ? 'default' : 'outline'}
+                  size="lg"
                 >
                   {plan.cta}
                 </Button>
@@ -148,18 +212,68 @@ const Pricing = () => {
         </div>
 
         {/* Money-back guarantee */}
-        <div className="mt-12 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Shield className="h-5 w-5 text-success" />
-          <span>14-day money-back guarantee on all paid plans</span>
+        <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="flex items-center gap-2 rounded-full bg-success/10 border border-success/20 px-4 py-2">
+            <Shield className="h-5 w-5 text-success" />
+            <span className="text-sm font-medium text-success">14-day money-back guarantee</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2">
+            <Zap className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium text-primary">Cancel anytime</span>
+          </div>
+        </div>
+
+        {/* Feature Comparison Table */}
+        <div className="mt-20">
+          <h2 className="text-center text-2xl font-bold mb-8">Feature Comparison</h2>
+          
+          <div className="glass-card overflow-hidden overflow-x-auto">
+            <table className="w-full min-w-[640px]">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="p-4 text-left font-medium">Features</th>
+                  <th className="p-4 text-center font-medium">Free</th>
+                  <th className="p-4 text-center font-medium">Starter</th>
+                  <th className="p-4 text-center font-medium bg-primary/5">
+                    <div className="flex items-center justify-center gap-1">
+                      Pro
+                      <Star className="h-4 w-4 text-primary" />
+                    </div>
+                  </th>
+                  <th className="p-4 text-center font-medium">Elite</th>
+                </tr>
+              </thead>
+              <tbody>
+                {featureCategories.map((category) => (
+                  <>
+                    <tr key={category.name} className="bg-muted/30">
+                      <td colSpan={5} className="p-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        {category.name}
+                      </td>
+                    </tr>
+                    {category.features.map((feature) => (
+                      <tr key={feature.name} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                        <td className="p-4 text-sm">{feature.name}</td>
+                        <td className="p-4 text-center">{renderFeatureValue(feature.free)}</td>
+                        <td className="p-4 text-center">{renderFeatureValue(feature.starter)}</td>
+                        <td className="p-4 text-center bg-primary/5">{renderFeatureValue(feature.pro)}</td>
+                        <td className="p-4 text-center">{renderFeatureValue(feature.elite)}</td>
+                      </tr>
+                    ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* FAQ Section */}
         <div className="mt-20">
           <h2 className="text-center text-2xl font-bold">Frequently Asked Questions</h2>
 
-          <div className="mx-auto mt-8 max-w-3xl divide-y divide-border">
+          <div className="mx-auto mt-8 max-w-3xl divide-y divide-border glass-card overflow-hidden">
             {faqs.map((faq, index) => (
-              <div key={index} className="py-4">
+              <div key={index} className="p-4">
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
                   className="flex w-full items-center justify-between text-left"
@@ -167,21 +281,41 @@ const Pricing = () => {
                   <span className="font-medium">{faq.question}</span>
                   <Zap
                     className={cn(
-                      'h-5 w-5 text-primary transition-transform',
+                      'h-5 w-5 text-primary transition-transform flex-shrink-0 ml-4',
                       expandedFaq === index && 'rotate-45'
                     )}
                   />
                 </button>
                 {expandedFaq === index && (
-                  <p className="mt-3 animate-fade-in text-muted-foreground">{faq.answer}</p>
+                  <p className="mt-3 animate-fade-in text-muted-foreground pr-8">{faq.answer}</p>
                 )}
               </div>
             ))}
           </div>
         </div>
+
+        {/* Final CTA */}
+        <div className="mt-20 glass-card p-8 text-center bg-gradient-to-r from-primary/10 via-transparent to-accent/10">
+          <h2 className="text-2xl font-bold">Ready to Get Your Edge?</h2>
+          <p className="mt-2 text-muted-foreground">Join 10,000+ analysts winning with AI-powered predictions</p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link to="/signup">
+              <Button size="xl" className="btn-gradient gap-2">
+                <Zap className="h-5 w-5" />
+                Start Free Trial
+              </Button>
+            </Link>
+            <Link to="/predictions">
+              <Button size="xl" variant="outline">
+                View Live Picks
+              </Button>
+            </Link>
+          </div>
+        </div>
       </main>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 };

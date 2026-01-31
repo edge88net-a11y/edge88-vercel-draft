@@ -2,6 +2,7 @@ import { Bookmark, TrendingUp, Target, Zap } from 'lucide-react';
 import { Navigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 import { PredictionCard } from '@/components/PredictionCard';
 import { Button } from '@/components/ui/button';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
@@ -143,6 +144,7 @@ const SavedPicks = () => {
       </main>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { ArrowRight, Zap, Shield, Globe, TrendingUp, BarChart3, Target, Users, C
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 import { LiveTicker } from '@/components/LiveTicker';
 import { PredictionCard } from '@/components/PredictionCard';
 import { StatCard } from '@/components/StatCard';
@@ -276,6 +277,7 @@ const Index = () => {
       </section>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 };

@@ -2,11 +2,13 @@ import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, AlertCircle, Ref
 import { Navigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileNav } from '@/components/MobileNav';
 import { StatCard } from '@/components/StatCard';
 import { PredictionCard } from '@/components/PredictionCard';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { AccuracyChart } from '@/components/charts/AccuracyChart';
 import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
+import { TonightsGames } from '@/components/TonightsGames';
 import { TeamLogo } from '@/components/TeamLogo';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
@@ -165,6 +167,11 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Tonight's Games Section */}
+            <div className="mb-8">
+              <TonightsGames predictions={predictions || []} />
+            </div>
+
             {/* Main Content Grid */}
             <div className="grid gap-8 lg:grid-cols-3">
               {/* Live Predictions */}
@@ -303,6 +310,7 @@ const Dashboard = () => {
       </main>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 };
