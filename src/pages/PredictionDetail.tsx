@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History, Sparkles, MessageCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -16,6 +16,7 @@ import { OddsComparison } from '@/components/OddsComparison';
 import { BankrollCalculator } from '@/components/BankrollCalculator';
 import { SportSpecificStats } from '@/components/SportSpecificStats';
 import { NumerologyTab } from '@/components/NumerologyTab';
+import { DiscussionTab } from '@/components/DiscussionTab';
 import { useActivePredictions } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -310,6 +311,10 @@ export default function PredictionDetail() {
               <Sparkles className="h-3 w-3" />
               {language === 'cz' ? 'Mystika' : 'Mystical'}
             </TabsTrigger>
+            <TabsTrigger value="discussion" className="flex-1 md:flex-initial gap-1">
+              <MessageCircle className="h-3 w-3" />
+              {language === 'cz' ? 'Diskuze' : 'Discussion'}
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -509,6 +514,15 @@ export default function PredictionDetail() {
               awayTeam={prediction.awayTeam}
               gameTime={prediction.gameTime}
               pick={prediction.prediction.pick}
+            />
+          </TabsContent>
+
+          {/* Discussion Tab - Community Hub */}
+          <TabsContent value="discussion" className="space-y-6">
+            <DiscussionTab
+              predictionId={prediction.id}
+              homeTeam={prediction.homeTeam}
+              awayTeam={prediction.awayTeam}
             />
           </TabsContent>
         </Tabs>
