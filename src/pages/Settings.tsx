@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Settings as SettingsIcon, Bell, Mail, Globe, Palette, Link2, Trash2, Loader2, Check } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Mail, Globe, Palette, Link2, Trash2, Loader2, Check, DollarSign } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { OddsFormat } from '@/components/OddsComparison';
 
 const Settings = () => {
   const { user, loading: authLoading } = useAuth();
@@ -23,6 +24,19 @@ const Settings = () => {
   
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Odds format state
+  const [oddsFormat, setOddsFormat] = useState<OddsFormat>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('oddsFormat') as OddsFormat) || 'american';
+    }
+    return 'american';
+  });
+  
+  // Save odds format to localStorage
+  useEffect(() => {
+    localStorage.setItem('oddsFormat', oddsFormat);
+  }, [oddsFormat]);
   
   // Save states
   const [saving, setSaving] = useState(false);
@@ -99,7 +113,75 @@ const Settings = () => {
                   >
                     🇨🇿 Čeština
                   </button>
+          </div>
+
+          {/* Odds Format Section */}
+          <div className="glass-card overflow-hidden">
+            <div className="border-b border-border p-4 flex items-center gap-3">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">{language === 'cz' ? 'Formát kurzů' : 'Odds Format'}</h2>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{language === 'cz' ? 'Zobrazení kurzů' : 'Odds Display'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'cz' ? 'Vyberte preferovaný formát kurzů' : 'Choose your preferred odds format'}
+                  </p>
                 </div>
+                <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+                  <button
+                    onClick={() => setOddsFormat('american')}
+                    className={cn(
+                      'rounded-md px-3 py-2 text-sm font-medium transition-all',
+                      oddsFormat === 'american'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    🇺🇸 -110
+                  </button>
+                  <button
+                    onClick={() => setOddsFormat('decimal')}
+                    className={cn(
+                      'rounded-md px-3 py-2 text-sm font-medium transition-all',
+                      oddsFormat === 'decimal'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    🇪🇺 1.91
+                  </button>
+                  <button
+                    onClick={() => setOddsFormat('fractional')}
+                    className={cn(
+                      'rounded-md px-3 py-2 text-sm font-medium transition-all',
+                      oddsFormat === 'fractional'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    🇬🇧 10/11
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                <strong>{language === 'cz' ? 'Příklad:' : 'Example:'}</strong>{' '}
+                {oddsFormat === 'american' && (language === 'cz' 
+                  ? 'Americký formát (-110 = sázka $110 pro výhru $100)'
+                  : 'American format (-110 = bet $110 to win $100)'
+                )}
+                {oddsFormat === 'decimal' && (language === 'cz'
+                  ? 'Desetinný formát (1.91 = celková výplata $191 za sázku $100)'
+                  : 'Decimal format (1.91 = total return $191 on $100 bet)'
+                )}
+                {oddsFormat === 'fractional' && (language === 'cz'
+                  ? 'Zlomkový formát (10/11 = výhra $10 za každých $11 sázky)'
+                  : 'Fractional format (10/11 = win $10 for every $11 staked)'
+                )}
+              </div>
+            </div>
+          </div>
               </div>
             </div>
           </div>
