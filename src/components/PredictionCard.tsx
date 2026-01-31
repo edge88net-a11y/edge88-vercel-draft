@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ChevronDown, Clock, TrendingUp, Lock } from 'lucide-react';
+import { ChevronDown, TrendingUp, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Prediction, sportIcons } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import { GameCountdown } from '@/components/GameCountdown';
+import { ConfidenceMeter } from '@/components/ConfidenceMeter';
 
 // Team logos for display
 const teamLogos: Record<string, string> = {
@@ -24,6 +26,54 @@ const teamLogos: Record<string, string> = {
   'Dodgers': '💙',
   'Man City': '🩵',
   'Real Madrid': '⚪',
+  'Cowboys': '⭐',
+  'Giants': '🔵',
+  'Ravens': '🟣',
+  'Bengals': '🐅',
+  'Dolphins': '🐬',
+  'Jets': '✈️',
+  'Packers': '💚',
+  'Bears': '🐻',
+  'Lions': '🦁',
+  'Vikings': '⚔️',
+  'Seahawks': '🦅',
+  'Cardinals': '🔴',
+  'Nuggets': '💛',
+  'Suns': '🌞',
+  'Bucks': '🦌',
+  '76ers': '🔔',
+  'Mavericks': '🐴',
+  'Clippers': '⛵',
+  'Nets': '🏀',
+  'Knicks': '🏙️',
+  'Grizzlies': '🐻',
+  'Pelicans': '🦅',
+  'Kings': '👑',
+  'Thunder': '⚡',
+  'Avalanche': '🏔️',
+  'Stars': '⭐',
+  'Panthers': '🐆',
+  'Lightning': '⚡',
+  'Canucks': '🐋',
+  'Flames': '🔥',
+  'Devils': '😈',
+  'Hurricanes': '🌀',
+  'Braves': '🪓',
+  'Astros': '⭐',
+  'Phillies': '🔔',
+  'Padres': '🟤',
+  'Orioles': '🐦',
+  'Rays': '☀️',
+  'Cubs': '🐻',
+  'Mariners': '⚓',
+  'Chelsea': '🔵',
+  'Barcelona': '🔵🔴',
+  'Bayern': '🔴',
+  'Dortmund': '💛',
+  'PSG': '🔵',
+  'Marseille': '⚪',
+  'Inter': '🔵⚫',
+  'AC Milan': '🔴⚫',
 };
 
 interface PredictionCardProps {
@@ -34,41 +84,10 @@ interface PredictionCardProps {
 export function PredictionCard({ prediction, isLocked = false }: PredictionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 75) return 'text-success';
-    if (confidence >= 65) return 'text-yellow-400';
-    return 'text-orange-400';
-  };
-
-  const getConfidenceBg = (confidence: number) => {
-    if (confidence >= 75) return 'from-success/20 to-success/5';
-    if (confidence >= 65) return 'from-yellow-400/20 to-yellow-400/5';
-    return 'from-orange-400/20 to-orange-400/5';
-  };
-
-  const getConfidenceLabel = (confidence: number) => {
-    if (confidence >= 75) return '🔒 LOCK';
-    if (confidence >= 65) return '🔥 HIGH';
-    return '📊 MEDIUM';
-  };
-
-  const formatTimeUntil = (dateInput: Date | string) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    const now = new Date();
-    const diff = date.getTime() - now.getTime();
-    if (diff < 0) return 'Live';
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    if (hours > 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-  };
-
-  const gameTime = typeof prediction.gameTime === 'string' 
-    ? new Date(prediction.gameTime) 
-    : prediction.gameTime;
-  const isLive = gameTime.getTime() < new Date().getTime();
   const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+  const expectedValue = typeof prediction.expectedValue === 'string' 
+    ? parseFloat(prediction.expectedValue) 
+    : prediction.expectedValue;
 
   return (
     <div
@@ -85,17 +104,7 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
             {prediction.league || prediction.sport}
           </span>
         </div>
-        <div
-          className={cn(
-            'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold',
-            isLive
-              ? 'bg-destructive/20 text-destructive animate-pulse'
-              : 'bg-muted text-muted-foreground'
-          )}
-        >
-          <Clock className="h-3 w-3" />
-          {formatTimeUntil(prediction.gameTime)}
-        </div>
+        <GameCountdown gameTime={prediction.gameTime} />
       </div>
 
       {/* Teams */}
@@ -112,22 +121,8 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
           </div>
         </div>
 
-        {/* Confidence Circle */}
-        <div className="relative flex flex-col items-center">
-          <div
-            className={cn(
-              'flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br',
-              getConfidenceBg(prediction.confidence)
-            )}
-          >
-            <span className={cn('font-mono text-xl font-bold', getConfidenceColor(prediction.confidence))}>
-              {prediction.confidence}%
-            </span>
-          </div>
-          <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {getConfidenceLabel(prediction.confidence)}
-          </span>
-        </div>
+        {/* Confidence Meter */}
+        <ConfidenceMeter value={prediction.confidence} size="md" />
       </div>
 
       {/* Prediction Pick */}
@@ -146,7 +141,7 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
         </div>
         <div className="mt-2 flex items-center gap-2">
           <TrendingUp className="h-3.5 w-3.5 text-success" />
-          <span className="text-xs font-medium text-success">+{prediction.expectedValue}% EV</span>
+          <span className="text-xs font-medium text-success">+{expectedValue.toFixed(1)}% EV</span>
         </div>
       </div>
 

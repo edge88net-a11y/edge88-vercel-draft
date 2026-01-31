@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect, useRef } from 'react';
 
 // Types for external API
 export interface APIPrediction {
@@ -16,9 +18,17 @@ export interface APIPrediction {
     odds: string;
   };
   confidence: number;
-  expectedValue: number;
+  expectedValue: number | string;
   reasoning: string;
   result?: 'win' | 'loss' | 'push' | 'pending';
+}
+
+export interface DailyAccuracy {
+  date: string;
+  accuracy: number;
+  predictions: number;
+  wins: number;
+  losses: number;
 }
 
 export interface APIStats {
@@ -41,36 +51,64 @@ export interface APIStats {
     accuracy: number;
     roi: number;
   }[];
+  dailyAccuracy?: DailyAccuracy[];
 }
 
-// Fetch active predictions from external API
+// Fetch active predictions via edge function proxy
 export function useActivePredictions() {
-  return useQuery({
+  const { toast } = useToast();
+  const previousCount = useRef<number>(0);
+  
+  const query = useQuery({
     queryKey: ['predictions', 'active'],
     queryFn: async (): Promise<APIPrediction[]> => {
-      const response = await fetch('https://api.edge88.net/api/v1/predictions/active');
-      if (!response.ok) {
-        throw new Error('Failed to fetch predictions');
-      }
-      return response.json();
+      const { data, error } = await supabase.functions.invoke('predictions-proxy', {
+        body: {},
+      });
+      
+      if (error) throw error;
+      return data;
     },
-    staleTime: 30 * 1000, // Refresh every 30 seconds
+    staleTime: 30 * 1000,
     refetchInterval: 30 * 1000,
   });
+
+  // Toast notification for new predictions
+  useEffect(() => {
+    if (query.data) {
+      const activePredictions = query.data.filter(p => p.result === 'pending');
+      if (previousCount.current > 0 && activePredictions.length > previousCount.current) {
+        const newCount = activePredictions.length - previousCount.current;
+        toast({
+          title: '🔥 New Predictions!',
+          description: `${newCount} new ${newCount === 1 ? 'pick' : 'picks'} just dropped.`,
+        });
+      }
+      previousCount.current = activePredictions.length;
+    }
+  }, [query.data, toast]);
+
+  return query;
 }
 
-// Fetch stats from external API
+// Fetch stats via edge function proxy
 export function useStats() {
   return useQuery({
     queryKey: ['predictions', 'stats'],
     queryFn: async (): Promise<APIStats> => {
-      const response = await fetch('https://api.edge88.net/api/v1/predictions/stats');
-      if (!response.ok) {
-        throw new Error('Failed to fetch stats');
-      }
-      return response.json();
+      const { data, error } = await supabase.functions.invoke('predictions-proxy', {
+        body: {},
+        headers: { 'x-endpoint': 'stats' },
+      });
+      
+      if (error) throw error;
+      
+      // Parse the endpoint from query params workaround
+      const response = await supabase.functions.invoke('predictions-proxy?endpoint=stats');
+      if (response.error) throw response.error;
+      return response.data;
     },
-    staleTime: 60 * 1000, // Refresh every minute
+    staleTime: 60 * 1000,
   });
 }
 

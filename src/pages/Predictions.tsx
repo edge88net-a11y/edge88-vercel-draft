@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Filter, RefreshCw, Zap, Loader2 } from 'lucide-react';
+import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PredictionCard } from '@/components/PredictionCard';
+import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { Button } from '@/components/ui/button';
 import { useActivePredictions } from '@/hooks/usePredictions';
 import { sportIcons } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
 const confidenceLevels = [
@@ -18,13 +20,18 @@ const confidenceLevels = [
 ];
 const predictionTypes = ['All', 'Moneyline', 'Spread', 'Over/Under', 'Prop'];
 
+const FREE_PICKS_LIMIT = 3;
+
 const Predictions = () => {
   const [selectedSport, setSelectedSport] = useState('All');
   const [selectedConfidence, setSelectedConfidence] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { data: predictions, isLoading, refetch, isFetching } = useActivePredictions();
+
+  const isPro = profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'elite';
 
   const handleRefresh = () => {
     refetch();
@@ -41,28 +48,64 @@ const Predictions = () => {
     return true;
   });
 
+  // Sort by confidence (highest first)
+  const sortedPredictions = [...filteredPredictions].sort((a, b) => b.confidence - a.confidence);
+
+  const shouldLockPrediction = (index: number) => {
+    if (isPro) return false;
+    if (user) return index >= FREE_PICKS_LIMIT * 2; // Logged in users get 6
+    return index >= FREE_PICKS_LIMIT; // Non-logged in get 3
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Predictions</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">Predictions</h1>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                {activePredictions.length} Active
+              </span>
+            </div>
             <p className="mt-2 text-muted-foreground">
               AI-powered picks across all major sports
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isFetching}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-            {isFetching ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-lg border border-border p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'rounded-md p-2 transition-colors',
+                  viewMode === 'grid' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'rounded-md p-2 transition-colors',
+                  viewMode === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isFetching}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              {isFetching ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -145,7 +188,12 @@ const Predictions = () => {
         {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{filteredPredictions.length}</span> predictions
+            Showing <span className="font-medium text-foreground">{sortedPredictions.length}</span> predictions
+            {!isPro && (
+              <span className="ml-2 text-primary">
+                ({user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT} unlocked)
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Zap className="h-4 w-4 text-primary" />
@@ -158,15 +206,19 @@ const Predictions = () => {
           <div className="flex items-center justify-center py-32">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : filteredPredictions.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPredictions.map((prediction, index) => (
-              <PredictionCard
-                key={prediction.id}
-                prediction={prediction}
-                isLocked={!user && index > 2} // Lock after first 3 for non-logged-in users
-              />
-            ))}
+        ) : sortedPredictions.length > 0 ? (
+          <div className={cn(
+            'grid gap-6',
+            viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+          )}>
+            {sortedPredictions.map((prediction, index) => {
+              const isLocked = shouldLockPrediction(index);
+              return (
+                <SubscriptionGate key={prediction.id} isLocked={isLocked}>
+                  <PredictionCard prediction={prediction} />
+                </SubscriptionGate>
+              );
+            })}
           </div>
         ) : (
           <div className="glass-card py-16 text-center">
@@ -179,19 +231,28 @@ const Predictions = () => {
         )}
 
         {/* Subscription Gate Notice */}
-        {!user && (
-          <div className="mt-8 glass-card p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Free users see 3 predictions.{' '}
-              <Link to="/signup" className="text-primary font-medium hover:underline">
-                Sign up free
-              </Link>{' '}
-              for more access or{' '}
-              <Link to="/pricing" className="text-primary font-medium hover:underline">
-                upgrade to Pro
-              </Link>{' '}
-              for unlimited.
+        {!isPro && sortedPredictions.length > (user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT) && (
+          <div className="mt-8 glass-card p-6 text-center bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+            <div className="flex items-center justify-center gap-2 text-primary mb-2">
+              <Zap className="h-5 w-5" />
+              <span className="font-bold">Unlock All {sortedPredictions.length} Predictions</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              {user ? 'Upgrade to Pro' : 'Sign up free'} to see all predictions and maximize your edge.
             </p>
+            <div className="flex items-center justify-center gap-3">
+              {!user && (
+                <Link to="/signup">
+                  <Button variant="outline">Sign Up Free</Button>
+                </Link>
+              )}
+              <Link to="/pricing">
+                <Button className="btn-gradient gap-2">
+                  <Zap className="h-4 w-4" />
+                  Upgrade to Pro
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
       </main>

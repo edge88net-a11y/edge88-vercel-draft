@@ -1,13 +1,16 @@
-import { BarChart3, TrendingUp, Target, Activity, Loader2 } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StatCard } from '@/components/StatCard';
 import { PredictionCard } from '@/components/PredictionCard';
+import { AccuracyChart } from '@/components/charts/AccuracyChart';
+import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { sportIcons } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user, profile, loading: authLoading } = useAuth();
@@ -25,17 +28,17 @@ const Dashboard = () => {
   const isLoading = authLoading || predictionsLoading || statsLoading;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-bold tracking-tight">
               Welcome back, {profile?.display_name || user?.email?.split('@')[0] || 'Analyst'}
             </h1>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary capitalize">
+            <span className="rounded-full bg-gradient-to-r from-primary/20 to-accent/10 px-4 py-1 text-sm font-medium text-primary capitalize border border-primary/20">
               {profile?.subscription_tier || 'Free'} Member
             </span>
           </div>
@@ -51,7 +54,7 @@ const Dashboard = () => {
         ) : (
           <>
             {/* Stats Grid */}
-            <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title="Total Predictions"
                 value={stats?.totalPredictions ?? 0}
@@ -84,18 +87,63 @@ const Dashboard = () => {
               />
             </div>
 
+            {/* Charts Row */}
+            <div className="mb-8 grid gap-6 lg:grid-cols-2">
+              {/* Accuracy Over Time Chart */}
+              <div className="glass-card overflow-hidden">
+                <div className="border-b border-border p-4 flex items-center justify-between">
+                  <h3 className="font-semibold">Accuracy Over Time</h3>
+                  <span className="text-xs text-muted-foreground">Last 30 days</span>
+                </div>
+                <div className="p-4">
+                  {stats?.dailyAccuracy ? (
+                    <AccuracyChart data={stats.dailyAccuracy} />
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                      No chart data available
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sport Performance Chart */}
+              <div className="glass-card overflow-hidden">
+                <div className="border-b border-border p-4 flex items-center justify-between">
+                  <h3 className="font-semibold">Performance by Sport</h3>
+                  <span className="text-xs text-muted-foreground">All time</span>
+                </div>
+                <div className="p-4">
+                  {stats?.bySport && stats.bySport.length > 0 ? (
+                    <SportPerformanceChart data={stats.bySport} />
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                      No sport data available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Main Content Grid */}
             <div className="grid gap-8 lg:grid-cols-3">
               {/* Live Predictions */}
               <div className="lg:col-span-2">
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Active Predictions</h2>
-                  <div className="flex items-center gap-2 rounded-full bg-success/10 px-3 py-1 text-sm text-success">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-                    </span>
-                    Live Updates
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-full bg-success/10 px-3 py-1 text-sm text-success">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+                      </span>
+                      Live Updates
+                    </div>
+                    <Link to="/predictions">
+                      <Button variant="ghost" size="sm" className="gap-2">
+                        View All
+                        <Zap className="h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
 
@@ -115,7 +163,7 @@ const Dashboard = () => {
               </div>
 
               {/* Sidebar */}
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {/* Win Streak */}
                 <div className="glass-card overflow-hidden">
                   <div className="border-b border-border p-4">
