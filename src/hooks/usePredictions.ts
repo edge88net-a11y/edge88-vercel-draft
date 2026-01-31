@@ -555,7 +555,166 @@ export interface DetailedAnalysis {
   riskFactors: { risk: string; severity: 'low' | 'medium' | 'high' }[];
 }
 
-// Fetch detailed prediction by ID
+// Full prediction detail from API
+export interface FullPredictionDetail {
+  id: string;
+  sport: string;
+  league?: string;
+  homeTeam: string;
+  awayTeam: string;
+  gameTime: string;
+  status: string;
+  venue?: string;
+  prediction: {
+    type: string;
+    pick: string;
+    line?: string;
+    odds: string;
+  };
+  confidence: number;
+  expectedValue: number;
+  reasoning: string;
+  fullReasoning?: string;
+  keyFactors?: string[];
+  injuries?: {
+    home: { player: string; status: string; impact: string }[];
+    away: { player: string; status: string; impact: string }[];
+  };
+  bookmakerOdds?: {
+    bookmaker: string;
+    homeOdds: number;
+    awayOdds: number;
+    spreadHome?: number;
+    total?: number;
+  }[];
+  confidenceBreakdown?: {
+    total: number;
+    fromResearch: number;
+    fromOdds: number;
+    fromHistorical: number;
+  };
+  modelVersion?: string;
+  sourcesAnalyzed?: number;
+  result?: 'win' | 'loss' | 'push' | 'pending';
+}
+
+// Transform full API response for single prediction
+function transformFullPrediction(raw: Record<string, unknown>): FullPredictionDetail {
+  const gamesObj = raw.games as Record<string, unknown> | undefined;
+  const featuresObj = raw.features_used as Record<string, unknown> | undefined;
+  const breakdownObj = raw.confidence_breakdown as Record<string, unknown> | undefined;
+  
+  // Parse bookmaker odds
+  let bookmakerOdds: FullPredictionDetail['bookmakerOdds'];
+  const rawOdds = raw.bookmaker_odds || raw.bookmakerOdds;
+  if (Array.isArray(rawOdds)) {
+    bookmakerOdds = rawOdds.map((o: Record<string, unknown>) => ({
+      bookmaker: String(o.bookmaker || ''),
+      homeOdds: Number(o.home_odds || o.homeOdds || 0),
+      awayOdds: Number(o.away_odds || o.awayOdds || 0),
+      spreadHome: o.spread_home ? Number(o.spread_home) : undefined,
+      total: o.total ? Number(o.total) : undefined,
+    }));
+  }
+  
+  // Parse key factors from features_used
+  let keyFactors: string[] | undefined;
+  if (featuresObj && Array.isArray(featuresObj.key_factors)) {
+    keyFactors = featuresObj.key_factors as string[];
+  } else if (Array.isArray(raw.key_factors)) {
+    keyFactors = raw.key_factors as string[];
+  }
+  
+  // Parse injuries from features_used
+  let injuries: FullPredictionDetail['injuries'];
+  if (featuresObj?.injuries) {
+    injuries = featuresObj.injuries as FullPredictionDetail['injuries'];
+  } else if (raw.injuries) {
+    injuries = raw.injuries as FullPredictionDetail['injuries'];
+  }
+  
+  // Parse confidence breakdown
+  let confidenceBreakdown: FullPredictionDetail['confidenceBreakdown'];
+  if (breakdownObj) {
+    confidenceBreakdown = {
+      total: Number(breakdownObj.total || 0),
+      fromResearch: Number(breakdownObj.from_research || breakdownObj.fromResearch || 0),
+      fromOdds: Number(breakdownObj.from_odds || breakdownObj.fromOdds || 0),
+      fromHistorical: Number(breakdownObj.from_historical || breakdownObj.fromHistorical || 0),
+    };
+  }
+  
+  // Sources count
+  const sourcesAnalyzed = featuresObj?.sources_scanned 
+    ? Number(featuresObj.sources_scanned) 
+    : (raw.sources_analyzed ? Number(raw.sources_analyzed) : undefined);
+  
+  return {
+    id: String(raw.id || ''),
+    sport: String(raw.sport || gamesObj?.sport_id || ''),
+    league: String(raw.league || ''),
+    homeTeam: String(raw.home_team || gamesObj?.home_team || ''),
+    awayTeam: String(raw.away_team || gamesObj?.away_team || ''),
+    gameTime: String(raw.game_time || gamesObj?.commence_time || ''),
+    status: String(raw.status || gamesObj?.status || 'scheduled'),
+    venue: gamesObj?.venue ? String(gamesObj.venue) : undefined,
+    prediction: {
+      type: String(raw.prediction_type || 'h2h'),
+      pick: String(raw.predicted_winner || ''),
+      line: raw.predicted_spread ? String(raw.predicted_spread) : undefined,
+      odds: '-110',
+    },
+    confidence: Number(raw.confidence || 0),
+    expectedValue: Number(raw.expected_value || 0),
+    reasoning: String(raw.reasoning || raw.full_reasoning || ''),
+    fullReasoning: raw.full_reasoning ? String(raw.full_reasoning) : undefined,
+    keyFactors,
+    injuries,
+    bookmakerOdds,
+    confidenceBreakdown,
+    modelVersion: String(raw.model_version || 'Edge88'),
+    sourcesAnalyzed,
+    result: raw.is_correct === null ? 'pending' : raw.is_correct === true ? 'win' : 'loss',
+  };
+}
+
+// Fetch single prediction with full details from API
+export function useSinglePrediction(predictionId: string | undefined) {
+  return useQuery({
+    queryKey: ['prediction', 'full', predictionId],
+    queryFn: async (): Promise<FullPredictionDetail | null> => {
+      if (!predictionId) return null;
+      
+      console.log(`[useSinglePrediction] Fetching prediction: ${predictionId}`);
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}`);
+        console.log(`[useSinglePrediction] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) return null;
+          const errorText = await response.text();
+          console.error(`[useSinglePrediction] API error: ${errorText}`);
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('[useSinglePrediction] Raw response:', data);
+        
+        return transformFullPrediction(data);
+      } catch (error) {
+        console.error('[useSinglePrediction] Failed:', error);
+        throw error;
+      }
+    },
+    enabled: !!predictionId,
+    staleTime: 30 * 1000,
+    retry: 2,
+    retryDelay: 1000,
+  });
+}
+
+// Legacy hook - keep for backward compatibility
 export function usePredictionDetail(predictionId: string | undefined) {
   return useQuery({
     queryKey: ['prediction', 'detail', predictionId],
