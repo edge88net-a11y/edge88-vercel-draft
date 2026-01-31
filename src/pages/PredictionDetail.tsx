@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History, Sparkles, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History, Sparkles, MessageCircle, Database, Cpu, TrendingUp } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -11,25 +11,28 @@ import { TeamLogo } from '@/components/TeamLogo';
 import { SavePickButton } from '@/components/SavePickButton';
 import { GameCountdown } from '@/components/GameCountdown';
 import { LiveGameBadge, WinProbabilityBar } from '@/components/LiveGameBadge';
-import { AnalysisSection } from '@/components/AnalysisSection';
 import { OddsComparison } from '@/components/OddsComparison';
 import { BankrollCalculator } from '@/components/BankrollCalculator';
 import { SportSpecificStats } from '@/components/SportSpecificStats';
 import { NumerologyTab } from '@/components/NumerologyTab';
 import { DiscussionTab } from '@/components/DiscussionTab';
-import { useActivePredictions } from '@/hooks/usePredictions';
+import { useSinglePrediction, useActivePredictions } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function PredictionDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: predictions, isLoading } = useActivePredictions();
+  const { data: fullPrediction, isLoading: isLoadingFull, error: fullError } = useSinglePrediction(id);
+  const { data: predictions, isLoading: isLoadingList } = useActivePredictions();
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   const [winProbability, setWinProbability] = useState(50);
 
-  const prediction = predictions?.find(p => p.id === id);
+  // Use full prediction from API, fallback to list data
+  const listPrediction = predictions?.find(p => p.id === id);
+  const prediction = fullPrediction || listPrediction;
+  const isLoading = isLoadingFull && isLoadingList;
 
   // Check if game is live
   const isGameLive = () => {
@@ -44,14 +47,12 @@ export default function PredictionDetail() {
   // Simulate live probability updates
   useEffect(() => {
     if (isGameLive() && prediction) {
-      // Set initial probability based on our pick
       const isPredictingHome = prediction.prediction.pick.includes(prediction.homeTeam);
       const confidence = prediction.confidence <= 1 
         ? Math.round(prediction.confidence * 100) 
         : Math.round(prediction.confidence);
       setWinProbability(isPredictingHome ? confidence : 100 - confidence);
 
-      // Simulate updates every 30 seconds
       const interval = setInterval(() => {
         setWinProbability(prev => {
           const change = (Math.random() - 0.5) * 10;
@@ -67,8 +68,9 @@ export default function PredictionDetail() {
     return (
       <div className="min-h-screen pb-20 md:pb-0">
         <Navbar />
-        <div className="flex items-center justify-center pt-32">
+        <div className="flex flex-col items-center justify-center pt-32 gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">{language === 'cz' ? 'Načítám analýzu...' : 'Loading analysis...'}</p>
         </div>
       </div>
     );
@@ -108,55 +110,55 @@ export default function PredictionDetail() {
     ? Math.round(prediction.confidence * 100) 
     : Math.round(prediction.confidence);
 
-  // Get bookmaker odds
-  const bookmakerOdds = prediction.bookmakerOdds || [
-    { bookmaker: 'DraftKings', odds: prediction.prediction.odds },
-    { bookmaker: 'FanDuel', odds: adjustOdds(prediction.prediction.odds, 2) },
-    { bookmaker: 'BetMGM', odds: adjustOdds(prediction.prediction.odds, -3) },
-    { bookmaker: 'Bet365', odds: adjustOdds(prediction.prediction.odds, 5) },
-    { bookmaker: 'Tipsport', odds: adjustOdds(prediction.prediction.odds, -1) },
-    { bookmaker: 'Fortuna', odds: adjustOdds(prediction.prediction.odds, 3) },
-    { bookmaker: 'Betano', odds: adjustOdds(prediction.prediction.odds, 4) },
-    { bookmaker: 'Chance', odds: adjustOdds(prediction.prediction.odds, -2) },
-  ];
+  // Get bookmaker odds from full prediction or transform from list
+  const bookmakerOdds = fullPrediction?.bookmakerOdds?.map(o => ({
+    bookmaker: o.bookmaker.charAt(0).toUpperCase() + o.bookmaker.slice(1).replace(/([A-Z])/g, ' $1'),
+    odds: o.homeOdds > 0 ? `+${o.homeOdds}` : String(o.homeOdds),
+    awayOdds: o.awayOdds > 0 ? `+${o.awayOdds}` : String(o.awayOdds),
+    line: o.spreadHome ? String(o.spreadHome) : undefined,
+  })) || listPrediction?.bookmakerOdds || [];
 
-  // Find best odds
-  const bestOddsIndex = bookmakerOdds.reduce((best, curr, idx, arr) => {
-    const currValue = parseOddsValue(curr.odds);
-    const bestValue = parseOddsValue(arr[best].odds);
-    return currValue > bestValue ? idx : best;
-  }, 0);
+  // Get confidence breakdown from full prediction
+  const breakdown = fullPrediction?.confidenceBreakdown 
+    ? {
+        research: Math.round(fullPrediction.confidenceBreakdown.fromResearch * 100),
+        odds: Math.round(fullPrediction.confidenceBreakdown.fromOdds * 100),
+        historical: Math.round(fullPrediction.confidenceBreakdown.fromHistorical * 100),
+      }
+    : { research: 50, odds: 30, historical: 20 };
 
-  // Get breakdown
-  const breakdown = prediction.confidenceBreakdown || { research: 50, odds: 30, historical: 20 };
-
-  // Mock timeline data
-  const timeline = [
-    { 
-      time: format(new Date(prediction.gameTime), 'HH:mm') + ' UTC', 
-      event: language === 'cz' ? 'Analýza zahájena' : 'Analysis started', 
-      icon: FileText 
-    },
-    { 
-      time: format(new Date(new Date(prediction.gameTime).getTime() - 30 * 60000), 'HH:mm') + ' UTC', 
-      event: language === 'cz' ? 'Model aktualizován' : 'Model updated', 
-      icon: BarChart3 
-    },
-    { 
-      time: format(new Date(new Date(prediction.gameTime).getTime() - 15 * 60000), 'HH:mm') + ' UTC', 
-      event: language === 'cz' ? 'Linka se posunula' : 'Line moved', 
-      icon: DollarSign 
-    },
-  ];
-
-  // Research stats
+  // Research stats from full prediction
   const researchStats = {
-    articles: prediction.dataSources ? prediction.dataSources * 100 : 1247,
-    experts: Math.floor(Math.random() * 30) + 30,
-    injuries: prediction.keyFactors?.injuries?.length || 12,
+    sources: fullPrediction?.sourcesAnalyzed || 0,
+    modelVersion: fullPrediction?.modelVersion || 'Edge88',
+    ev: typeof prediction.expectedValue === 'number' 
+      ? (prediction.expectedValue * 100).toFixed(1) 
+      : prediction.expectedValue,
   };
 
+  // Get key factors from full prediction
+  const keyFactors = fullPrediction?.keyFactors || [];
+
+  // Get injuries from full prediction
+  const injuries = fullPrediction?.injuries;
+
+  // Get full analysis text
+  const analysisText = fullPrediction?.fullReasoning || fullPrediction?.reasoning || prediction.reasoning;
+
   const live = isGameLive();
+
+  // Create prediction object for SavePickButton
+  const predictionForSave = {
+    id: prediction.id,
+    sport: prediction.sport,
+    homeTeam: prediction.homeTeam,
+    awayTeam: prediction.awayTeam,
+    gameTime: prediction.gameTime,
+    prediction: prediction.prediction,
+    confidence: prediction.confidence,
+    expectedValue: prediction.expectedValue,
+    reasoning: prediction.reasoning,
+  };
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -169,11 +171,11 @@ export default function PredictionDetail() {
           {t.predictions}
         </Link>
 
-        {/* Hero Section - Premium Design */}
+        {/* Hero Section */}
         <div className="glass-card relative overflow-hidden mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
           
-          {/* Live Badge - Top Right */}
+          {/* Live Badge */}
           {live && (
             <div className="absolute right-4 top-4 z-10">
               <LiveGameBadge gameTime={prediction.gameTime} />
@@ -181,7 +183,7 @@ export default function PredictionDetail() {
           )}
 
           <div className="relative p-8">
-            {/* Teams - Large Layout */}
+            {/* Teams */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
               {/* Away Team */}
               <div className="flex flex-col items-center text-center flex-1">
@@ -211,17 +213,12 @@ export default function PredictionDetail() {
                   <GameCountdown gameTime={prediction.gameTime} />
                 ) : (
                   <div className="text-center">
-                    <span className="text-3xl font-mono font-bold">
-                      {Math.floor(Math.random() * 30)} - {Math.floor(Math.random() * 30)}
-                    </span>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {language === 'cz' ? 'Živé skóre' : 'Live Score'}
-                    </p>
+                    <span className="text-3xl font-mono font-bold">LIVE</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span>{prediction.homeTeam} Stadium</span>
+                  <span>{fullPrediction?.venue || `${prediction.homeTeam} Stadium`}</span>
                 </div>
               </div>
 
@@ -260,12 +257,12 @@ export default function PredictionDetail() {
 
             {/* Save Button */}
             <div className="absolute right-4 top-4 md:right-8 md:top-8">
-              <SavePickButton prediction={prediction} />
+              <SavePickButton prediction={predictionForSave} />
             </div>
           </div>
         </div>
 
-        {/* Our Pick Card - Prominent */}
+        {/* Our Pick Card */}
         <div className="glass-card p-6 mb-8 bg-gradient-to-r from-primary/10 to-accent/5 border-primary/20">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
@@ -289,23 +286,37 @@ export default function PredictionDetail() {
           </div>
         </div>
 
+        {/* Key Factors Pills - Only show if we have real data */}
+        {keyFactors.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              {language === 'cz' ? 'Klíčové faktory' : 'Key Factors'}
+            </h3>
+            <div className="space-y-3">
+              {keyFactors.map((factor, idx) => (
+                <div key={idx} className="glass-card p-4 border-l-4 border-primary">
+                  <p className="text-sm">{factor}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Analysis Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
           <TabsList className="w-full justify-start mb-6 bg-muted/50 overflow-x-auto">
             <TabsTrigger value="overview" className="flex-1 md:flex-initial">
-              {language === 'cz' ? 'Přehled' : 'Overview'}
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="flex-1 md:flex-initial">
-              {language === 'cz' ? 'Statistiky' : 'Stats'}
-            </TabsTrigger>
-            <TabsTrigger value="injuries" className="flex-1 md:flex-initial">
-              {language === 'cz' ? 'Zranění' : 'Injuries'}
+              {language === 'cz' ? 'Analýza' : 'Analysis'}
             </TabsTrigger>
             <TabsTrigger value="odds" className="flex-1 md:flex-initial">
               {language === 'cz' ? 'Kurzy' : 'Odds'}
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="flex-1 md:flex-initial">
-              {language === 'cz' ? 'Časová osa' : 'Timeline'}
+            <TabsTrigger value="injuries" className="flex-1 md:flex-initial">
+              {language === 'cz' ? 'Zranění' : 'Injuries'}
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="flex-1 md:flex-initial">
+              {language === 'cz' ? 'Statistiky' : 'Stats'}
             </TabsTrigger>
             <TabsTrigger value="mystical" className="flex-1 md:flex-initial gap-1">
               <Sparkles className="h-3 w-3" />
@@ -317,20 +328,21 @@ export default function PredictionDetail() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
+          {/* Overview/Analysis Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-3">
+              {/* Full Analysis */}
               <div className="lg:col-span-2">
                 <div className="glass-card p-6">
-                  <AnalysisSection
-                    predictionId={prediction.id}
-                    reasoning={prediction.reasoning}
-                    pick={prediction.prediction.pick}
-                    confidence={confidencePercent}
-                    keyFactors={prediction.keyFactors}
-                    homeTeam={prediction.homeTeam}
-                    awayTeam={prediction.awayTeam}
-                  />
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    {language === 'cz' ? 'AI Analýza' : 'AI Analysis'}
+                  </h3>
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {analysisText}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -346,97 +358,39 @@ export default function PredictionDetail() {
                   </div>
                 </div>
 
-                {/* Research Stats */}
+                {/* Model Stats */}
                 <div className="glass-card p-6">
-                  <h3 className="text-lg font-bold mb-4">{t.researchStats}</h3>
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Cpu className="h-5 w-5 text-primary" />
+                    {language === 'cz' ? 'Model Info' : 'Model Info'}
+                  </h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{t.scannedArticles}</span>
-                      <span className="font-mono font-bold">{researchStats.articles.toLocaleString()}</span>
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Database className="h-4 w-4" />
+                        {language === 'cz' ? 'Zdroje analyzovány' : 'Sources Analyzed'}
+                      </span>
+                      <span className="font-mono font-bold text-primary">
+                        {researchStats.sources > 0 ? researchStats.sources.toLocaleString() : 'N/A'}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{t.expertOpinions}</span>
-                      <span className="font-mono font-bold">{researchStats.experts}</span>
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Cpu className="h-4 w-4" />
+                        {language === 'cz' ? 'Verze modelu' : 'Model Version'}
+                      </span>
+                      <span className="font-mono font-bold">{researchStats.modelVersion}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{t.injuryReports}</span>
-                      <span className="font-mono font-bold">{researchStats.injuries}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Stats Tab - Sport Specific */}
-          <TabsContent value="stats" className="space-y-6">
-            <div className="glass-card p-6">
-              <SportSpecificStats
-                predictionId={prediction.id}
-                sport={prediction.sport}
-                homeTeam={prediction.homeTeam}
-                awayTeam={prediction.awayTeam}
-                confidence={confidencePercent}
-              />
-            </div>
-            
-            {/* Additional Team Comparison */}
-            <div className="glass-card p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                {language === 'cz' ? 'Porovnání týmů' : 'Team Comparison'}
-              </h3>
-              
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Mock stats comparison */}
-                {[
-                  { label: language === 'cz' ? 'Domácí bilance' : 'Home Record', home: '8-2', away: '6-4' },
-                  { label: language === 'cz' ? 'Venkovní bilance' : 'Away Record', home: '5-5', away: '7-3' },
-                  { label: language === 'cz' ? 'Posledních 5' : 'Last 5', home: '4-1', away: '3-2' },
-                  { label: language === 'cz' ? 'Vzájemná bilance' : 'H2H', home: '3-2', away: '2-3' },
-                ].map((stat, idx) => (
-                  <div key={idx} className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                    <span className="font-medium">{prediction.homeTeam}</span>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      <p className="font-mono text-sm">{stat.home} vs {stat.away}</p>
-                    </div>
-                    <span className="font-medium">{prediction.awayTeam}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Injuries Tab */}
-          <TabsContent value="injuries" className="space-y-6">
-            <div className="glass-card p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                {language === 'cz' ? 'Hlášení zranění' : 'Injury Report'}
-              </h3>
-              
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Home Team Injuries */}
-                <div>
-                  <h4 className="font-medium mb-3">{prediction.homeTeam}</h4>
-                  <div className="space-y-2">
-                    {(prediction.keyFactors?.injuries || ['No significant injuries reported']).slice(0, 3).map((injury, idx) => (
-                      <div key={idx} className="flex items-center gap-2 rounded-lg bg-muted/50 p-3">
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
-                        <span className="text-sm">{injury}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Away Team Injuries */}
-                <div>
-                  <h4 className="font-medium mb-3">{prediction.awayTeam}</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-success/10 p-3">
-                      <span className="text-sm text-success">
-                        {language === 'cz' ? 'Žádná významná zranění' : 'No significant injuries'}
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        {language === 'cz' ? 'Očekávaná hodnota' : 'Expected Value'}
+                      </span>
+                      <span className={cn(
+                        'font-mono font-bold',
+                        Number(researchStats.ev) > 0 ? 'text-success' : 'text-muted-foreground'
+                      )}>
+                        {Number(researchStats.ev) > 0 ? '+' : ''}{researchStats.ev}%
                       </span>
                     </div>
                   </div>
@@ -454,59 +408,95 @@ export default function PredictionDetail() {
                     <DollarSign className="h-5 w-5 text-primary" />
                     {t.oddsComparison}
                   </h3>
-                  <OddsComparison bookmakerOdds={bookmakerOdds} />
+                  {bookmakerOdds.length > 0 ? (
+                    <OddsComparison bookmakerOdds={bookmakerOdds} />
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      {language === 'cz' ? 'Kurzy se načítají...' : 'Loading odds...'}
+                    </p>
+                  )}
                 </div>
               </div>
-
               <div>
                 <BankrollCalculator bookmakerOdds={bookmakerOdds} />
               </div>
             </div>
           </TabsContent>
 
-          {/* Timeline Tab */}
-          <TabsContent value="timeline" className="space-y-6">
+          {/* Injuries Tab */}
+          <TabsContent value="injuries" className="space-y-6">
             <div className="glass-card p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
-                {t.timeline}
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                {language === 'cz' ? 'Hlášení zranění' : 'Injury Report'}
               </h3>
               
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-4 top-8 bottom-8 w-px bg-border" />
-                
-                <div className="space-y-6">
-                  {timeline.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-4 relative">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 z-10">
-                        <item.icon className="h-4 w-4 text-primary" />
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Home Team Injuries */}
+                <div>
+                  <h4 className="font-medium mb-3">{prediction.homeTeam}</h4>
+                  <div className="space-y-2">
+                    {injuries?.home && injuries.home.length > 0 ? (
+                      injuries.home.map((injury, idx) => (
+                        <div key={idx} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
+                          <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
+                          <div>
+                            <p className="font-medium text-sm">{injury.player}</p>
+                            <p className="text-xs text-muted-foreground">{injury.status} - {injury.impact}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-lg bg-success/10 p-3">
+                        <span className="text-sm text-success">
+                          {language === 'cz' ? 'Žádná významná zranění' : 'No significant injuries'}
+                        </span>
                       </div>
-                      <div className="flex-1 rounded-lg bg-muted/50 p-4">
-                        <p className="font-medium">{item.event}</p>
-                        <p className="text-sm text-muted-foreground">{item.time}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Away Team Injuries */}
+                <div>
+                  <h4 className="font-medium mb-3">{prediction.awayTeam}</h4>
+                  <div className="space-y-2">
+                    {injuries?.away && injuries.away.length > 0 ? (
+                      injuries.away.map((injury, idx) => (
+                        <div key={idx} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
+                          <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
+                          <div>
+                            <p className="font-medium text-sm">{injury.player}</p>
+                            <p className="text-xs text-muted-foreground">{injury.status} - {injury.impact}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-lg bg-success/10 p-3">
+                        <span className="text-sm text-success">
+                          {language === 'cz' ? 'Žádná významná zranění' : 'No significant injuries'}
+                        </span>
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Next Update */}
-              {!live && (
-                <div className="mt-6 rounded-lg bg-primary/5 border border-primary/20 p-4 text-center">
-                  <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'cz' 
-                      ? 'Další aktualizace analýzy za 15 minut'
-                      : 'Analysis updates in 15 minutes'
-                    }
-                  </p>
-                </div>
-              )}
             </div>
           </TabsContent>
 
-          {/* Mystical Tab - Numerology & Astrology */}
+          {/* Stats Tab */}
+          <TabsContent value="stats" className="space-y-6">
+            <div className="glass-card p-6">
+              <SportSpecificStats
+                predictionId={prediction.id}
+                sport={prediction.sport}
+                homeTeam={prediction.homeTeam}
+                awayTeam={prediction.awayTeam}
+                confidence={confidencePercent}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Mystical Tab */}
           <TabsContent value="mystical" className="space-y-6">
             <NumerologyTab
               predictionId={prediction.id}
@@ -517,7 +507,7 @@ export default function PredictionDetail() {
             />
           </TabsContent>
 
-          {/* Discussion Tab - Community Hub */}
+          {/* Discussion Tab */}
           <TabsContent value="discussion" className="space-y-6">
             <DiscussionTab
               predictionId={prediction.id}
@@ -534,7 +524,7 @@ export default function PredictionDetail() {
   );
 }
 
-// Helper components
+// Helper component
 function BreakdownBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
@@ -547,18 +537,4 @@ function BreakdownBar({ label, value, color }: { label: string; value: number; c
       </div>
     </div>
   );
-}
-
-// Helper functions
-function adjustOdds(odds: string, adjustment: number): string {
-  const numOdds = parseInt(odds.replace('+', ''));
-  if (isNaN(numOdds)) return odds;
-  const adjusted = numOdds + adjustment;
-  return adjusted > 0 ? `+${adjusted}` : String(adjusted);
-}
-
-function parseOddsValue(odds: string): number {
-  const num = parseInt(odds.replace('+', ''));
-  if (isNaN(num)) return 0;
-  return num > 0 ? 100 + num : 100 + (100 / Math.abs(num)) * 100;
 }
