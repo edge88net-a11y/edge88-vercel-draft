@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: TrendingUp },
@@ -14,6 +15,14 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut, loading } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+    setIsOpen(false);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -54,17 +63,37 @@ export function Navbar() {
 
           {/* Desktop Auth */}
           <div className="hidden md:flex md:items-center md:gap-3">
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <LogIn className="h-4 w-4" />
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button size="sm" className="btn-gradient">
-                <span>Get Started</span>
-              </Button>
-            </Link>
+            {loading ? (
+              <div className="h-9 w-24 animate-pulse rounded-lg bg-muted" />
+            ) : user ? (
+              <>
+                <Link to="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                  <User className="h-4 w-4" />
+                  <span>{profile?.display_name || user.email?.split('@')[0]}</span>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {profile?.subscription_tier || 'Free'}
+                  </span>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button size="sm" className="btn-gradient">
+                    <span>Get Started</span>
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -101,16 +130,31 @@ export function Navbar() {
               );
             })}
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-              <Link to="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  Login
-                </Button>
-              </Link>
-              <Link to="/signup" onClick={() => setIsOpen(false)}>
-                <Button className="btn-gradient w-full">
-                  <span>Get Started</span>
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 px-4 py-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{profile?.display_name || user.email}</span>
+                  </div>
+                  <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" className="w-full">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/signup" onClick={() => setIsOpen(false)}>
+                    <Button className="btn-gradient w-full">
+                      <span>Get Started</span>
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

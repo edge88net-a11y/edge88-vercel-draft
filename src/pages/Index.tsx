@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Globe, TrendingUp, BarChart3, Target, Users, CheckCircle } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Globe, TrendingUp, BarChart3, Target, Users, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { LiveTicker } from '@/components/LiveTicker';
 import { PredictionCard } from '@/components/PredictionCard';
 import { StatCard } from '@/components/StatCard';
-import { mockPredictions, mockUserStats, pricingPlans } from '@/lib/mockData';
+import { useActivePredictions, useStats } from '@/hooks/usePredictions';
+import { pricingPlans } from '@/lib/mockData';
 
 const features = [
   {
@@ -26,18 +27,21 @@ const features = [
   },
 ];
 
-const stats = [
-  { label: 'Overall Accuracy', value: 64.8, suffix: '%', icon: Target },
-  { label: 'Total Predictions', value: 12847, icon: BarChart3 },
-  { label: 'Average ROI', value: 8.7, suffix: '%', prefix: '+', icon: TrendingUp },
-  { label: 'Active Analysts', value: 10432, icon: Users },
-];
-
 const Index = () => {
-  const featuredPredictions = mockPredictions
-    .filter((p) => p.result === 'pending')
+  const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
+  const { data: stats, isLoading: statsLoading } = useStats();
+
+  const featuredPredictions = predictions
+    ?.filter((p) => p.result === 'pending')
     .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 3);
+    .slice(0, 3) || [];
+
+  const displayStats = [
+    { label: 'Overall Accuracy', value: stats?.accuracy ?? 64.8, suffix: '%', icon: Target },
+    { label: 'Total Predictions', value: stats?.totalPredictions ?? 12847, icon: BarChart3 },
+    { label: 'Average ROI', value: stats?.roi ?? 8.7, suffix: '%', prefix: '+', icon: TrendingUp },
+    { label: 'Active Analysts', value: 10432, icon: Users },
+  ];
 
   return (
     <div className="min-h-screen">
@@ -144,11 +148,23 @@ const Index = () => {
             </Link>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featuredPredictions.map((prediction) => (
-              <PredictionCard key={prediction.id} prediction={prediction} />
-            ))}
-          </div>
+          {predictionsLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : featuredPredictions.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {featuredPredictions.map((prediction) => (
+                <PredictionCard key={prediction.id} prediction={prediction} />
+              ))}
+            </div>
+          ) : (
+            <div className="glass-card py-16 text-center">
+              <Zap className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-semibold">No active predictions</h3>
+              <p className="mt-2 text-muted-foreground">Check back soon for new picks</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -165,7 +181,7 @@ const Index = () => {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
+            {displayStats.map((stat) => (
               <StatCard
                 key={stat.label}
                 title={stat.label}

@@ -1,8 +1,30 @@
 import { useState } from 'react';
 import { ChevronDown, Clock, TrendingUp, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Prediction, sportIcons, teamLogos } from '@/lib/mockData';
+import { Prediction, sportIcons } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+
+// Team logos for display
+const teamLogos: Record<string, string> = {
+  'Lakers': '💜',
+  'Celtics': '☘️',
+  'Chiefs': '🔴',
+  'Bills': '🦬',
+  'Arsenal': '🔴',
+  'Liverpool': '🔴',
+  'Maple Leafs': '🍁',
+  'Rangers': '🗽',
+  '49ers': '⛏️',
+  'Eagles': '🦅',
+  'Warriors': '💛',
+  'Heat': '🔥',
+  'Bruins': '🐻',
+  'Oilers': '🛢️',
+  'Yankees': '⚾',
+  'Dodgers': '💙',
+  'Man City': '🩵',
+  'Real Madrid': '⚪',
+};
 
 interface PredictionCardProps {
   prediction: Prediction;
@@ -30,7 +52,8 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
     return '📊 MEDIUM';
   };
 
-  const formatTimeUntil = (date: Date) => {
+  const formatTimeUntil = (dateInput: Date | string) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
     const now = new Date();
     const diff = date.getTime() - now.getTime();
     if (diff < 0) return 'Live';
@@ -41,7 +64,11 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
     return `${minutes}m`;
   };
 
-  const isLive = prediction.gameTime.getTime() < new Date().getTime();
+  const gameTime = typeof prediction.gameTime === 'string' 
+    ? new Date(prediction.gameTime) 
+    : prediction.gameTime;
+  const isLive = gameTime.getTime() < new Date().getTime();
+  const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
 
   return (
     <div
@@ -53,7 +80,7 @@ export function PredictionCard({ prediction, isLocked = false }: PredictionCardP
       {/* Sport & League Badge */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{sportIcons[prediction.sport]}</span>
+          <span className="text-2xl">{sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}</span>
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
             {prediction.league || prediction.sport}
           </span>
