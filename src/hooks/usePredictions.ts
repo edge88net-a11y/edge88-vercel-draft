@@ -54,17 +54,52 @@ export interface APIStats {
   dailyAccuracy?: DailyAccuracy[];
 }
 
+// Transform snake_case API response to camelCase APIPrediction
+function transformPrediction(raw: Record<string, unknown>): APIPrediction {
+  return {
+    id: String(raw.id || ''),
+    sport: String(raw.sport || raw.sport_id || ''),
+    league: String(raw.league || raw.sport || ''),
+    homeTeam: String(raw.home_team || raw.homeTeam || ''),
+    awayTeam: String(raw.away_team || raw.awayTeam || ''),
+    gameTime: String(raw.game_time || raw.gameTime || raw.commence_time || ''),
+    prediction: {
+      type: String(raw.prediction_type || (raw.prediction as Record<string, unknown>)?.type || 'Moneyline'),
+      pick: String(raw.predicted_winner || (raw.prediction as Record<string, unknown>)?.pick || ''),
+      line: raw.predicted_spread ? String(raw.predicted_spread) : undefined,
+      odds: String((raw.prediction as Record<string, unknown>)?.odds || '-110'),
+    },
+    confidence: Number(raw.confidence) || 0.65,
+    expectedValue: Number(raw.expected_value ?? (raw.prediction as Record<string, unknown>)?.expectedValue ?? 0),
+    reasoning: String(raw.reasoning || 'AI analysis based on historical data and current conditions.'),
+    result: raw.is_correct === null 
+      ? 'pending' 
+      : raw.is_correct === true 
+        ? 'win' 
+        : 'loss',
+  };
+}
+
 // Helper to safely extract predictions array from API response
 function extractPredictionsArray(data: unknown): APIPrediction[] {
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
+  let rawArray: unknown[] = [];
+  
+  if (Array.isArray(data)) {
+    rawArray = data;
+  } else if (data && typeof data === 'object') {
     const obj = data as Record<string, unknown>;
-    if (Array.isArray(obj.predictions)) return obj.predictions as APIPrediction[];
-    if (Array.isArray(obj.data)) return obj.data as APIPrediction[];
-    if (Array.isArray(obj.items)) return obj.items as APIPrediction[];
+    if (Array.isArray(obj.predictions)) rawArray = obj.predictions;
+    else if (Array.isArray(obj.data)) rawArray = obj.data;
+    else if (Array.isArray(obj.items)) rawArray = obj.items;
   }
-  console.warn('Could not extract predictions array from response:', data);
-  return [];
+  
+  if (rawArray.length === 0) {
+    console.warn('Could not extract predictions array from response:', data);
+    return [];
+  }
+  
+  // Transform each prediction to match APIPrediction interface
+  return rawArray.map((item) => transformPrediction(item as Record<string, unknown>));
 }
 
 // Fetch active predictions via edge function proxy
