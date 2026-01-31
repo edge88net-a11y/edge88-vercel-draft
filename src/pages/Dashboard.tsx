@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, RefreshCw, PieChart, Flame } from 'lucide-react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -12,20 +13,45 @@ import { SportDistributionChart } from '@/components/charts/SportDistributionCha
 import { TonightsGames } from '@/components/TonightsGames';
 import { TeamLogo } from '@/components/TeamLogo';
 import { MaintenanceState } from '@/components/MaintenanceState';
+import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { sportIcons } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { data: predictions, isLoading: predictionsLoading, isError, refetch, isMaintenanceMode } = useActivePredictions();
   const { data: stats, isLoading: statsLoading, isMaintenanceMode: statsMaintenanceMode } = useStats();
   const { stats: savedStats } = useSavedPicks();
+
+  // Handle checkout success from URL
+  useEffect(() => {
+    const checkoutResult = searchParams.get('checkout');
+    if (checkoutResult === 'success') {
+      toast({
+        title: '🎉 Welcome to Pro!',
+        description: 'Your subscription is now active. Enjoy unlimited predictions!',
+      });
+      // Clear the URL param
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams, toast]);
+
+  // Check if user needs onboarding
+  useEffect(() => {
+    if (profile && !profile.onboarding_completed) {
+      setShowOnboarding(true);
+    }
+  }, [profile]);
 
   // Redirect to login if not authenticated
   if (!authLoading && !user) {
@@ -49,6 +75,19 @@ const Dashboard = () => {
     }
     return acc;
   }, [] as { sport: string; count: number }[]) || [];
+
+  // Show onboarding flow if needed
+  if (showOnboarding && user && profile) {
+    return (
+      <OnboardingFlow 
+        onComplete={() => {
+          setShowOnboarding(false);
+          // Refresh profile data
+          window.location.reload();
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
