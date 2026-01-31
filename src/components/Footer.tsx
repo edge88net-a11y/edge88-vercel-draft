@@ -1,25 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Zap, Twitter, Github, MessageCircle } from 'lucide-react';
-
-const footerLinks = {
-  product: [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Predictions', href: '/predictions' },
-    { label: 'Results', href: '/results' },
-    { label: 'Pricing', href: '/pricing' },
-  ],
-  company: [
-    { label: 'About', href: '#' },
-    { label: 'Blog', href: '#' },
-    { label: 'Careers', href: '#' },
-    { label: 'Press', href: '#' },
-  ],
-  legal: [
-    { label: 'Privacy', href: '#' },
-    { label: 'Terms', href: '#' },
-    { label: 'Cookies', href: '#' },
-  ],
-};
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const socialLinks = [
   { icon: Twitter, href: '#', label: 'Twitter' },
@@ -28,6 +9,28 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { t } = useLanguage();
+
+  const footerLinks = {
+    product: [
+      { label: t.dashboard, href: '/dashboard' },
+      { label: t.predictions, href: '/predictions' },
+      { label: t.results, href: '/results' },
+      { label: t.pricing, href: '/pricing' },
+    ],
+    company: [
+      { label: 'About', href: '#' },
+      { label: 'Blog', href: '#' },
+      { label: 'Careers', href: '#' },
+      { label: 'Press', href: '#' },
+    ],
+    legal: [
+      { label: t.privacyPolicy, href: '#' },
+      { label: t.termsOfService, href: '#' },
+      { label: 'Cookies', href: '#' },
+    ],
+  };
+
   return (
     <footer className="border-t border-border/50 bg-background/50 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -43,8 +46,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-              The world's most advanced AI-powered prediction platform. 
-              Trusted by thousands of analysts worldwide.
+              {t.footerTagline}
             </p>
             <div className="mt-6 flex gap-4">
               {socialLinks.map((social) => (
@@ -99,7 +101,7 @@ export function Footer() {
 
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-              Legal
+              {t.legal}
             </h3>
             <ul className="mt-4 space-y-3">
               {footerLinks.legal.map((link) => (
@@ -118,7 +120,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Edge88. All rights reserved.
+            © {new Date().getFullYear()} Edge88. {t.allRightsReserved}
           </p>
           <p className="text-xs text-muted-foreground">
             For entertainment purposes only. Please gamble responsibly.

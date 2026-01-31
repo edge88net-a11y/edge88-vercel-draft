@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { PredictionCard } from '@/components/PredictionCard';
+import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useActivePredictions } from '@/hooks/usePredictions';
 import { sportIcons } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +22,11 @@ const confidenceLevels = [
   { label: 'Medium 55%+', min: 55 },
 ];
 const predictionTypes = ['All', 'Moneyline', 'Spread', 'Over/Under', 'Prop'];
+const sortOptions = [
+  { value: 'confidence', label: 'Confidence' },
+  { value: 'gameTime', label: 'Game Time' },
+  { value: 'sport', label: 'Sport' },
+];
 
 const FREE_PICKS_LIMIT = 3;
 
@@ -27,9 +35,13 @@ const Predictions = () => {
   const [selectedConfidence, setSelectedConfidence] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('confidence');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   const { user, profile } = useAuth();
-  const { data: predictions, isLoading, refetch, isFetching } = useActivePredictions();
+  const { t } = useLanguage();
+  const { data: predictions, isLoading, isError, refetch, isFetching } = useActivePredictions();
 
   const isPro = profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'elite';
 
@@ -37,19 +49,67 @@ const Predictions = () => {
     refetch();
   };
 
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  };
+
   const activePredictions = predictions?.filter((p) => p.result === 'pending') || [];
 
-  const filteredPredictions = activePredictions.filter((prediction) => {
-    const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
-    if (selectedSport !== 'All' && sportKey !== selectedSport && prediction.sport !== selectedSport) return false;
-    const confidenceFilter = confidenceLevels.find((c) => c.label === selectedConfidence);
-    if (confidenceFilter && prediction.confidence < confidenceFilter.min) return false;
-    if (selectedType !== 'All' && prediction.prediction.type !== selectedType) return false;
-    return true;
-  });
+  const filteredAndSortedPredictions = useMemo(() => {
+    let filtered = activePredictions.filter((prediction) => {
+      const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+      
+      // Sport filter
+      if (selectedSport !== 'All' && sportKey !== selectedSport && prediction.sport !== selectedSport) {
+        return false;
+      }
+      
+      // Confidence filter
+      const confidenceFilter = confidenceLevels.find((c) => c.label === selectedConfidence);
+      if (confidenceFilter && prediction.confidence < confidenceFilter.min) {
+        return false;
+      }
+      
+      // Type filter
+      if (selectedType !== 'All' && prediction.prediction.type !== selectedType) {
+        return false;
+      }
+      
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesHome = prediction.homeTeam.toLowerCase().includes(query);
+        const matchesAway = prediction.awayTeam.toLowerCase().includes(query);
+        const matchesPick = prediction.prediction.pick.toLowerCase().includes(query);
+        if (!matchesHome && !matchesAway && !matchesPick) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
 
-  // Sort by confidence (highest first)
-  const sortedPredictions = [...filteredPredictions].sort((a, b) => b.confidence - a.confidence);
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'confidence':
+          comparison = a.confidence - b.confidence;
+          break;
+        case 'gameTime':
+          comparison = new Date(a.gameTime).getTime() - new Date(b.gameTime).getTime();
+          break;
+        case 'sport':
+          comparison = a.sport.localeCompare(b.sport);
+          break;
+        default:
+          comparison = b.confidence - a.confidence;
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return filtered;
+  }, [activePredictions, selectedSport, selectedConfidence, selectedType, searchQuery, sortBy, sortOrder]);
 
   const shouldLockPrediction = (index: number) => {
     if (isPro) return false;
@@ -66,13 +126,13 @@ const Predictions = () => {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Predictions</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{t.predictions}</h1>
               <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-                {activePredictions.length} Active
+                {activePredictions.length} {t.active}
               </span>
             </div>
             <p className="mt-2 text-muted-foreground">
-              AI-powered picks across all major sports
+              {t.aiPoweredPicks}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -103,7 +163,37 @@ const Predictions = () => {
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-              {isFetching ? 'Refreshing...' : 'Refresh'}
+              {isFetching ? t.loading : t.refresh}
+            </Button>
+          </div>
+        </div>
+
+        {/* Search & Sort Bar */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={`${t.search} teams...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{t.sortBy}:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-lg border border-border bg-muted px-3 py-2 text-sm"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <Button variant="ghost" size="icon" onClick={toggleSortOrder}>
+              <ArrowUpDown className={cn('h-4 w-4', sortOrder === 'asc' && 'rotate-180')} />
             </Button>
           </div>
         </div>
@@ -112,14 +202,14 @@ const Predictions = () => {
         <div className="glass-card mb-8 p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
             <Filter className="h-4 w-4" />
-            Filters
+            {t.filter}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             {/* Sport Filter */}
             <div>
               <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Sport
+                {t.sport}
               </label>
               <div className="flex flex-wrap gap-2">
                 {sports.map((sport) => (
@@ -133,7 +223,7 @@ const Predictions = () => {
                     }`}
                   >
                     {sport !== 'All' && <span>{sportIcons[sport] || sportIcons[sport.toUpperCase()]}</span>}
-                    {sport}
+                    {sport === 'All' ? t.all : sport}
                   </button>
                 ))}
               </div>
@@ -142,7 +232,7 @@ const Predictions = () => {
             {/* Confidence Filter */}
             <div>
               <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Confidence
+                {t.confidence}
               </label>
               <div className="flex flex-wrap gap-2">
                 {confidenceLevels.map((level) => (
@@ -155,7 +245,7 @@ const Predictions = () => {
                         : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                     }`}
                   >
-                    {level.label}
+                    {level.label === 'All' ? t.all : level.label}
                   </button>
                 ))}
               </div>
@@ -164,7 +254,7 @@ const Predictions = () => {
             {/* Type Filter */}
             <div>
               <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Type
+                {t.type}
               </label>
               <div className="flex flex-wrap gap-2">
                 {predictionTypes.map((type) => (
@@ -177,7 +267,7 @@ const Predictions = () => {
                         : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                     }`}
                   >
-                    {type}
+                    {type === 'All' ? t.all : type}
                   </button>
                 ))}
               </div>
@@ -188,30 +278,46 @@ const Predictions = () => {
         {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{sortedPredictions.length}</span> predictions
+            {t.showing} <span className="font-medium text-foreground">{filteredAndSortedPredictions.length}</span> {t.predictions.toLowerCase()}
             {!isPro && (
               <span className="ml-2 text-primary">
-                ({user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT} unlocked)
+                ({user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT} {t.unlocked})
               </span>
             )}
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Zap className="h-4 w-4 text-primary" />
-            Auto-refresh in 30s
+            {t.autoRefresh}
           </div>
         </div>
 
+        {/* Error State */}
+        {isError && (
+          <div className="glass-card py-12 text-center mb-6">
+            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+            <h3 className="mt-4 text-lg font-semibold">{t.somethingWentWrong}</h3>
+            <p className="mt-2 text-muted-foreground">Failed to load predictions</p>
+            <Button onClick={handleRefresh} className="mt-4 gap-2">
+              <RefreshCw className="h-4 w-4" />
+              {t.retry}
+            </Button>
+          </div>
+        )}
+
         {/* Predictions Grid */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : sortedPredictions.length > 0 ? (
           <div className={cn(
             'grid gap-6',
             viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
           )}>
-            {sortedPredictions.map((prediction, index) => {
+            <PredictionCardSkeletonList count={6} />
+          </div>
+        ) : filteredAndSortedPredictions.length > 0 ? (
+          <div className={cn(
+            'grid gap-6',
+            viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+          )}>
+            {filteredAndSortedPredictions.map((prediction, index) => {
               const isLocked = shouldLockPrediction(index);
               return (
                 <SubscriptionGate key={prediction.id} isLocked={isLocked}>
@@ -223,33 +329,45 @@ const Predictions = () => {
         ) : (
           <div className="glass-card py-16 text-center">
             <Zap className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-semibold">No predictions found</h3>
+            <h3 className="mt-4 text-lg font-semibold">{t.noPredictions}</h3>
             <p className="mt-2 text-muted-foreground">
-              Try adjusting your filters to see more predictions
+              {t.noPredictionsDesc}
             </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedSport('All');
+                setSelectedConfidence('All');
+                setSelectedType('All');
+                setSearchQuery('');
+              }}
+              className="mt-4"
+            >
+              {t.adjustFilters}
+            </Button>
           </div>
         )}
 
         {/* Subscription Gate Notice */}
-        {!isPro && sortedPredictions.length > (user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT) && (
+        {!isPro && filteredAndSortedPredictions.length > (user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT) && (
           <div className="mt-8 glass-card p-6 text-center bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
             <div className="flex items-center justify-center gap-2 text-primary mb-2">
               <Zap className="h-5 w-5" />
-              <span className="font-bold">Unlock All {sortedPredictions.length} Predictions</span>
+              <span className="font-bold">{t.unlockAll} {filteredAndSortedPredictions.length} {t.predictions}</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              {user ? 'Upgrade to Pro' : 'Sign up free'} to see all predictions and maximize your edge.
+              {user ? t.upgradeToPro : t.signUpFree} to see all predictions and maximize your edge.
             </p>
             <div className="flex items-center justify-center gap-3">
               {!user && (
                 <Link to="/signup">
-                  <Button variant="outline">Sign Up Free</Button>
+                  <Button variant="outline">{t.signUpFree}</Button>
                 </Link>
               )}
               <Link to="/pricing">
                 <Button className="btn-gradient gap-2">
                   <Zap className="h-4 w-4" />
-                  Upgrade to Pro
+                  {t.upgradeToPro}
                 </Button>
               </Link>
             </div>
