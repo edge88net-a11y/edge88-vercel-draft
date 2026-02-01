@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, RefreshCw, PieChart, Flame } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
@@ -16,7 +16,8 @@ import { MaintenanceState } from '@/components/MaintenanceState';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
-import { getSportEmoji } from '@/lib/sportEmoji';
+import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -55,15 +56,30 @@ const Dashboard = () => {
 
   // Note: Auth protection is handled by ProtectedRoute wrapper in App.tsx
 
-  const activePredictions = predictions?.filter((p) => p.result === 'pending').slice(0, 6) || [];
-  const recentResults = predictions?.filter((p) => p.result !== 'pending').slice(0, 5) || [];
+  // Deduplicate predictions
+  const deduplicatedPredictions = useMemo(() => {
+    if (!predictions) return [];
+    const seenGames = new Map<string, typeof predictions[0]>();
+    predictions.forEach(p => {
+      const key = `${p.homeTeam}-${p.awayTeam}-${p.gameTime.split('T')[0]}`;
+      if (!seenGames.has(key)) {
+        seenGames.set(key, p);
+      }
+    });
+    return Array.from(seenGames.values());
+  }, [predictions]);
+
+  const activePredictions = deduplicatedPredictions.filter((p) => p.result === 'pending').slice(0, 6);
+  const recentResults = deduplicatedPredictions.filter((p) => p.result !== 'pending').slice(0, 5);
 
   const isLoading = authLoading || (predictionsLoading && !isMaintenanceMode);
   const showMaintenanceState = isMaintenanceMode || statsMaintenanceMode;
 
-  // Calculate sport distribution for donut chart
-  const sportDistribution = predictions?.reduce((acc, pred) => {
-    const sport = pred.sport || 'Other';
+  // Calculate sport distribution for donut chart - infer sport from teams
+  const sportDistribution = deduplicatedPredictions?.reduce((acc, pred) => {
+    const sport = pred.sport?.includes('-') 
+      ? getSportFromTeams(pred.homeTeam, pred.awayTeam)
+      : pred.sport || 'Other';
     const existing = acc.find(s => s.sport === sport);
     if (existing) {
       existing.count++;

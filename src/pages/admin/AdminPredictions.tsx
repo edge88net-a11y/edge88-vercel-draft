@@ -28,6 +28,9 @@ import { cn } from '@/lib/utils';
 type SortField = 'sport' | 'confidence' | 'gameTime';
 type SortDirection = 'asc' | 'desc';
 
+// Available sports for filter
+const SPORT_OPTIONS = ['All', 'NHL', 'NBA', 'Soccer', 'NFL', 'MLB', 'UFC'];
+
 export default function AdminPredictions() {
   const { predictions, loading, refetch } = useAdminPredictions();
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,10 +93,8 @@ export default function AdminPredictions() {
     return result;
   }, [predictions, searchQuery, sportFilter, resultFilter, sortField, sortDirection]);
 
-  const uniqueSports = useMemo(() => {
-    const sports = new Set(predictions.map(p => p.sport));
-    return Array.from(sports);
-  }, [predictions]);
+  // Use fixed sport options instead of extracting from UUID data
+  const uniqueSports = SPORT_OPTIONS;
 
   return (
     <AdminLayout title="Predictions" description="View and manage all predictions">
@@ -116,7 +117,7 @@ export default function AdminPredictions() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Sports</SelectItem>
-            {uniqueSports.map(sport => (
+            {SPORT_OPTIONS.filter(s => s !== 'All').map(sport => (
               <SelectItem key={sport} value={sport.toLowerCase()}>
                 {getSportEmoji(sport)} {sport}
               </SelectItem>

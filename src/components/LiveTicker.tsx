@@ -1,5 +1,6 @@
 import { useActivePredictions } from '@/hooks/usePredictions';
 import { getSportEmoji } from '@/lib/sportEmoji';
+import { normalizeConfidence, getConfidenceColorClass } from '@/lib/confidenceUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LiveTicker() {
@@ -21,18 +22,19 @@ export function LiveTicker() {
     return null;
   }
 
-  const tickerItems = predictions
+  // Deduplicate predictions by game (team + date)
+  const seenGames = new Map<string, typeof predictions[0]>();
+  predictions
     .filter((p) => p.result === 'pending')
-    .slice(0, 8);
-
+    .forEach(p => {
+      const key = `${p.homeTeam}-${p.awayTeam}-${p.gameTime.split('T')[0]}`;
+      if (!seenGames.has(key)) {
+        seenGames.set(key, p);
+      }
+    });
+  
+  const tickerItems = Array.from(seenGames.values()).slice(0, 8);
   const duplicatedItems = [...tickerItems, ...tickerItems];
-
-  // Helper to format confidence as percentage
-  const formatConfidence = (confidence: number) => {
-    // Handle both 0-1 and 0-100 ranges
-    const percent = confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence);
-    return percent;
-  };
 
   return (
     <div className="relative overflow-hidden border-y border-border/50 bg-muted/30 py-3">
@@ -41,7 +43,7 @@ export function LiveTicker() {
 
       <div className="flex animate-ticker">
         {duplicatedItems.map((prediction, index) => {
-          const confidencePercent = formatConfidence(prediction.confidence);
+          const confidencePercent = normalizeConfidence(prediction.confidence);
           
           return (
             <div

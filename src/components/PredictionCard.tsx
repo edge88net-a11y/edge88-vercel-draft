@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getSportEmoji } from '@/lib/sportEmoji';
+import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence, getConfidenceLabel as getConfLabel, getConfidenceColorClass } from '@/lib/confidenceUtils';
 import { Button } from '@/components/ui/button';
 import { GameCountdown } from '@/components/GameCountdown';
 import { ConfidenceMeter } from '@/components/ConfidenceMeter';
@@ -24,9 +25,7 @@ interface PredictionCardProps {
 function generateTeaser(prediction: APIPrediction, language: 'en' | 'cz'): string {
   const homeTeam = prediction.homeTeam.split(' ').pop() || prediction.homeTeam;
   const awayTeam = prediction.awayTeam.split(' ').pop() || prediction.awayTeam;
-  const confidence = prediction.confidence <= 1 
-    ? Math.round(prediction.confidence * 100) 
-    : Math.round(prediction.confidence);
+  const confidence = normalizeConfidence(prediction.confidence);
   
   const teasers = {
     en: [
@@ -54,15 +53,17 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
   const [isExpanded, setIsExpanded] = useState(false);
   const { t, language } = useLanguage();
 
-  const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+  // Infer sport from team names if sport field is UUID
+  const sportName = prediction.sport?.includes('-') 
+    ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
+    : prediction.sport;
+    
   const expectedValue = typeof prediction.expectedValue === 'string' 
     ? parseFloat(prediction.expectedValue) 
     : prediction.expectedValue;
 
-  // Format confidence as percentage (handle both 0-1 and 0-100 ranges)
-  const confidencePercent = prediction.confidence <= 1 
-    ? Math.round(prediction.confidence * 100) 
-    : Math.round(prediction.confidence);
+  // Format confidence as percentage (normalized to 0-100)
+  const confidencePercent = normalizeConfidence(prediction.confidence);
 
   // Get confidence color class
   const getConfidenceColorClass = () => {
@@ -73,10 +74,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
 
   // Get confidence label
   const getConfidenceLabel = () => {
-    if (confidencePercent >= 75) return '🔒 LOCK';
-    if (confidencePercent >= 70) return '🔥 HOT';
-    if (confidencePercent >= 60) return '💪 STRONG';
-    return '📊 VALUE';
+    return getConfLabel(prediction.confidence);
   };
 
   // Check if game is live
@@ -123,9 +121,9 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               #{gameNumber}
             </span>
           )}
-          <span className="text-xl sm:text-2xl shrink-0">{getSportEmoji(prediction.sport, prediction.homeTeam, prediction.awayTeam)}</span>
+          <span className="text-xl sm:text-2xl shrink-0">{getSportEmoji(sportName, prediction.homeTeam, prediction.awayTeam)}</span>
           <span className="rounded-lg bg-muted px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-muted-foreground border border-border truncate max-w-[100px] sm:max-w-none">
-            {prediction.league || prediction.sport}
+            {sportName}
           </span>
           {isGameLive() && <LiveGameBadge gameTime={prediction.gameTime} />}
           {confidencePercent >= 70 && (
