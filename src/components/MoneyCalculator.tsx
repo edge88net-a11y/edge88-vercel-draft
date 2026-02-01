@@ -1,23 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calculator, TrendingUp, ArrowRight } from 'lucide-react';
+import { Calculator, TrendingUp, ArrowRight, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+// Animated counter for profit display
+function useAnimatedValue(target: number, duration: number = 500) {
+  const [value, setValue] = useState(0);
+  const prevTarget = useRef(target);
+
+  useEffect(() => {
+    const startValue = prevTarget.current;
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.floor(startValue + (target - startValue) * eased));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+    prevTarget.current = target;
+  }, [target, duration]);
+
+  return value;
+}
 
 export function MoneyCalculator() {
   const { language } = useLanguage();
   const [bankroll, setBankroll] = useState(10000);
   const [betsPerDay, setBetsPerDay] = useState(3);
+  const [avgOdds, setAvgOdds] = useState(1.85);
 
-  // Calculate monthly profit based on 73% accuracy
-  // Using simplified Kelly criterion and flat betting
+  // Calculate profits based on 73% accuracy
   const accuracy = 0.73;
-  const avgOdds = 1.91; // ~-110 American odds
   const betSize = bankroll * 0.02; // 2% of bankroll per bet
   const expectedProfit = betSize * ((accuracy * avgOdds) - 1);
-  const dailyProfit = expectedProfit * betsPerDay;
-  const monthlyProfit = Math.round(dailyProfit * 30);
+  const dailyProfit = Math.round(expectedProfit * betsPerDay);
+  const weeklyProfit = dailyProfit * 7;
+  const monthlyProfit = dailyProfit * 30;
+
+  // Animated values
+  const animatedDaily = useAnimatedValue(dailyProfit);
+  const animatedWeekly = useAnimatedValue(weeklyProfit);
+  const animatedMonthly = useAnimatedValue(monthlyProfit);
 
   const formatCurrency = (amount: number) => {
     if (language === 'cz') {
@@ -28,14 +60,14 @@ export function MoneyCalculator() {
 
   return (
     <section className="py-16 border-y border-border bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 border border-success/30 text-sm font-medium text-success mb-4">
             <Calculator className="h-4 w-4" />
             <span>{language === 'cz' ? 'Kalkulačka zisku' : 'Profit Calculator'}</span>
           </div>
           <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">
-            {language === 'cz' ? 'Kolik můžete vydělat?' : 'How Much Could You Earn?'}
+            💰 {language === 'cz' ? 'Kolik můžete vydělat?' : 'How Much Could You Earn?'}
           </h2>
           <p className="mt-2 text-muted-foreground">
             {language === 'cz' 
@@ -44,8 +76,8 @@ export function MoneyCalculator() {
           </p>
         </div>
 
-        <div className="glass-card p-8">
-          <div className="grid gap-8 md:grid-cols-2">
+        <div className="glass-card p-6 sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-2">
             {/* Sliders */}
             <div className="space-y-8">
               {/* Bankroll Slider */}
@@ -54,7 +86,7 @@ export function MoneyCalculator() {
                   <label className="text-sm font-medium">
                     {language === 'cz' ? 'Počáteční bankroll' : 'Starting Bankroll'}
                   </label>
-                  <span className="font-mono font-bold text-primary">
+                  <span className="font-mono font-bold text-primary text-lg">
                     {formatCurrency(bankroll)}
                   </span>
                 </div>
@@ -78,7 +110,7 @@ export function MoneyCalculator() {
                   <label className="text-sm font-medium">
                     {language === 'cz' ? 'Sázek denně' : 'Bets Per Day'}
                   </label>
-                  <span className="font-mono font-bold text-primary">{betsPerDay}</span>
+                  <span className="font-mono font-bold text-primary text-lg">{betsPerDay}</span>
                 </div>
                 <Slider
                   value={[betsPerDay]}
@@ -94,6 +126,28 @@ export function MoneyCalculator() {
                 </div>
               </div>
 
+              {/* Average Odds Slider */}
+              <div>
+                <div className="flex justify-between mb-3">
+                  <label className="text-sm font-medium">
+                    {language === 'cz' ? 'Průměrný kurz' : 'Average Odds'}
+                  </label>
+                  <span className="font-mono font-bold text-primary text-lg">{avgOdds.toFixed(2)}</span>
+                </div>
+                <Slider
+                  value={[avgOdds * 100]}
+                  onValueChange={(v) => setAvgOdds(v[0] / 100)}
+                  min={150}
+                  max={300}
+                  step={5}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>1.50</span>
+                  <span>3.00</span>
+                </div>
+              </div>
+
               {/* Accuracy display */}
               <div className="flex items-center justify-between p-4 rounded-xl bg-success/10 border border-success/30">
                 <span className="text-sm font-medium">
@@ -104,24 +158,48 @@ export function MoneyCalculator() {
             </div>
 
             {/* Results */}
-            <div className="flex flex-col justify-center items-center text-center p-8 rounded-2xl bg-gradient-to-br from-success/10 to-success/5 border border-success/30">
-              <TrendingUp className="h-12 w-12 text-success mb-4" />
-              <p className="text-sm text-muted-foreground mb-2">
-                {language === 'cz' ? 'Potenciální měsíční zisk' : 'Potential Monthly Profit'}
-              </p>
-              <div className="font-mono text-5xl md:text-6xl font-black text-success mb-2 animate-pulse">
-                +{formatCurrency(monthlyProfit)}
+            <div className="flex flex-col justify-center space-y-4">
+              {/* Daily */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+                <span className="text-sm text-muted-foreground">
+                  {language === 'cz' ? 'Denní zisk' : 'Daily Profit'}
+                </span>
+                <span className="font-mono text-xl font-bold text-success">
+                  +{formatCurrency(animatedDaily)}
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {language === 'cz' 
-                  ? `S ${formatCurrency(bankroll)} a ${betsPerDay} sázkami denně`
-                  : `With ${formatCurrency(bankroll)} and ${betsPerDay} bets/day`}
-              </p>
 
-              <Link to="/signup" className="mt-6 w-full">
-                <Button size="lg" className="btn-cta-premium w-full gap-2">
-                  {language === 'cz' ? 'Začít vyhrávat' : 'Start Winning Now'}
-                  <ArrowRight className="h-5 w-5" />
+              {/* Weekly */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+                <span className="text-sm text-muted-foreground">
+                  {language === 'cz' ? 'Týdenní zisk' : 'Weekly Profit'}
+                </span>
+                <span className="font-mono text-2xl font-bold text-success">
+                  +{formatCurrency(animatedWeekly)}
+                </span>
+              </div>
+
+              {/* Monthly - Featured */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-success/20 to-success/5 border-2 border-success/40 text-center">
+                <TrendingUp className="h-10 w-10 text-success mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  {language === 'cz' ? 'Potenciální měsíční zisk' : 'Potential Monthly Profit'}
+                </p>
+                <div className="font-mono text-4xl sm:text-5xl font-black text-success animate-pulse">
+                  +{formatCurrency(animatedMonthly)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {language === 'cz' 
+                    ? `S ${formatCurrency(bankroll)} a ${betsPerDay} sázkami denně při kurzu ${avgOdds.toFixed(2)}`
+                    : `With ${formatCurrency(bankroll)} and ${betsPerDay} bets/day at ${avgOdds.toFixed(2)} odds`}
+                </p>
+              </div>
+
+              {/* CTA */}
+              <Link to="/signup" className="mt-4">
+                <Button size="lg" className="btn-cta-premium w-full gap-2 h-14 text-lg">
+                  <Zap className="h-5 w-5" />
+                  {language === 'cz' ? 'Začněte vydělávat →' : 'Start Earning →'}
                 </Button>
               </Link>
             </div>
@@ -130,8 +208,8 @@ export function MoneyCalculator() {
 
         <p className="text-center text-xs text-muted-foreground mt-4">
           {language === 'cz' 
-            ? '* Kalkulace je orientační. Skutečné výsledky se mohou lišit. Sázejte zodpovědně.'
-            : '* Calculations are estimates. Actual results may vary. Gamble responsibly.'}
+            ? '* Kalkulace je orientační. Minulé výsledky nezaručují budoucí výnosy. Sázejte zodpovědně.'
+            : '* Based on historical accuracy. Past results don\'t guarantee future performance. Gamble responsibly.'}
         </p>
       </div>
     </section>

@@ -154,10 +154,15 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
             <NavItem
               key={item.href}
               {...item}
-              badge={item.href === '/dashboard' && winStreak?.currentStreak && winStreak.currentStreak > 0 ? (
-                <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400">
-                  <Flame className="h-3 w-3" />
-                  {winStreak.currentStreak}
+              badge={item.href === '/dashboard' && winStreak?.currentStreak >= 3 ? (
+                <span className={cn(
+                  'flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded',
+                  winStreak.currentStreak >= 5 
+                    ? 'text-orange-400 bg-orange-500/20' 
+                    : 'text-success bg-success/20'
+                )}>
+                  <Flame className={cn('h-3 w-3', winStreak.currentStreak >= 5 && 'animate-pulse')} />
+                  🔥 {winStreak.currentStreak}
                 </span>
               ) : undefined}
             />
