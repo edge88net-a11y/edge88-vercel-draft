@@ -27,11 +27,14 @@ export function BlogSidebar({ currentArticleId }: BlogSidebarProps) {
   const filteredRecent = recentArticles?.filter(a => a.id !== currentArticleId).slice(0, 3);
   const filteredTop = topArticles?.filter(a => a.id !== currentArticleId).slice(0, 3);
 
-  const getAccuracyColor = (accuracy: number | null) => {
-    if (!accuracy) return 'text-muted-foreground';
-    if (accuracy >= 70) return 'text-success';
-    if (accuracy >= 55) return 'text-yellow-400';
-    return 'text-destructive';
+  // Calculate accuracy color based on completed picks
+  const getAccuracyDisplay = (article: { wins: number; losses: number; total_picks: number; accuracy_pct: number | null }) => {
+    const completed = (article.wins || 0) + (article.losses || 0);
+    if (completed === 0) return { text: '—', color: 'text-muted-foreground' };
+    
+    const accuracy = (article.wins / completed) * 100;
+    const color = accuracy >= 60 ? 'text-success' : accuracy >= 45 ? 'text-yellow-400' : 'text-destructive';
+    return { text: `${accuracy.toFixed(0)}%`, color };
   };
 
   return (
@@ -70,9 +73,10 @@ export function BlogSidebar({ currentArticleId }: BlogSidebarProps) {
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       <span>{format(new Date(article.article_date), 'MMM d')}</span>
-                      <span className={cn('font-mono font-bold', getAccuracyColor(article.accuracy_pct))}>
-                        {article.accuracy_pct?.toFixed(0)}%
-                      </span>
+                      {(() => {
+                        const display = getAccuracyDisplay(article);
+                        return <span className={cn('font-mono font-bold', display.color)}>{display.text}</span>;
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -131,11 +135,12 @@ export function BlogSidebar({ currentArticleId }: BlogSidebarProps) {
                     </p>
                     <div className="flex items-center gap-2 mt-1 text-xs">
                       <span className="text-muted-foreground">
-                        {article.wins}/{article.total_picks}
+                        {article.wins}/{(article.wins || 0) + (article.losses || 0)}
                       </span>
-                      <span className={cn('font-mono font-bold', getAccuracyColor(article.accuracy_pct))}>
-                        {article.accuracy_pct?.toFixed(0)}%
-                      </span>
+                      {(() => {
+                        const display = getAccuracyDisplay(article);
+                        return <span className={cn('font-mono font-bold', display.color)}>{display.text}</span>;
+                      })()}
                     </div>
                   </div>
                 </div>

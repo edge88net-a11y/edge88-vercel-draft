@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Search, BookOpen, ChevronRight, ChevronLeft, Target, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, Search, BookOpen, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBlogArticles, useBlogStats } from '@/hooks/useBlogArticles';
+import { useBlogArticles, useBlogStats, BlogArticle } from '@/hooks/useBlogArticles';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSportEmoji } from '@/lib/sportEmoji';
@@ -50,35 +50,95 @@ export default function Blog() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const getAccuracyBadge = (accuracy: number | null) => {
-    if (!accuracy) return { text: '—', className: 'bg-muted text-muted-foreground' };
-    if (accuracy >= 65) return { 
-      text: `✅ ${accuracy.toFixed(0)}%`, 
-      className: 'bg-success/20 text-success border-success/30' 
-    };
-    if (accuracy >= 50) return { 
-      text: `${accuracy.toFixed(0)}%`, 
-      className: 'bg-warning/20 text-warning border-warning/30' 
-    };
-    return { 
-      text: `❌ ${accuracy.toFixed(0)}%`, 
-      className: 'bg-destructive/20 text-destructive border-destructive/30' 
+  // Calculate accurate accuracy badge based on completed picks only
+  const getAccuracyBadge = (article: BlogArticle) => {
+    if (!article) return { text: '—', className: 'bg-muted text-muted-foreground', detail: '' };
+    
+    const wins = article.wins || 0;
+    const losses = article.losses || 0;
+    const completed = wins + losses;
+    const total = article.total_picks || 0;
+    const pending = total - completed;
+    
+    // Not enough completed picks to show meaningful accuracy
+    if (completed === 0) {
+      return { 
+        text: language === 'cz' ? 'Čeká na výsledky' : 'Pending results',
+        className: 'bg-muted text-muted-foreground',
+        detail: `${total} ${language === 'cz' ? 'tipů čeká' : 'picks pending'}`
+      };
+    }
+    
+    const accuracy = (wins / completed) * 100;
+    const isFullyGraded = pending === 0;
+    
+    // Color based on accuracy
+    let colorClass = 'bg-muted text-muted-foreground'; // gray for <50% graded
+    if (completed / total >= 0.5) {
+      if (accuracy >= 60) {
+        colorClass = 'bg-success/20 text-success border-success/30';
+      } else if (accuracy >= 45) {
+        colorClass = 'bg-warning/20 text-warning border-warning/30';
+      } else {
+        colorClass = 'bg-destructive/20 text-destructive border-destructive/30';
+      }
+    }
+    
+    // Build detail text
+    const detailText = isFullyGraded
+      ? `${wins}/${completed} ${language === 'cz' ? 'správně' : 'correct'}`
+      : language === 'cz'
+        ? `${wins}/${completed} vyhodnoceno · ${pending} čeká`
+        : `${wins}/${completed} graded · ${pending} pending`;
+    
+    return {
+      text: isFullyGraded 
+        ? `${accuracy >= 60 ? '✅' : accuracy < 45 ? '❌' : ''} ${accuracy.toFixed(0)}%`
+        : `${accuracy.toFixed(0)}%`,
+      className: colorClass,
+      detail: detailText
     };
   };
 
-  // Extract preview text from content
-  const getPreviewText = (content: string | null, maxLength = 100): string => {
+  // Extract preview text from content - cleaner formatting
+  const getPreviewText = (content: string | null, maxLength = 150): string => {
     if (!content) return '';
-    // Remove markdown formatting and references
+    // Remove markdown formatting, references, and clean up
     let text = content
-      .replace(/\[\d+\]/g, '')
-      .replace(/[#*_`]/g, '')
-      .replace(/\n+/g, ' ')
+      .replace(/\[\d+\]/g, '') // Remove [1], [2] references
+      .replace(/#{1,6}\s*/g, '') // Remove ## headings
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold** markers
+      .replace(/\*([^*]+)\*/g, '$1') // Remove *italic* markers
+      .replace(/__([^_]+)__/g, '$1') // Remove __bold__ markers
+      .replace(/_([^_]+)_/g, '$1') // Remove _italic_ markers
+      .replace(/`([^`]+)`/g, '$1') // Remove `code` markers
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove [text](url) links, keep text
+      .replace(/\n+/g, ' ') // Replace newlines with spaces
+      .replace(/\s+/g, ' ') // Collapse multiple spaces
       .trim();
+    
     if (text.length > maxLength) {
-      text = text.substring(0, maxLength).trim() + '...';
+      // Cut at word boundary
+      text = text.substring(0, maxLength);
+      const lastSpace = text.lastIndexOf(' ');
+      if (lastSpace > maxLength * 0.7) {
+        text = text.substring(0, lastSpace);
+      }
+      text = text.trim() + '...';
     }
     return text;
+  };
+
+  // Format date based on language
+  const formatArticleDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (language === 'cz') {
+      const day = date.getDate();
+      const months = ['ledna', 'února', 'března', 'dubna', 'května', 'června', 
+                      'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'];
+      return `${day}. ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+    return format(date, 'MMMM d, yyyy');
   };
 
   return (
@@ -96,9 +156,9 @@ export default function Blog() {
           }
         </p>
 
-        {/* Stats Summary */}
+        {/* Stats Summary - improved with full breakdown */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 max-w-3xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mt-8 max-w-4xl mx-auto">
             <div className="glass-card p-4 text-center">
               <div className="text-2xl md:text-3xl font-mono font-black text-foreground">
                 {stats.totalArticles}
@@ -124,15 +184,26 @@ export default function Blog() {
               </p>
             </div>
             <div className="glass-card p-4 text-center">
+              <div className="text-2xl md:text-3xl font-mono font-black text-destructive">
+                {stats.totalLosses}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'cz' ? 'Proher' : 'Losses'}
+              </p>
+            </div>
+            <div className="glass-card p-4 text-center col-span-2 md:col-span-1">
               <div className={cn(
                 'text-2xl md:text-3xl font-mono font-black',
-                stats.avgAccuracy >= 65 ? 'text-success' : 
-                stats.avgAccuracy >= 50 ? 'text-warning' : 'text-destructive'
+                stats.avgAccuracy >= 60 ? 'text-success' : 
+                stats.avgAccuracy >= 45 ? 'text-warning' : 'text-destructive'
               )}>
                 {stats.avgAccuracy.toFixed(0)}%
               </div>
               <p className="text-xs text-muted-foreground">
-                {language === 'cz' ? 'Přesnost' : 'Accuracy'}
+                {language === 'cz' 
+                  ? `Přesnost (${stats.totalCompleted} vyhodnoceno)`
+                  : `Accuracy (${stats.totalCompleted} graded)`
+                }
               </p>
             </div>
           </div>
@@ -201,8 +272,12 @@ export default function Blog() {
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {paginatedArticles.map((article) => {
-              const accuracyBadge = getAccuracyBadge(article.accuracy_pct);
+              const accuracyBadge = getAccuracyBadge(article);
               const previewText = getPreviewText(article.content);
+              const sportEmoji = article.sport ? getSportEmoji(article.sport) : '🏆';
+              const sportLabel = article.sport 
+                ? (article.sport === 'Mixed' || !article.sport ? (language === 'cz' ? 'Multi-sport' : 'Multi-sport') : article.sport)
+                : (language === 'cz' ? 'Multi-sport' : 'Multi-sport');
               
               return (
                 <Link
@@ -213,16 +288,14 @@ export default function Blog() {
                   {/* Header: Sport Badge + Date */}
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">
-                        {article.sport ? getSportEmoji(article.sport) : '📊'}
-                      </span>
+                      <span className="text-2xl">{sportEmoji}</span>
                       <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-muted text-muted-foreground uppercase tracking-wide">
-                        {article.sport || 'Mixed'}
+                        {sportLabel}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
-                      <span>{format(new Date(article.article_date), 'MMM d')}</span>
+                      <span>{formatArticleDate(article.article_date)}</span>
                     </div>
                   </div>
 
@@ -231,26 +304,40 @@ export default function Blog() {
                     {article.title}
                   </h3>
 
-                  {/* Accuracy Badge */}
-                  <div className="mb-3">
+                  {/* Accuracy Badge with Detail */}
+                  <div className="mb-3 space-y-1">
                     <span className={cn(
                       'text-xs font-bold px-2.5 py-1 rounded-lg border inline-flex items-center gap-1',
                       accuracyBadge.className
                     )}>
                       {accuracyBadge.text}
                     </span>
+                    {accuracyBadge.detail && (
+                      <span className="text-[10px] text-muted-foreground block mt-1">
+                        {accuracyBadge.detail}
+                      </span>
+                    )}
                   </div>
 
-                  {/* Stats Row */}
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                  {/* Stats Row - show pending count */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
                     <span className="font-mono font-semibold text-foreground">{article.total_picks}</span>
                     <span>{language === 'cz' ? 'tipů' : 'picks'}</span>
                     <span>·</span>
-                    <span className="font-mono font-semibold text-success">{article.wins}</span>
-                    <span>{language === 'cz' ? 'výher' : 'wins'}</span>
+                    <span className="font-mono font-semibold text-success">{article.wins || 0}</span>
+                    <span>{language === 'cz' ? 'V' : 'W'}</span>
                     <span>·</span>
-                    <span className="font-mono font-semibold text-destructive">{article.losses}</span>
-                    <span>{language === 'cz' ? 'proher' : 'losses'}</span>
+                    <span className="font-mono font-semibold text-destructive">{article.losses || 0}</span>
+                    <span>{language === 'cz' ? 'P' : 'L'}</span>
+                    {article.total_picks - (article.wins || 0) - (article.losses || 0) > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="font-mono font-semibold text-muted-foreground">
+                          {article.total_picks - (article.wins || 0) - (article.losses || 0)}
+                        </span>
+                        <span>{language === 'cz' ? 'čeká' : 'pending'}</span>
+                      </>
+                    )}
                   </div>
 
                   {/* Preview Text */}
