@@ -1,6 +1,6 @@
 import { useActivePredictions } from '@/hooks/usePredictions';
 import { getSportEmoji } from '@/lib/sportEmoji';
-import { normalizeConfidence, getConfidenceColorClass } from '@/lib/confidenceUtils';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LiveTicker() {
@@ -22,7 +22,7 @@ export function LiveTicker() {
     return null;
   }
 
-  // Deduplicate predictions by game (team + date)
+  // Get ALL pending predictions, deduplicated
   const seenGames = new Map<string, typeof predictions[0]>();
   predictions
     .filter((p) => p.result === 'pending')
@@ -33,17 +33,34 @@ export function LiveTicker() {
       }
     });
   
-  const tickerItems = Array.from(seenGames.values()).slice(0, 8);
-  const duplicatedItems = [...tickerItems, ...tickerItems];
+  // Show all predictions (up to 15) for scrolling
+  const tickerItems = Array.from(seenGames.values())
+    .sort((a, b) => {
+      const confA = a.confidence <= 1 ? a.confidence * 100 : a.confidence;
+      const confB = b.confidence <= 1 ? b.confidence * 100 : b.confidence;
+      return confB - confA;
+    })
+    .slice(0, 15);
+  
+  // Duplicate for seamless infinite scroll
+  const duplicatedItems = [...tickerItems, ...tickerItems, ...tickerItems];
 
   return (
     <div className="relative overflow-hidden border-y border-border/50 bg-muted/30 py-3">
+      {/* Fade edges */}
       <div className="absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-background to-transparent" />
       <div className="absolute right-0 top-0 z-10 h-full w-20 bg-gradient-to-l from-background to-transparent" />
 
-      <div className="flex animate-ticker">
+      {/* Scrolling ticker - using CSS animation */}
+      <div 
+        className="flex whitespace-nowrap"
+        style={{
+          animation: `ticker ${tickerItems.length * 4}s linear infinite`,
+        }}
+      >
         {duplicatedItems.map((prediction, index) => {
           const confidencePercent = normalizeConfidence(prediction.confidence);
+          const sportEmoji = getSportEmoji(prediction.sport, prediction.homeTeam, prediction.awayTeam);
           
           return (
             <div
@@ -51,7 +68,7 @@ export function LiveTicker() {
               className="flex flex-shrink-0 items-center gap-6 px-8"
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{getSportEmoji(prediction.sport, prediction.homeTeam, prediction.awayTeam)}</span>
+                <span className="text-xl">{sportEmoji}</span>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-foreground">
                     {prediction.awayTeam} @ {prediction.homeTeam}
@@ -79,6 +96,14 @@ export function LiveTicker() {
           );
         })}
       </div>
+
+      {/* Add keyframe animation via style tag */}
+      <style>{`
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.333%); }
+        }
+      `}</style>
     </div>
   );
 }

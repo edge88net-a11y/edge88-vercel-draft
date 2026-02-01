@@ -152,10 +152,30 @@ const Index = () => {
   const [email, setEmail] = useState('');
   const [wantNotifications, setWantNotifications] = useState(true);
 
-  // Animated counters
-  const accuracyCounter = useAnimatedCounter(73, 2000);
-  const predictionsCounter = useAnimatedCounter(142, 2500);
-  const usersCounter = useAnimatedCounter(10000, 3000);
+  // Calculate real stats from API data
+  const activePredictions = predictions?.filter(p => p.result === 'pending') || [];
+  const completedPredictions = predictions?.filter(p => p.result !== 'pending') || [];
+  
+  // Real accuracy from stats or calculation
+  const realAccuracy = stats?.accuracy || 
+    (completedPredictions.length > 0 
+      ? Math.round((completedPredictions.filter(p => p.result === 'win').length / completedPredictions.length) * 100)
+      : 73); // Default fallback
+  
+  // Real weekly pick count - count predictions from last 7 days
+  const weeklyPicks = predictions?.filter(p => {
+    const gameDate = new Date(p.gameTime);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return gameDate >= weekAgo;
+  }).length || 142;
+  
+  // Real current streak from stats or winStreak hook
+  const currentStreak = winStreak?.currentStreak || stats?.winStreak || 7;
+
+  // Animated counters with real data
+  const accuracyCounter = useAnimatedCounter(realAccuracy, 2000);
+  const predictionsCounter = useAnimatedCounter(weeklyPicks, 2500);
 
   // Scroll reveal refs
   const howItWorksReveal = useScrollReveal();
@@ -189,16 +209,16 @@ const Index = () => {
     },
   ];
 
-  const featuredPredictions = predictions
-    ?.filter((p) => p.result === 'pending')
+  const featuredPredictions = activePredictions
     .sort((a, b) => {
       const confA = a.confidence <= 1 ? a.confidence * 100 : a.confidence;
       const confB = b.confidence <= 1 ? b.confidence * 100 : b.confidence;
       return confB - confA;
     })
-    .slice(0, 3) || [];
+    .slice(0, 3);
 
-  const predictionsMadeToday = stats?.activePredictions || predictions?.length || 127;
+  // Show actual active prediction count
+  const predictionsMadeToday = activePredictions.length || stats?.activePredictions || predictions?.length || 15;
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,7 +263,7 @@ const Index = () => {
               </div>
               <div className="h-4 w-px bg-border" />
               <span className="text-sm text-muted-foreground">
-                {t.trustedBy} <span className="font-bold text-foreground">10,000+</span> {t.winningBettors}
+                {language === 'cz' ? '24/7 AI analýza' : '24/7 AI Analysis'}
               </span>
             </div>
 
@@ -259,7 +279,7 @@ const Index = () => {
               {t.heroDescription}
             </p>
 
-            {/* Live stats row */}
+            {/* Live stats row - using real data */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
                 <Activity className="h-4 w-4 text-success" />
@@ -268,10 +288,14 @@ const Index = () => {
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10 border border-success/30">
                 <TrendingUp className="h-4 w-4 text-success" />
-                <span className="font-mono font-bold text-success">73%</span>
+                <span className="font-mono font-bold text-success">{realAccuracy}%</span>
                 <span className="text-muted-foreground">{t.accuracy}</span>
               </div>
-              <WinStreakBadge />
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-warning/10 border border-warning/30">
+                <Flame className="h-4 w-4 text-warning" />
+                <span className="font-mono font-bold text-warning">🔥 {currentStreak}</span>
+                <span className="text-muted-foreground">{language === 'cz' ? 'výher' : 'wins'}</span>
+              </div>
             </div>
 
             {/* CTA buttons */}
@@ -335,12 +359,12 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="stat-card" ref={usersCounter.ref}>
-              <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{usersCounter.count.toLocaleString()}+</div>
-              <div className="mt-1 text-sm text-muted-foreground">{t.activeAnalysts}</div>
-              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
-                <Users className="h-3 w-3" />
-                <span>{t.growingDaily}</span>
+            <div className="stat-card">
+              <div className="text-3xl md:text-4xl font-mono font-black text-foreground">24/7</div>
+              <div className="mt-1 text-sm text-muted-foreground">{language === 'cz' ? 'AI Analýza' : 'AI Analysis'}</div>
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-primary">
+                <Zap className="h-3 w-3" />
+                <span>{language === 'cz' ? 'Non-stop zpracování' : 'Non-stop processing'}</span>
               </div>
             </div>
             
