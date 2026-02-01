@@ -13,6 +13,7 @@ import {
 import { TeamLogo } from '@/components/TeamLogo';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SEOHead } from '@/components/SEOHead';
 import { useActivePredictions, useStats, useAccuracyStats, DailyAccuracy } from '@/hooks/usePredictions';
 import { useWinStreak } from '@/hooks/useWinStreak';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -227,6 +228,14 @@ const Results = () => {
 
   return (
     <div className="space-y-8">
+      {/* SEO Meta Tags */}
+      <SEOHead 
+        title={language === 'cz' ? 'Výsledky predikcí' : 'Prediction Results'}
+        description={language === 'cz' 
+          ? `Kompletní transparentnost. ${Math.round(accuracy)}% přesnost napříč ${totalPredictions}+ predikcemi.`
+          : `Complete transparency. ${Math.round(accuracy)}% accuracy across ${totalPredictions}+ predictions.`}
+        url="/results"
+      />
       {/* Hero Section */}
       <div className="text-center py-8 md:py-12">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-4">

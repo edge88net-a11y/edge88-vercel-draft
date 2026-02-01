@@ -9,6 +9,7 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { isAdminUser } from '@/lib/adminAccess';
+import { SEOHead } from '@/components/SEOHead';
 
 const faqs = {
   en: [
@@ -159,6 +160,14 @@ const Pricing = () => {
 
   return (
     <div className="pt-12 space-y-12">
+      {/* SEO Meta Tags */}
+      <SEOHead 
+        title={language === 'cz' ? 'Ceník' : 'Pricing'}
+        description={language === 'cz' 
+          ? 'Vyberte plán Edge88 odpovídající vašemu stylu sázení. Starter, Pro a Elite plány s AI predikcemi.'
+          : 'Choose an Edge88 plan that matches your betting style. Starter, Pro and Elite plans with AI predictions.'}
+        url="/pricing"
+      />
       {/* Admin Full Access Notice */}
       {isAdmin && (
         <div className="mx-auto max-w-2xl">
