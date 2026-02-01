@@ -15,7 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
-const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
+const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'EPL', 'UFC'];
 const confidenceLevels = [
   { label: 'All', min: 0, icon: null },
   { label: '🔒 Lock 75%+', min: 75, color: 'success' },
@@ -54,12 +54,17 @@ const Predictions = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
-  // Deduplicate predictions by game (homeTeam-awayTeam-date)
-  const activePredictions = useMemo(() => {
-    const pending = predictions?.filter((p) => p.result === 'pending') || [];
-    const seenGames = new Map<string, typeof pending[0]>();
+  // Debug: Log predictions data
+  console.log('[Predictions Page] Raw predictions:', predictions);
+  console.log('[Predictions Page] Total count:', predictions?.length);
+
+  // Deduplicate predictions by game (homeTeam-awayTeam-date) - keep ALL, don't filter by result
+  const allPredictions = useMemo(() => {
+    if (!predictions || predictions.length === 0) return [];
     
-    pending.forEach(p => {
+    const seenGames = new Map<string, typeof predictions[0]>();
+    
+    predictions.forEach(p => {
       const key = `${p.homeTeam}-${p.awayTeam}-${p.gameTime.split('T')[0]}`;
       const existing = seenGames.get(key);
       // Keep the most recent prediction
@@ -68,28 +73,43 @@ const Predictions = () => {
       }
     });
     
-    return Array.from(seenGames.values());
+    const deduped = Array.from(seenGames.values());
+    console.log('[Predictions Page] After dedup:', deduped.length);
+    return deduped;
   }, [predictions]);
 
-  // Calculate stats
+  // Active (pending) predictions for filtering
+  const activePredictions = useMemo(() => {
+    const pending = allPredictions.filter((p) => p.result === 'pending');
+    console.log('[Predictions Page] Pending predictions:', pending.length);
+    return pending;
+  }, [allPredictions]);
+
+  // Calculate stats - use allPredictions for accurate count
   const stats = useMemo(() => {
-    const total = activePredictions.length;
-    const highConfidence = activePredictions.filter(p => normalizeConfidence(p.confidence) >= 70).length;
-    const locks = activePredictions.filter(p => normalizeConfidence(p.confidence) >= 75).length;
+    const total = allPredictions.length;
+    const highConfidence = allPredictions.filter(p => normalizeConfidence(p.confidence) >= 70).length;
+    const locks = allPredictions.filter(p => normalizeConfidence(p.confidence) >= 75).length;
     return { total, highConfidence, locks };
-  }, [activePredictions]);
+  }, [allPredictions]);
 
   const filteredAndSortedPredictions = useMemo(() => {
-    let filtered = activePredictions.filter((prediction) => {
+    // Use ALL predictions (including pending and completed) for display
+    let filtered = allPredictions.filter((prediction) => {
       // Infer sport from team names if UUID
       const sportName = prediction.sport?.includes('-') 
         ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
         : prediction.sport;
       const normalizedConfidence = normalizeConfidence(prediction.confidence);
       
-      // Sport filter
-      if (selectedSport !== 'All' && sportName?.toUpperCase() !== selectedSport && sportName !== selectedSport) {
-        return false;
+      // Sport filter - more lenient matching
+      if (selectedSport !== 'All') {
+        const sportMatch = (sportName || '').toLowerCase();
+        const filterMatch = selectedSport.toLowerCase();
+        // Check if sport contains the filter or filter contains the sport
+        if (!sportMatch.includes(filterMatch) && !filterMatch.includes(sportMatch)) {
+          return false;
+        }
       }
       
       // Confidence filter
@@ -117,6 +137,8 @@ const Predictions = () => {
       return true;
     });
 
+    console.log('[Predictions Page] After filtering:', filtered.length);
+
     // Sort
     filtered.sort((a, b) => {
       let comparison = 0;
@@ -128,7 +150,7 @@ const Predictions = () => {
           comparison = new Date(a.gameTime).getTime() - new Date(b.gameTime).getTime();
           break;
         case 'sport':
-          comparison = a.sport.localeCompare(b.sport);
+          comparison = (a.sport || '').localeCompare(b.sport || '');
           break;
         default:
           comparison = normalizeConfidence(b.confidence) - normalizeConfidence(a.confidence);
@@ -137,7 +159,7 @@ const Predictions = () => {
     });
 
     return filtered;
-  }, [activePredictions, selectedSport, selectedConfidence, selectedType, searchQuery, sortBy, sortOrder]);
+  }, [allPredictions, selectedSport, selectedConfidence, selectedType, searchQuery, sortBy, sortOrder]);
 
   const shouldLockPrediction = (index: number) => {
     if (isPro) return false;

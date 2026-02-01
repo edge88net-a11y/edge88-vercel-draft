@@ -15,23 +15,48 @@ const SPORT_EMOJI_MAP: Record<string, string> = {
   basketball: '🏀',
   ncaab: '🏀',
   
-  // Soccer / Football
+  // Soccer / Football - expanded list
   soccer: '⚽',
   football: '⚽', // International football = soccer
   mls: '⚽',
   epl: '⚽',
   laliga: '⚽',
+  'la liga': '⚽',
   bundesliga: '⚽',
   seriea: '⚽',
+  'serie a': '⚽',
   ligue1: '⚽',
+  'ligue 1': '⚽',
   championsleague: '⚽',
+  'champions league': '⚽',
   ucl: '⚽',
   premierleague: '⚽',
+  'premier league': '⚽',
+  'english premier': '⚽',
+  facup: '⚽',
+  'fa cup': '⚽',
+  carabaocup: '⚽',
+  championship: '⚽',
+  'scottish premier': '⚽',
+  eredivisie: '⚽',
+  ligamx: '⚽',
+  'liga mx': '⚽',
+  copadelrey: '⚽',
+  'copa del rey': '⚽',
+  uefaeuropa: '⚽',
+  'europa league': '⚽',
+  conferenceleague: '⚽',
+  internationalsoccer: '⚽',
+  worldcup: '⚽',
+  europeanchampionship: '⚽',
+  copaamerica: '⚽',
   
   // UFC / MMA
   ufc: '🥊',
   mma: '🥊',
   boxing: '🥊',
+  bellator: '🥊',
+  pfl: '🥊',
   
   // NFL / American Football
   nfl: '🏈',
@@ -48,6 +73,10 @@ const SPORT_EMOJI_MAP: Record<string, string> = {
   tennis: '🎾',
   atp: '🎾',
   wta: '🎾',
+  australianopen: '🎾',
+  frenchopen: '🎾',
+  usopen: '🎾',
+  wimbledon: '🎾',
   
   // Prediction markets
   polymarket: '📊',
@@ -62,6 +91,25 @@ const SPORT_EMOJI_MAP: Record<string, string> = {
   formula1: '🏎️',
   nascar: '🏎️',
   racing: '🏎️',
+  indycar: '🏎️',
+  
+  // Cricket
+  cricket: '🏏',
+  ipl: '🏏',
+  
+  // Rugby
+  rugby: '🏉',
+  sixnations: '🏉',
+  
+  // eSports
+  esports: '🎮',
+  csgo: '🎮',
+  valorant: '🎮',
+  lol: '🎮',
+  dota2: '🎮',
+  
+  // Generic sports category
+  sports: '🏆',
 };
 
 // NHL team keywords
@@ -84,14 +132,24 @@ const NBA_TEAMS = [
   'mavericks', 'rockets', 'grizzlies', 'pelicans', 'spurs',
 ];
 
-// Soccer team keywords
+// Soccer team keywords - expanded to include more Premier League teams
 const SOCCER_TEAMS = [
+  // Premier League
   'manchester united', 'manchester city', 'liverpool', 'chelsea', 'arsenal', 'tottenham',
-  'leicester', 'west ham', 'everton', 'wolves', 'newcastle', 'aston villa', 'brighton',
-  'crystal palace', 'brentford', 'fulham', 'bournemouth', 'nottingham forest', 'luton',
-  'sheffield united', 'burnley', 'barcelona', 'real madrid', 'atletico madrid', 'sevilla',
-  'bayern munich', 'borussia dortmund', 'juventus', 'inter milan', 'ac milan', 'napoli',
-  'psg', 'paris saint-germain', 'marseille', 'lyon', 'monaco',
+  'leicester', 'west ham', 'everton', 'wolves', 'wolverhampton', 'newcastle', 'aston villa', 'brighton',
+  'crystal palace', 'brentford', 'fulham', 'bournemouth', 'nottingham forest', 'nottingham', 'luton',
+  'sheffield united', 'burnley', 'ipswich', 'southampton', 'leeds', 'sunderland',
+  // La Liga
+  'barcelona', 'real madrid', 'atletico madrid', 'sevilla', 'real sociedad', 'villarreal', 'athletic bilbao',
+  // Bundesliga
+  'bayern munich', 'borussia dortmund', 'rb leipzig', 'leverkusen', 'eintracht frankfurt',
+  // Serie A
+  'juventus', 'inter milan', 'ac milan', 'napoli', 'roma', 'lazio', 'atalanta', 'fiorentina',
+  // Ligue 1
+  'psg', 'paris saint-germain', 'marseille', 'lyon', 'monaco', 'lille',
+  // Championship
+  'watford', 'blackburn', 'middlesbrough', 'norwich', 'coventry', 'plymouth', 'hull', 'stoke', 'sheffield wednesday',
+  'queens park rangers', 'qpr', 'swansea', 'millwall', 'preston', 'bristol city', 'cardiff',
 ];
 
 // NFL team keywords  
