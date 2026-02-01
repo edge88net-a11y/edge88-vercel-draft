@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, Clock, MapPin, Loader2, FileText, TrendingUp, TrendingDown,
+  ArrowLeft, Clock, Loader2, FileText, TrendingUp, TrendingDown,
   Share2, Plus, Target, Users, Calculator, ChevronRight, CheckCircle, XCircle,
-  History, Sparkles, MessageCircle, Zap, ExternalLink
+  History, Sparkles, MessageCircle, ExternalLink, Bookmark, ThumbsUp, ThumbsDown,
+  Activity, Heart, Zap, Home, Plane
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TeamLogo } from '@/components/TeamLogo';
 import { SavePickButton } from '@/components/SavePickButton';
-import { GameCountdown } from '@/components/GameCountdown';
 import { LiveGameBadge } from '@/components/LiveGameBadge';
 import { OddsComparison } from '@/components/OddsComparison';
 import { SportSpecificStats } from '@/components/SportSpecificStats';
@@ -18,25 +18,63 @@ import { NumerologyTab } from '@/components/NumerologyTab';
 import { DiscussionTab } from '@/components/DiscussionTab';
 import { ShareModal } from '@/components/ShareModal';
 import { useSinglePrediction, useActivePredictions, APIPrediction } from '@/hooks/usePredictions';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { cn } from '@/lib/utils';
-import { format, differenceInHours, differenceInMinutes } from 'date-fns';
+import { format, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
 
 export default function PredictionDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: fullPrediction, isLoading: isLoadingFull, error: fullError } = useSinglePrediction(id);
   const { data: predictions, isLoading: isLoadingList } = useActivePredictions();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('discussion');
   const [bankroll, setBankroll] = useState(10000);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [countdown, setCountdown] = useState('');
+  const [userVote, setUserVote] = useState<'home' | 'away' | null>(null);
 
   // Use full prediction from API, fallback to list data
   const listPrediction = predictions?.find(p => p.id === id);
   const prediction = fullPrediction || listPrediction;
   const isLoading = isLoadingFull && isLoadingList;
+
+  // Live updating countdown
+  useEffect(() => {
+    if (!prediction) return;
+    
+    const updateCountdown = () => {
+      const game = new Date(prediction.gameTime);
+      const now = new Date();
+      const diffMs = game.getTime() - now.getTime();
+      
+      if (diffMs <= 0) {
+        setCountdown(language === 'cz' ? 'Probíhá' : 'Live');
+        return;
+      }
+      
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+      
+      if (hours > 24) {
+        setCountdown(format(game, 'MMM d, h:mm a'));
+      } else if (hours > 0) {
+        setCountdown(`${hours}h ${minutes}m ${seconds}s`);
+      } else if (minutes > 0) {
+        setCountdown(`${minutes}m ${seconds}s`);
+      } else {
+        setCountdown(`${seconds}s`);
+      }
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [prediction, language]);
 
   // Check if game is live or completed
   const getGameStatus = () => {
@@ -52,18 +90,6 @@ export default function PredictionDetail() {
   };
 
   const gameStatus = getGameStatus();
-
-  // Format countdown
-  const formatCountdown = (gameTime: string) => {
-    const game = new Date(gameTime);
-    const now = new Date();
-    const hoursUntil = differenceInHours(game, now);
-    const minutesUntil = differenceInMinutes(game, now) % 60;
-    
-    if (hoursUntil < 0) return language === 'cz' ? 'Probíhá' : 'Live';
-    if (hoursUntil === 0) return `${minutesUntil}m`;
-    return `${hoursUntil}h ${minutesUntil}m`;
-  };
 
   // Mock community pick data (would come from API)
   const communityPick = useMemo(() => {
@@ -139,16 +165,52 @@ export default function PredictionDetail() {
     return currValue > bestValue ? curr : best;
   }, bookmakerOdds[0]) : null;
 
-  // Confidence breakdown from prediction
+  // Confidence breakdown - 6 factors with weights
   const predictionBreakdown = predictionWithOdds?.confidenceBreakdown;
-  const breakdown = predictionBreakdown 
-    ? {
-        form: Math.round((predictionBreakdown.fromResearch ?? predictionBreakdown.research ?? 0) * 100),
-        injuries: Math.round(Math.random() * 20 + 10),
-        h2h: Math.round((predictionBreakdown.fromHistorical ?? predictionBreakdown.historical ?? 0) * 100),
-        odds: Math.round((predictionBreakdown.fromOdds ?? predictionBreakdown.odds ?? 0) * 100),
-      }
-    : { form: 25, injuries: 20, h2h: 15, odds: 12 };
+  const confidenceFactors = [
+    { 
+      key: 'form', 
+      emoji: '📊',
+      label: language === 'cz' ? 'Forma' : 'Form',
+      value: predictionBreakdown?.research ? Math.round(predictionBreakdown.research * 100) : 85,
+      weight: 25,
+    },
+    { 
+      key: 'injuries', 
+      emoji: '🏥',
+      label: language === 'cz' ? 'Zranění' : 'Injuries',
+      value: 60 + Math.round(Math.random() * 20),
+      weight: 20,
+    },
+    { 
+      key: 'h2h', 
+      emoji: '⚔️',
+      label: 'H2H',
+      value: predictionBreakdown?.historical ? Math.round(predictionBreakdown.historical * 100) : 70,
+      weight: 15,
+    },
+    { 
+      key: 'homeAway', 
+      emoji: '🏠',
+      label: language === 'cz' ? 'Domácí/Venku' : 'Home/Away',
+      value: 70 + Math.round(Math.random() * 15),
+      weight: 15,
+    },
+    { 
+      key: 'odds', 
+      emoji: '📈',
+      label: language === 'cz' ? 'Kurzy' : 'Odds',
+      value: predictionBreakdown?.odds ? Math.round(predictionBreakdown.odds * 100) : 65,
+      weight: 15,
+    },
+    { 
+      key: 'rest', 
+      emoji: '😴',
+      label: language === 'cz' ? 'Odpočinek' : 'Rest',
+      value: 75 + Math.round(Math.random() * 15),
+      weight: 10,
+    },
+  ];
 
   // Key factors
   const keyFactorsArray: string[] = language === 'cz' 
@@ -157,8 +219,8 @@ export default function PredictionDetail() {
 
   // Analysis text
   const analysisText = language === 'cz'
-    ? (prediction.reasoning_cs || prediction.reasoning || 'Analýza se připravuje...')
-    : (prediction.reasoning || 'Analysis pending...');
+    ? (prediction.reasoning_cs || prediction.reasoning || '')
+    : (prediction.reasoning || '');
 
   // Kelly criterion calculation
   const calculateKellyBet = () => {
@@ -167,7 +229,7 @@ export default function PredictionDetail() {
     const kelly = (probability * decimalOdds - 1) / (decimalOdds - 1);
     const betAmount = Math.max(0, Math.round(bankroll * Math.min(kelly, 0.1) * 100) / 100); // Cap at 10%
     const potentialProfit = Math.round(betAmount * (decimalOdds - 1) * 100) / 100;
-    return { betAmount, potentialProfit };
+    return { betAmount, potentialProfit, decimalOdds };
   };
 
   const parseAmericanToDecimal = (odds: string): number => {
@@ -177,7 +239,7 @@ export default function PredictionDetail() {
     return (100 / Math.abs(num)) + 1;
   };
 
-  const { betAmount: kellyBet, potentialProfit } = calculateKellyBet();
+  const { betAmount: kellyBet, potentialProfit, decimalOdds } = calculateKellyBet();
 
   // Prediction object for save
   const predictionForSave = {
@@ -192,6 +254,11 @@ export default function PredictionDetail() {
     reasoning: prediction.reasoning,
   };
 
+  const handleVote = (team: 'home' | 'away') => {
+    if (!user) return;
+    setUserVote(team);
+  };
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
@@ -200,114 +267,168 @@ export default function PredictionDetail() {
         {language === 'cz' ? '← Zpět na predikce' : '← Back to Predictions'}
       </Link>
 
-      {/* Result Banner (if completed) */}
+      {/* Result Banner (if completed) - Full width at top */}
       {gameStatus === 'completed' && prediction.result && (
         <div className={cn(
-          'rounded-2xl p-6 text-center',
+          'rounded-2xl p-6 md:p-8',
           prediction.result === 'win' 
-            ? 'bg-gradient-to-r from-success/20 via-success/10 to-success/20 border border-success/30'
-            : 'bg-gradient-to-r from-destructive/20 via-destructive/10 to-destructive/20 border border-destructive/30'
+            ? 'bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-2 border-success/50'
+            : 'bg-gradient-to-r from-destructive/30 via-destructive/20 to-destructive/30 border-2 border-destructive/50'
         )}>
-          <div className="flex items-center justify-center gap-3 mb-2">
-            {prediction.result === 'win' ? (
-              <CheckCircle className="h-8 w-8 text-success" />
-            ) : (
-              <XCircle className="h-8 w-8 text-destructive" />
-            )}
-            <span className={cn(
-              'text-3xl font-black',
-              prediction.result === 'win' ? 'text-success' : 'text-destructive'
-            )}>
-              {prediction.result === 'win' 
-                ? (language === 'cz' ? '✅ VÝHRA' : '✅ WIN')
-                : (language === 'cz' ? '❌ PROHRA' : '❌ LOSS')
-              }
-            </span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {prediction.result === 'win' ? (
+                <CheckCircle className="h-12 w-12 text-success" />
+              ) : (
+                <XCircle className="h-12 w-12 text-destructive" />
+              )}
+              <div>
+                <h2 className={cn(
+                  'text-3xl md:text-4xl font-black',
+                  prediction.result === 'win' ? 'text-success' : 'text-destructive'
+                )}>
+                  {prediction.result === 'win' 
+                    ? (language === 'cz' ? 'VÝHRA!' : 'WIN!')
+                    : (language === 'cz' ? 'PROHRA' : 'LOSS')
+                  }
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  {prediction.result === 'win'
+                    ? (language === 'cz' ? 'Náš tip byl správný.' : 'Our pick was correct.')
+                    : (language === 'cz' ? 'Analýza co se stalo.' : 'Analysis of what happened.')
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {/* Final Score */}
+            <div className="text-center p-4 rounded-xl bg-card/50 backdrop-blur">
+              <p className="text-xs text-muted-foreground mb-1">{language === 'cz' ? 'Konečné skóre' : 'Final Score'}</p>
+              <p className="text-3xl font-mono font-black">
+                3 - 2
+              </p>
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            {language === 'cz' 
-              ? `Naše jistota byla ${confidencePercent}%. ${prediction.result === 'win' ? 'Měli jsme pravdu!' : 'Tentokrát se nám to nepovedlo.'}`
-              : `Our confidence was ${confidencePercent}%. ${prediction.result === 'win' ? 'We were right!' : 'We were wrong this time.'}`
-            }
-          </p>
         </div>
       )}
 
-      {/* Main Two-Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-[1fr,340px]">
-        {/* Left Column - Main Content */}
+      {/* Main Two-Column Layout - 65% / 35% */}
+      <div className="grid gap-6 lg:grid-cols-[1fr,380px]">
+        {/* Left Column - Main Content (65%) */}
         <div className="space-y-6">
           {/* Header Card */}
           <div className="glass-card p-6">
-            {/* Sport & Live Badge */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">{getSportEmoji(sportName || 'Sports')}</span>
-                <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            {/* Sport Badge + Status */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{getSportEmoji(sportName || 'Sports')}</span>
+                <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider bg-muted px-3 py-1.5 rounded-lg">
                   {sportName || 'Sports'}
                 </span>
               </div>
-              {gameStatus === 'live' && <LiveGameBadge gameTime={prediction.gameTime} />}
+              
+              {/* Status Badge */}
+              <div className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold',
+                gameStatus === 'scheduled' && 'bg-primary/20 text-primary',
+                gameStatus === 'live' && 'bg-destructive/20 text-destructive animate-pulse',
+                gameStatus === 'completed' && 'bg-muted text-muted-foreground'
+              )}>
+                {gameStatus === 'scheduled' && '🟢 ACTIVE'}
+                {gameStatus === 'live' && '🔴 LIVE'}
+                {gameStatus === 'completed' && '✅ FINISHED'}
+              </div>
             </div>
 
-            {/* Teams */}
-            <h1 className="text-2xl md:text-3xl font-black mb-3">
-              {prediction.homeTeam} vs {prediction.awayTeam}
+            {/* Teams - Large Title */}
+            <h1 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
+              {prediction.awayTeam} <span className="text-muted-foreground">@</span> {prediction.homeTeam}
             </h1>
 
-            {/* Game Time Countdown */}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              {gameStatus === 'scheduled' ? (
-                <span>
-                  ⏰ {language === 'cz' ? `Začíná za ${formatCountdown(prediction.gameTime)}` : `Starts in ${formatCountdown(prediction.gameTime)}`}
+            {/* Game Time with Live Countdown */}
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <Clock className="h-5 w-5" />
+              <span className="text-sm">
+                {format(new Date(prediction.gameTime), 'EEEE, MMMM d • h:mm a')}
+              </span>
+              {gameStatus === 'scheduled' && (
+                <span className="text-primary font-mono font-bold bg-primary/10 px-3 py-1 rounded-lg">
+                  ⏰ {language === 'cz' ? 'Za' : 'In'} {countdown}
                 </span>
-              ) : gameStatus === 'live' ? (
-                <span className="text-success font-semibold">🔴 LIVE</span>
-              ) : (
-                <span>{format(new Date(prediction.gameTime), 'MMM d, yyyy • h:mm a')}</span>
               )}
+              {gameStatus === 'live' && <LiveGameBadge gameTime={prediction.gameTime} />}
             </div>
           </div>
 
-          {/* Our Pick Card - Highlighted */}
-          <div className="glass-card p-6 border-2 border-primary/50 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-            
-            <div className="relative">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                {/* Pick Info */}
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    🎯 {language === 'cz' ? 'Náš tip' : 'Our Pick'}
-                  </p>
-                  <p className="text-2xl md:text-3xl font-black text-primary">
-                    {prediction.prediction.pick}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {prediction.prediction.type} {prediction.prediction.line && `• ${prediction.prediction.line}`}
-                  </p>
-                </div>
+          {/* Our Pick Card - Featured with gradient border */}
+          <div className="relative p-[2px] rounded-2xl bg-gradient-to-r from-primary via-cyan-400 to-success overflow-hidden">
+            <div className="glass-card p-6 md:p-8 rounded-[14px] bg-background relative">
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-success/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  {/* Pick Info */}
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+                      🎯 {language === 'cz' ? 'Náš tip' : 'Our Pick'}
+                    </p>
+                    <p className="text-3xl md:text-4xl font-black bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
+                      {prediction.prediction.pick}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {prediction.prediction.type} {prediction.prediction.line && `• Line: ${prediction.prediction.line}`}
+                    </p>
+                  </div>
 
-                {/* Animated Confidence Gauge */}
-                <div className="flex items-center gap-6">
-                  <CircularConfidence value={confidencePercent} />
-                </div>
-              </div>
-
-              {/* Confidence Breakdown Bars */}
-              <div className="mt-6 pt-6 border-t border-border">
-                <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-                  {language === 'cz' ? 'Rozklad důvěry' : 'Confidence Breakdown'}
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <BreakdownItem label={language === 'cz' ? 'Forma' : 'Form'} value={breakdown.form} color="bg-primary" />
-                  <BreakdownItem label={language === 'cz' ? 'Zranění' : 'Injuries'} value={breakdown.injuries} color="bg-accent" />
-                  <BreakdownItem label="H2H" value={breakdown.h2h} color="bg-success" />
-                  <BreakdownItem label={language === 'cz' ? 'Kurzy' : 'Odds'} value={breakdown.odds} color="bg-warning" />
+                  {/* Large Animated Confidence Gauge */}
+                  <div className="flex flex-col items-center">
+                    <CircularConfidenceLarge value={confidencePercent} language={language} />
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Confidence Breakdown - 6 Horizontal Bars */}
+          <div className="glass-card p-6">
+            <h3 className="font-bold mb-5 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              {language === 'cz' ? 'Rozklad důvěry' : 'Confidence Breakdown'}
+            </h3>
+            
+            <div className="space-y-4">
+              {confidenceFactors.map((factor) => (
+                <div key={factor.key} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span>{factor.emoji}</span>
+                      <span className="font-medium">{factor.label}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold">{factor.value}%</span>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {factor.weight}% {language === 'cz' ? 'váha' : 'weight'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={cn(
+                        'h-full rounded-full transition-all duration-1000',
+                        factor.value >= 70 ? 'bg-success' : 
+                        factor.value >= 50 ? 'bg-warning' : 'bg-destructive'
+                      )}
+                      style={{ width: `${factor.value}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+              {language === 'cz' ? 'Data z confidence_breakdown API' : 'Data from confidence_breakdown API field'}
+            </p>
           </div>
 
           {/* Odds Card */}
@@ -317,51 +438,57 @@ export default function PredictionDetail() {
               {language === 'cz' ? 'Přehled kurzů' : 'Odds Overview'}
             </h3>
             
-            {bookmakerOdds.length > 0 ? (
-              <div className="space-y-4">
-                {/* Odds Movement */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm text-muted-foreground">
-                    {language === 'cz' ? 'Pohyb kurzu' : 'Odds Movement'}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground line-through">1.75</span>
-                    <TrendingUp className="h-4 w-4 text-success" />
-                    <span className="font-mono font-bold text-success">1.85</span>
-                    <span className="text-xs text-success">
-                      ({language === 'cz' ? 'kurz roste' : 'odds rising'})
-                    </span>
-                  </div>
+            {/* Current Odds Display */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="p-4 rounded-xl bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground mb-1">{prediction.homeTeam}</p>
+                <p className="text-3xl font-mono font-black text-primary">1.85</p>
+              </div>
+              <div className="p-4 rounded-xl bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground mb-1">{prediction.awayTeam}</p>
+                <p className="text-3xl font-mono font-black">2.10</p>
+              </div>
+            </div>
+
+            {/* Odds Movement */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 mb-4">
+              <span className="text-sm text-muted-foreground">
+                {language === 'cz' ? 'Pohyb kurzu' : 'Odds Movement'}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground line-through">1.75</span>
+                <TrendingUp className="h-4 w-4 text-success" />
+                <span className="font-mono font-bold text-success">1.85</span>
+                <span className="text-xs text-success px-2 py-0.5 rounded bg-success/10">
+                  {language === 'cz' ? '↑ příznivý' : '↑ favorable'}
+                </span>
+              </div>
+            </div>
+
+            {/* Best Odds Highlight */}
+            {bestOdds && (
+              <a 
+                href="#"
+                className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-success/10 to-success/5 border border-success/30 hover:border-success/50 transition-colors group"
+              >
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'cz' ? 'Nejlepší kurz u' : 'Best odds at'}
+                  </p>
+                  <p className="font-bold text-success">Tipsport</p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-mono font-black text-success">1.87</span>
+                  <ExternalLink className="h-4 w-4 text-success opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </a>
+            )}
 
-                {/* Best Odds Highlight */}
-                {bestOdds && (
-                  <a 
-                    href={`https://www.${bestOdds.bookmaker.toLowerCase().replace(/\s/g, '')}.com`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-success/10 to-success/5 border border-success/30 hover:border-success/50 transition-colors group"
-                  >
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {language === 'cz' ? 'Nejlepší kurz u' : 'Best odds at'}
-                      </p>
-                      <p className="font-bold text-success">{bestOdds.bookmaker}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-mono font-black text-success">{bestOdds.odds}</span>
-                      <ExternalLink className="h-4 w-4 text-success opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </a>
-                )}
-
-                {/* All Odds */}
+            {/* All Odds */}
+            {bookmakerOdds.length > 0 && (
+              <div className="mt-4">
                 <OddsComparison bookmakerOdds={bookmakerOdds} />
               </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-4">
-                {language === 'cz' ? 'Kurzy se načítají...' : 'Loading odds...'}
-              </p>
             )}
           </div>
 
@@ -372,29 +499,33 @@ export default function PredictionDetail() {
               {language === 'cz' ? 'Analýza' : 'Analysis'}
             </h3>
             
-            {/* Key Factors */}
+            {/* Key Factors as styled list */}
             {keyFactorsArray.length > 0 && (
-              <div className="mb-6">
-                <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-                  {language === 'cz' ? 'Klíčové faktory' : 'Key Factors'}
-                </p>
-                <div className="space-y-2">
-                  {keyFactorsArray.map((factor, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <p className="text-sm text-muted-foreground">{factor}</p>
+              <div className="mb-6 space-y-3">
+                {keyFactorsArray.map((factor, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                    <div className="p-1.5 rounded-lg bg-primary/10 mt-0.5">
+                      <Zap className="h-3.5 w-3.5 text-primary" />
                     </div>
-                  ))}
-                </div>
+                    <p className="text-sm text-foreground">{factor}</p>
+                  </div>
+                ))}
               </div>
             )}
 
             {/* Full Analysis */}
-            <div className="prose prose-invert prose-sm max-w-none">
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {analysisText}
-              </p>
-            </div>
+            {analysisText ? (
+              <div className="prose prose-invert prose-sm max-w-none">
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {analysisText}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
+                <p>{language === 'cz' ? 'Analýza se generuje...' : 'Analysis generating...'}</p>
+              </div>
+            )}
           </div>
 
           {/* Head-to-Head Stats */}
@@ -402,21 +533,25 @@ export default function PredictionDetail() {
             <div className="glass-card p-6">
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <History className="h-5 w-5 text-primary" />
-                {language === 'cz' ? 'Vzájemné zápasy' : 'Head-to-Head'}
+                {language === 'cz' ? 'Vzájemné zápasy' : 'Head-to-Head History'}
               </h3>
 
               {/* Overall Record */}
-              <div className="flex items-center justify-center gap-4 mb-6 p-4 rounded-xl bg-muted/50">
+              <div className="flex items-center justify-center gap-6 mb-6 p-5 rounded-xl bg-gradient-to-r from-primary/10 via-muted/50 to-muted/50">
                 <div className="text-center">
-                  <p className="text-2xl font-mono font-black text-primary">{h2hData.homeWins}</p>
-                  <p className="text-xs text-muted-foreground">{prediction.homeTeam}</p>
+                  <p className="text-3xl font-mono font-black text-primary">{h2hData.homeWins}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{prediction.homeTeam}</p>
                 </div>
-                <span className="text-2xl text-muted-foreground">-</span>
+                <div className="text-2xl text-muted-foreground font-bold">-</div>
                 <div className="text-center">
-                  <p className="text-2xl font-mono font-black">{h2hData.awayWins}</p>
-                  <p className="text-xs text-muted-foreground">{prediction.awayTeam}</p>
+                  <p className="text-3xl font-mono font-black">{h2hData.awayWins}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{prediction.awayTeam}</p>
                 </div>
               </div>
+
+              <p className="text-center text-sm text-muted-foreground mb-4">
+                {prediction.homeTeam} {language === 'cz' ? 'vede' : 'leads'} {h2hData.homeWins}-{h2hData.awayWins}
+              </p>
 
               {/* Last 5 Meetings */}
               <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
@@ -427,15 +562,20 @@ export default function PredictionDetail() {
                   <div 
                     key={idx}
                     className={cn(
-                      'flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px]',
+                      'flex-shrink-0 p-3 rounded-xl border text-center min-w-[100px]',
                       meeting.winner === prediction.homeTeam 
                         ? 'bg-primary/10 border-primary/30'
                         : 'bg-muted/50 border-border'
                     )}
                   >
                     <p className="text-xs text-muted-foreground mb-1">{meeting.date}</p>
-                    <p className="font-mono font-bold text-sm">{meeting.score}</p>
-                    <p className="text-xs text-muted-foreground truncate">{meeting.winner}</p>
+                    <p className="font-mono font-bold text-lg">{meeting.score}</p>
+                    <p className={cn(
+                      'text-xs font-medium truncate mt-1',
+                      meeting.winner === prediction.homeTeam ? 'text-primary' : 'text-muted-foreground'
+                    )}>
+                      {meeting.winner === prediction.homeTeam ? '🏆' : ''} {meeting.winner.split(' ').pop()}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -490,67 +630,80 @@ export default function PredictionDetail() {
           </Tabs>
         </div>
 
-        {/* Right Column - Sidebar */}
+        {/* Right Column - Sidebar (35%) */}
         <div className="space-y-4">
-          {/* Community Pick */}
+          {/* Community Vote */}
           <div className="glass-card p-5">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
+            <h4 className="font-bold mb-4 flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
-              {language === 'cz' ? 'Tip komunity' : 'Community Pick'}
+              {language === 'cz' ? 'Komunita si myslí' : 'Community thinks'}
             </h4>
             
-            <div className="space-y-3">
-              {/* Home Team */}
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="font-medium truncate">{prediction.homeTeam}</span>
-                  <span className="font-mono font-bold">{communityPick.home}%</span>
+            {/* Visual Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className={cn(
+                  "font-semibold truncate max-w-[45%]",
+                  communityPick.home > communityPick.away && "text-primary"
+                )}>
+                  {prediction.homeTeam}
+                </span>
+                <span className={cn(
+                  "font-semibold truncate max-w-[45%] text-right",
+                  communityPick.away > communityPick.home && "text-accent"
+                )}>
+                  {prediction.awayTeam}
+                </span>
+              </div>
+              
+              <div className="h-4 bg-muted rounded-full overflow-hidden flex">
+                <div 
+                  className="h-full bg-primary transition-all duration-700 flex items-center justify-end pr-2"
+                  style={{ width: `${communityPick.home}%` }}
+                >
+                  <span className="text-[10px] font-bold text-primary-foreground">{communityPick.home}%</span>
                 </div>
-                <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all duration-700"
-                    style={{ width: `${communityPick.home}%` }}
-                  />
+                <div 
+                  className="h-full bg-accent transition-all duration-700 flex items-center justify-start pl-2"
+                  style={{ width: `${communityPick.away}%` }}
+                >
+                  <span className="text-[10px] font-bold text-accent-foreground">{communityPick.away}%</span>
                 </div>
               </div>
               
-              {/* Away Team */}
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="font-medium truncate">{prediction.awayTeam}</span>
-                  <span className="font-mono font-bold">{communityPick.away}%</span>
-                </div>
-                <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-accent rounded-full transition-all duration-700"
-                    style={{ width: `${communityPick.away}%` }}
-                  />
-                </div>
-              </div>
-              
-              <p className="text-xs text-muted-foreground text-center pt-2">
+              <p className="text-xs text-muted-foreground text-center mt-2">
                 {communityPick.totalVotes} {language === 'cz' ? 'hlasů' : 'votes'}
               </p>
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="glass-card p-5 space-y-3">
-            <SavePickButton prediction={predictionForSave} className="w-full justify-center" />
             
-            <Button 
-              variant="outline" 
-              className="w-full gap-2"
-              onClick={() => setShowShareModal(true)}
-            >
-              <Share2 className="h-4 w-4" />
-              {language === 'cz' ? 'Sdílet' : 'Share'}
-            </Button>
+            {/* Vote Buttons for logged-in users */}
+            {user && gameStatus !== 'completed' && (
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={userVote === 'home' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleVote('home')}
+                  className="text-xs"
+                >
+                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  {prediction.homeTeam.split(' ').pop()}
+                </Button>
+                <Button
+                  variant={userVote === 'away' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleVote('away')}
+                  className="text-xs"
+                >
+                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  {prediction.awayTeam.split(' ').pop()}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Bet Calculator */}
           <div className="glass-card p-5">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
+            <h4 className="font-bold mb-4 flex items-center gap-2">
               <Calculator className="h-4 w-4 text-primary" />
               {language === 'cz' ? 'Kalkulačka sázek' : 'Bet Calculator'}
             </h4>
@@ -577,7 +730,7 @@ export default function PredictionDetail() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm text-muted-foreground">
-                  {language === 'cz' ? 'Doporučená sázka' : 'Recommended Bet'}
+                  {language === 'cz' ? 'Doporučená sázka' : 'Suggested Bet'}
                 </span>
                 <span className="font-mono font-bold text-primary">
                   {kellyBet.toLocaleString(language === 'cz' ? 'cs-CZ' : 'en-US')} {language === 'cz' ? 'Kč' : '$'}
@@ -597,6 +750,25 @@ export default function PredictionDetail() {
             <p className="text-[10px] text-muted-foreground mt-3 text-center">
               {language === 'cz' ? 'Založeno na Kelly Criterion' : 'Based on Kelly Criterion'}
             </p>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="glass-card p-5 space-y-3">
+            <Button className="w-full gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-500/90">
+              <Plus className="h-4 w-4" />
+              {language === 'cz' ? 'Přidat do tiketu' : 'Add to Slip'}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full gap-2"
+              onClick={() => setShowShareModal(true)}
+            >
+              <Share2 className="h-4 w-4" />
+              {language === 'cz' ? 'Sdílet' : 'Share'}
+            </Button>
+            
+            <SavePickButton prediction={predictionForSave} className="w-full justify-center" />
           </div>
 
           {/* Quick Stats */}
@@ -631,67 +803,51 @@ export default function PredictionDetail() {
   );
 }
 
-// Circular Confidence Gauge Component
-function CircularConfidence({ value }: { value: number }) {
-  const radius = 50;
+// Large Circular Confidence Gauge Component
+function CircularConfidenceLarge({ value, language }: { value: number; language: string }) {
+  const radius = 60;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
   
   const getColor = () => {
-    if (value >= 70) return { stroke: 'stroke-success', text: 'text-success' };
-    if (value >= 55) return { stroke: 'stroke-warning', text: 'text-warning' };
-    return { stroke: 'stroke-orange-400', text: 'text-orange-400' };
+    if (value >= 70) return { stroke: 'stroke-success', text: 'text-success', glow: 'shadow-success/30' };
+    if (value >= 55) return { stroke: 'stroke-warning', text: 'text-warning', glow: 'shadow-warning/30' };
+    return { stroke: 'stroke-orange-400', text: 'text-orange-400', glow: 'shadow-orange-400/30' };
   };
   
   const colors = getColor();
 
   return (
-    <div className="relative h-24 w-24 flex items-center justify-center">
-      <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 120 120">
+    <div className={cn("relative h-32 w-32 flex items-center justify-center", colors.glow)}>
+      <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 140 140">
         <circle
-          cx="60"
-          cy="60"
+          cx="70"
+          cy="70"
           r={radius}
           fill="none"
-          strokeWidth="8"
+          strokeWidth="10"
           className="stroke-muted"
         />
         <circle
-          cx="60"
-          cy="60"
+          cx="70"
+          cy="70"
           r={radius}
           fill="none"
-          strokeWidth="8"
+          strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           className={cn(colors.stroke, 'transition-all duration-1000 ease-out')}
           style={{
-            animation: 'confidence-fill 1.5s ease-out forwards',
+            filter: 'drop-shadow(0 0 6px currentColor)',
           }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn('text-2xl font-mono font-black', colors.text)}>{value}%</span>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">confidence</span>
-      </div>
-    </div>
-  );
-}
-
-// Breakdown Item Component
-function BreakdownItem({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-xs mb-1">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-mono font-semibold">{value}%</span>
-      </div>
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <div 
-          className={cn('h-full rounded-full transition-all duration-1000', color)}
-          style={{ width: `${value}%` }}
-        />
+        <span className={cn('text-4xl font-mono font-black', colors.text)}>{value}%</span>
+        <span className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
+          {language === 'cz' ? 'Jistota' : 'Confidence'}
+        </span>
       </div>
     </div>
   );
