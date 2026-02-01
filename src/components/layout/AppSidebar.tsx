@@ -10,18 +10,18 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Flame,
-  Crown
+  Flame
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { useWinStreak } from '@/hooks/useWinStreak';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUserTier } from '@/hooks/useUserTier';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { isAdminUser, getDisplayTier } from '@/lib/adminAccess';
+import { Separator } from '@/components/ui/separator';
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -29,7 +29,7 @@ interface AppSidebarProps {
   onMobileClose?: () => void;
 }
 
-// Slimmed down to 5 essential items only
+// Main navigation - 5 essential items only
 const mainNavItems = [
   { href: '/dashboard', label: 'Dashboard', labelCz: 'Přehled', icon: LayoutDashboard },
   { href: '/predictions', label: 'Predictions', labelCz: 'Predikce', icon: Crosshair },
@@ -44,10 +44,7 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
   const { isAdmin } = useAdminCheck();
   const { winStreak } = useWinStreak();
   const { language } = useLanguage();
-
-  // Check if user is admin for display purposes
-  const isUserAdmin = isAdminUser(user?.email);
-  const displayTier = getDisplayTier(user?.email, profile?.subscription_tier);
+  const userTier = useUserTier();
 
   const handleNavClick = () => {
     onMobileClose?.();
@@ -56,14 +53,6 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
   const handleSignOut = async () => {
     await signOut();
     onMobileClose?.();
-  };
-
-  const tierColors: Record<string, string> = {
-    free: 'text-muted-foreground',
-    basic: 'text-blue-400',
-    pro: 'text-purple-400',
-    elite: 'text-yellow-400',
-    admin: 'text-yellow-300',
   };
 
   const NavItem = ({ href, label, labelCz, icon: Icon, badge }: {
@@ -120,13 +109,25 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
   return (
     <aside
       className={cn(
-        'flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-300',
+        'relative flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 overflow-visible',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
+      {/* Circular collapse button - attached to right edge */}
+      <button
+        onClick={() => onCollapse(!collapsed)}
+        className="absolute -right-4 top-1/2 -translate-y-1/2 z-50 w-8 h-8 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center hover:bg-gray-600 transition-colors shadow-lg"
+      >
+        {collapsed ? (
+          <ChevronRight className="h-4 w-4 text-white" />
+        ) : (
+          <ChevronLeft className="h-4 w-4 text-white" />
+        )}
+      </button>
+
       {/* Logo */}
       <div className={cn(
-        'flex items-center h-16 px-3 border-b border-sidebar-border shrink-0',
+        'flex items-center h-14 px-3 shrink-0',
         collapsed ? 'justify-center' : 'gap-3'
       )}>
         <Link to="/dashboard" onClick={handleNavClick} className="flex items-center gap-3">
@@ -139,7 +140,50 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
         </Link>
       </div>
 
-      {/* Main Navigation - Clean icon list */}
+      {/* Profile section - AT TOP */}
+      <div className={cn(
+        'px-3 py-3 border-b border-sidebar-border shrink-0',
+        collapsed && 'px-2 py-2'
+      )}>
+        <div className={cn(
+          'flex items-center gap-3 rounded-lg p-2 bg-muted/30',
+          collapsed && 'justify-center p-1.5'
+        )}>
+          <Avatar className={cn(
+            "border-2 shrink-0",
+            userTier.isAdmin ? "border-yellow-500/50" : "border-primary/30",
+            collapsed ? "h-8 w-8" : "h-10 w-10"
+          )}>
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+              {profile?.display_name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium truncate">
+                  {profile?.display_name || user?.email?.split('@')[0]}
+                </p>
+                <span className={cn(
+                  'text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shrink-0',
+                  userTier.bgColor,
+                  userTier.color,
+                  userTier.borderColor,
+                  'border'
+                )}>
+                  {userTier.icon} {language === 'cz' ? userTier.labelCz : userTier.label}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {user?.email}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
         {mainNavItems.map((item) => (
           <NavItem
@@ -160,7 +204,7 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
         ))}
       </nav>
 
-      {/* Bottom Section: Settings + Admin + User */}
+      {/* Bottom Section: Settings + Admin + Logout */}
       <div className="shrink-0 border-t border-sidebar-border p-2 space-y-1">
         {/* Settings */}
         <NavItem
@@ -180,32 +224,7 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
           />
         )}
 
-        {/* User Info - Compact */}
-        <div className={cn(
-          'flex items-center gap-2 rounded-lg p-2 mt-2 bg-muted/30',
-          collapsed && 'justify-center p-1.5'
-        )}>
-          <Avatar className="h-8 w-8 border-2 border-primary/30">
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
-              {profile?.display_name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">
-                {profile?.display_name || user?.email?.split('@')[0]}
-              </p>
-              <span className={cn(
-                'text-[10px] font-bold uppercase flex items-center gap-0.5',
-                tierColors[displayTier]
-              )}>
-                {isUserAdmin && <Crown className="h-2.5 w-2.5" />}
-                {isUserAdmin ? '👑 ADMIN' : displayTier.toUpperCase()}
-              </span>
-            </div>
-          )}
-        </div>
+        <Separator className="my-2" />
 
         {/* Logout */}
         {collapsed ? (
@@ -235,26 +254,6 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
             {language === 'cz' ? 'Odhlásit' : 'Logout'}
           </Button>
         )}
-
-        {/* Collapse Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onCollapse(!collapsed)}
-          className={cn(
-            'w-full text-muted-foreground hover:text-foreground text-xs',
-            collapsed ? 'justify-center p-2' : 'justify-start'
-          )}
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <>
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              {language === 'cz' ? 'Sbalit' : 'Collapse'}
-            </>
-          )}
-        </Button>
       </div>
     </aside>
   );

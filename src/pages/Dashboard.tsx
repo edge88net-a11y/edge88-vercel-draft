@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { 
   Target, Activity, Loader2, Flame, TrendingUp, TrendingDown,
-  ChevronRight, CheckCircle, XCircle, BarChart3, Clock, Crown
+  ChevronRight, CheckCircle, XCircle, BarChart3, Clock
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ComposedChart, Line } from 'recharts';
@@ -13,11 +13,11 @@ import { BettingSlip } from '@/components/dashboard/BettingSlip';
 import { HotPicksCarousel } from '@/components/dashboard/HotPicksCarousel';
 import { useActivePredictions, useStats, DailyAccuracy } from '@/hooks/usePredictions';
 import { useWinStreak } from '@/hooks/useWinStreak';
+import { useUserTier } from '@/hooks/useUserTier';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { getSportEmoji } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { formatCurrency } from '@/lib/oddsUtils';
-import { isAdminUser } from '@/lib/adminAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +41,7 @@ function StatCard({
   pulseAnimation,
   animationDelay = 0,
   todayBadge,
+  noDataText,
 }: {
   icon: React.ElementType;
   iconColor: string;
@@ -57,15 +58,25 @@ function StatCard({
   pulseAnimation?: boolean;
   animationDelay?: number;
   todayBadge?: string;
+  noDataText?: string;
 }) {
   const animatedValue = useAnimatedCounter(value, { delay: animationDelay, duration: 1200 });
   
   return (
     <div className={cn(
-      "glass-card p-4 md:p-5 relative overflow-hidden transition-all group",
+      "glass-card p-4 md:p-5 relative overflow-hidden transition-all duration-300 group hover:scale-[1.02]",
       highlight && "border-orange-500/30",
       glowColor && `shadow-lg ${glowColor}`
     )}>
+      {/* Gradient background */}
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-br opacity-50 transition-opacity group-hover:opacity-70",
+        highlight ? "from-orange-500/5 to-transparent" :
+        glowColor?.includes('success') ? "from-success/5 to-transparent" :
+        glowColor?.includes('primary') ? "from-primary/5 to-transparent" :
+        "from-muted/30 to-transparent"
+      )} />
+      
       {/* Glow effect for highlight cards */}
       {highlight && (
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-orange-500/20 to-transparent rounded-full blur-2xl" />
@@ -104,11 +115,13 @@ function StatCard({
               highlight && "text-orange-400"
             )}>
               {displayValue || (
-                <>
-                  {prefix}
-                  {typeof value === 'number' && value !== 0 ? animatedValue.toLocaleString() : value === 0 ? '—' : value}
-                  {suffix}
-                </>
+                noDataText && value === 0 ? noDataText : (
+                  <>
+                    {prefix}
+                    {typeof value === 'number' && value !== 0 ? animatedValue.toLocaleString() : value === 0 ? '—' : value}
+                    {suffix}
+                  </>
+                )
               )}
             </span>
             {highlight && value >= 5 && (
@@ -134,9 +147,9 @@ const Dashboard = () => {
   const { data: predictions, isLoading: predictionsLoading, isError, refetch, isMaintenanceMode } = useActivePredictions();
   const { data: stats, isLoading: statsLoading, isMaintenanceMode: statsMaintenanceMode } = useStats();
   const { winStreak } = useWinStreak();
+  const userTier = useUserTier();
 
   const locale = language === 'cz' ? 'cz' : 'en';
-  const isAdmin = isAdminUser(user?.email);
 
   // Handle checkout success
   useEffect(() => {
@@ -228,11 +241,21 @@ const Dashboard = () => {
     return activePredictions.filter(p => new Date(p.gameTime).toDateString() === today).length;
   }, [activePredictions]);
 
+  // Accuracy calculation with proper fallback
+  const accuracyValue = useMemo(() => {
+    if (stats?.accuracy && stats.accuracy > 0) return stats.accuracy;
+    if (completedPredictions.length > 0) {
+      const wins = completedPredictions.filter(p => p.result === 'win').length;
+      return Math.round((wins / completedPredictions.length) * 100);
+    }
+    return 0;
+  }, [stats?.accuracy, completedPredictions]);
+
   // Accuracy trend
   const accuracyTrend = useMemo(() => {
-    if (!stats?.accuracy) return 0;
+    if (!accuracyValue || accuracyValue === 0) return undefined;
     return 3.2; // Mock trend - would come from comparing to last week
-  }, [stats]);
+  }, [accuracyValue]);
 
   // Get time-based greeting
   const greeting = useMemo(() => {
@@ -247,21 +270,11 @@ const Dashboard = () => {
     return 'Good evening';
   }, [language]);
 
-  // Get user tier badge
-  const tierBadge = useMemo(() => {
-    if (isAdmin) return { label: '👑 ADMIN', className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
-    const tier = profile?.subscription_tier?.toLowerCase();
-    if (tier === 'elite') return { label: 'ELITE', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' };
-    if (tier === 'pro') return { label: 'PRO', className: 'bg-primary/20 text-primary border-primary/30' };
-    if (tier === 'starter') return { label: 'STARTER', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
-    return { label: language === 'cz' ? 'Vybrat plán' : 'Choose Plan', className: 'bg-muted text-muted-foreground border-border', isLink: true };
-  }, [isAdmin, profile?.subscription_tier, language]);
-
   // Chart data
   const chartData = useMemo(() => {
     const days = chartPeriod === '7D' ? 7 : chartPeriod === '30D' ? 30 : 90;
     const data: DailyAccuracy[] = [];
-    const baseAccuracy = stats?.accuracy || 73;
+    const baseAccuracy = accuracyValue || 73;
     
     for (let i = days - 1; i >= 0; i--) {
       const date = subDays(new Date(), i);
@@ -282,7 +295,7 @@ const Dashboard = () => {
       const movingAvg = window.reduce((sum, w) => sum + w.accuracy, 0) / window.length;
       return { ...d, movingAvg: Math.round(movingAvg * 10) / 10 };
     });
-  }, [chartPeriod, stats?.accuracy]);
+  }, [chartPeriod, accuracyValue]);
 
   // Sport performance
   const sportPerformance = useMemo(() => {
@@ -352,25 +365,29 @@ const Dashboard = () => {
         />
       ) : (
         <>
-          {/* Welcome Bar - Slim single line */}
-          <div className="glass-card py-3 px-4 flex items-center gap-3 flex-wrap">
+          {/* Welcome Bar - Slim single line, max 48px height */}
+          <div className="h-12 glass-card px-4 flex items-center gap-3 border-b border-border/50 bg-gray-800/50">
             {/* Tier Badge */}
-            {tierBadge.isLink ? (
+            {userTier.tier === 'none' ? (
               <Link 
                 to="/pricing"
                 className={cn(
-                  "text-xs font-bold px-2.5 py-1 rounded-full border transition-colors hover:bg-muted",
-                  tierBadge.className
+                  "text-xs font-bold px-2.5 py-1 rounded-full border transition-colors hover:bg-muted flex items-center gap-1",
+                  userTier.bgColor,
+                  userTier.color,
+                  userTier.borderColor
                 )}
               >
-                {tierBadge.label} →
+                {userTier.icon} {language === 'cz' ? userTier.labelCz : userTier.label}
               </Link>
             ) : (
               <span className={cn(
-                "text-xs font-bold px-2.5 py-1 rounded-full border",
-                tierBadge.className
+                "text-xs font-bold px-2.5 py-1 rounded-full border flex items-center gap-1",
+                userTier.bgColor,
+                userTier.color,
+                userTier.borderColor
               )}>
-                {tierBadge.label}
+                {userTier.icon} {language === 'cz' ? userTier.labelCz : userTier.label}
               </span>
             )}
             
@@ -384,7 +401,8 @@ const Dashboard = () => {
               </span>
               {currentStreak > 0 && (
                 <span className="flex items-center gap-1">
-                  🔥 {language === 'cz' ? 'Série' : 'Streak'}: <strong className="text-success">{currentStreak}</strong> {language === 'cz' ? 'výher' : 'wins'}
+                  <Flame className="h-3 w-3 text-orange-400" />
+                  {language === 'cz' ? 'Série' : 'Streak'}: <strong className="text-success">{currentStreak}</strong> {language === 'cz' ? 'výher' : 'wins'}
                 </span>
               )}
               <span className="flex items-center gap-1">
@@ -399,6 +417,7 @@ const Dashboard = () => {
             <StatCard
               icon={Target}
               iconColor="bg-primary/10 text-primary"
+              glowColor="shadow-primary/10"
               label={language === 'cz' ? 'Celkem predikcí' : 'Total Predictions'}
               value={deduplicatedPredictions.length}
               todayBadge={todayCount > 0 ? `+${todayCount} ${language === 'cz' ? 'dnes' : 'today'}` : undefined}
@@ -408,13 +427,20 @@ const Dashboard = () => {
             
             <StatCard
               icon={Activity}
-              iconColor="bg-success/10 text-success"
-              glowColor="shadow-success/10"
+              iconColor={cn(
+                "bg-opacity-10",
+                accuracyValue >= 70 ? "bg-success/10 text-success" :
+                accuracyValue >= 50 ? "bg-warning/10 text-warning" :
+                accuracyValue > 0 ? "bg-destructive/10 text-destructive" :
+                "bg-muted text-muted-foreground"
+              )}
+              glowColor={accuracyValue >= 70 ? "shadow-success/10" : accuracyValue >= 50 ? "shadow-warning/10" : undefined}
               label={language === 'cz' ? 'Přesnost' : 'Accuracy Rate'}
-              value={stats?.accuracy || 73}
+              value={accuracyValue}
               suffix="%"
+              noDataText="—"
               trend={accuracyTrend}
-              trendLabel={language === 'cz' ? 'vs minulý týden' : 'vs last week'}
+              trendLabel={accuracyValue > 0 ? (language === 'cz' ? 'vs minulý týden' : 'vs last week') : undefined}
               isLoading={statsLoading}
               animationDelay={100}
             />
@@ -422,6 +448,7 @@ const Dashboard = () => {
             <StatCard
               icon={Activity}
               iconColor="bg-primary/10 text-primary"
+              glowColor="shadow-primary/10"
               label={language === 'cz' ? 'Aktivní tipy' : 'Active Picks'}
               value={activePredictions.length}
               pulseAnimation={activePredictions.length > 0}

@@ -45,5 +45,5 @@ export function canAccessTier(
  */
 export function getDisplayTier(email: string | undefined | null, tier: string | undefined | null): string {
   if (isAdminUser(email)) return 'admin';
-  return tier?.toLowerCase() || 'free';
+  return tier?.toLowerCase() || 'none';
 }
