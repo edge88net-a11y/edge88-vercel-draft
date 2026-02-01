@@ -31,6 +31,7 @@ import PredictionDetail from "./pages/PredictionDetail";
 import SavedPicks from "./pages/SavedPicks";
 import Settings from "./pages/Settings";
 import Referral from "./pages/Referral";
+import Community from "./pages/Community";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 
@@ -74,6 +75,7 @@ const App = () => (
                 <Route path="/predictions" element={<PredictionsPage />} />
                 <Route path="/predictions/:id" element={<PredictionDetail />} />
                 <Route path="/results" element={<ResultsPage />} />
+                <Route path="/community" element={<Community />} />
                 <Route path="/saved-picks" element={<SavedPicks />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/referral" element={<Referral />} />
