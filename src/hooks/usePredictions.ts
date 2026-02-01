@@ -5,22 +5,26 @@ import { useEffect, useRef } from 'react';
 
 // Direct API - no proxy needed
 const API_BASE_URL = 'https://api.edge88.net/api/v1';
-const FETCH_TIMEOUT_MS = 10000; // 10 second timeout
 
-// Helper for fetch with timeout
-async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
+// Simple fetch with retry - NO AbortController, NO timeout
+async function fetchWithRetry(url: string, retries = 3): Promise<any> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`[API] Attempt ${i + 1}/${retries}: ${url}`);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      console.log(`[API] Success: ${Array.isArray(data) ? data.length : 'object'} items`);
+      return data;
+    } catch (error) {
+      console.error(`[API] Attempt ${i + 1} failed:`, error);
+      if (i < retries - 1) {
+        console.log(`[API] Waiting 5s before retry...`);
+        await new Promise(r => setTimeout(r, 5000));
+      }
+    }
   }
+  throw new Error('All retries failed');
 }
 
 // Bookmaker odds interface
@@ -28,6 +32,10 @@ export interface BookmakerOdds {
   bookmaker: string;
   odds: string;
   line?: string;
+  // Additional fields for detailed view
+  homeOdds?: number | string;
+  awayOdds?: number | string;
+  spreadHome?: number | string;
 }
 
 // Key factors interface
@@ -62,6 +70,10 @@ export interface ConfidenceBreakdown {
   sentiment?: number;
   injuries?: number;
   weather?: number;
+  // Aliases for backwards compatibility
+  fromResearch?: number;
+  fromOdds?: number;
+  fromHistorical?: number;
 }
 
 // Types for external API with enriched data
@@ -82,12 +94,17 @@ export interface APIPrediction {
   expectedValue: number | string;
   reasoning: string;
   result?: 'win' | 'loss' | 'push' | 'pending';
-  // Enriched data fields
   bookmakerOdds?: BookmakerOdds[];
   keyFactors?: KeyFactors;
   confidenceBreakdown?: ConfidenceBreakdown;
   modelVersion?: string;
   dataSources?: number;
+  // Additional fields for detailed view (used by PredictionDetail.tsx)
+  sourcesAnalyzed?: number;
+  injuries?: { home?: { player: string; status: string; impact: string }[]; away?: { player: string; status: string; impact: string }[] };
+  fullReasoning?: string;
+  venue?: string;
+  keyFactorsList?: string[];
 }
 
 export interface DailyAccuracy {
@@ -216,15 +233,14 @@ function extractPredictionsArray(data: unknown): APIPrediction[] {
   }
   
   if (rawArray.length === 0) {
-    console.warn('[usePredictions] Could not extract predictions array from response:', data);
+    console.warn('[API] Could not extract predictions array from response:', data);
     return [];
   }
   
-  // Transform each prediction to match APIPrediction interface
   return rawArray.map((item) => transformPrediction(item as Record<string, unknown>));
 }
 
-// Fetch active predictions from API with detailed data - DIRECT API ONLY
+// Fetch active predictions from API with detailed data
 export function useActivePredictions() {
   const { toast } = useToast();
   const previousCount = useRef<number>(0);
@@ -233,44 +249,31 @@ export function useActivePredictions() {
   const query = useQuery({
     queryKey: ['predictions', 'active', 'detailed'],
     queryFn: async (): Promise<APIPrediction[]> => {
-      console.log('[usePredictions] Fetching predictions from direct API...');
+      const url = `${API_BASE_URL}/predictions/active?include_details=true`;
       
       try {
-        const response = await fetchWithTimeout(
-          `${API_BASE_URL}/predictions/active?include_details=true&limit=50`
-        );
+        const data = await fetchWithRetry(url);
         
-        if (response.status === 503) {
-          throw new MaintenanceError('Prediction engine is updating');
-        }
-        
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-        
-        const data = await response.json();
         const predictions = extractPredictionsArray(data);
+        console.log(`[API] Extracted ${predictions.length} predictions`);
         
         if (predictions.length > 0) {
-          console.log(`[usePredictions] Got ${predictions.length} predictions`);
           toastShownRef.current = false;
           return predictions;
         }
         
-        // Empty response - maintenance mode
         throw new MaintenanceError('No predictions available');
       } catch (error) {
         if (error instanceof MaintenanceError) {
           throw error;
         }
         
-        // Network error or timeout
-        console.warn('[usePredictions] API error:', error);
+        console.error('[API] All retries exhausted:', error);
         
         if (!toastShownRef.current) {
           toast({
             title: "⚙️ Connecting to prediction engine...",
-            description: "Our AI is crunching the latest data. Auto-retrying...",
+            description: "Our AI is crunching the latest data. Will retry shortly.",
             variant: "default",
           });
           toastShownRef.current = true;
@@ -279,13 +282,13 @@ export function useActivePredictions() {
         throw new MaintenanceError('Prediction engine is currently processing data');
       }
     },
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: 60 * 1000,
+    retry: false,
   });
 
-  // Toast notification for new predictions
   useEffect(() => {
     if (query.data && query.data.length > 0) {
       const activePredictions = query.data.filter(p => p.result === 'pending');
@@ -313,11 +316,9 @@ function extractStats(data: unknown): APIStats | null {
   if (!data || typeof data !== 'object') return null;
   
   const obj = data as Record<string, unknown>;
-  // Handle nested data structures
   const statsData = (obj.stats || obj.data || obj) as Record<string, unknown>;
   
   if (typeof statsData === 'object' && statsData !== null) {
-    // Map snake_case to camelCase
     return {
       totalPredictions: Number(statsData.totalPredictions || statsData.total_predictions || 0),
       accuracy: Number(statsData.accuracy || 0),
@@ -338,25 +339,15 @@ function extractStats(data: unknown): APIStats | null {
   return null;
 }
 
-// Fetch stats from API directly - NO PROXY
+// Fetch stats from API directly
 export function useStats() {
   const query = useQuery({
     queryKey: ['predictions', 'stats'],
     queryFn: async (): Promise<APIStats> => {
-      console.log('[useStats] Fetching stats from direct API...');
+      console.log('[API] Fetching stats...');
       
       try {
-        const response = await fetchWithTimeout(`${API_BASE_URL}/predictions/stats`);
-        
-        if (response.status === 503) {
-          throw new MaintenanceError('Stats engine is updating');
-        }
-        
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/stats`);
         const stats = extractStats(data);
         
         if (stats) {
@@ -368,7 +359,7 @@ export function useStats() {
         if (error instanceof MaintenanceError) {
           throw error;
         }
-        console.warn('[useStats] API error:', error);
+        console.warn('[API] Stats error:', error);
         throw new MaintenanceError('Stats engine is currently processing data');
       }
     },
@@ -442,33 +433,107 @@ export function useAccuracyStats() {
   });
 }
 
-// Fetch sports from Supabase
-export function useSports() {
+// Fetch single prediction by ID
+export function usePrediction(id: string) {
   return useQuery({
-    queryKey: ['sports'],
+    queryKey: ['prediction', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('sports')
-        .select('*')
-        .eq('active', true)
-        .order('name');
+        .from('predictions')
+        .select(`
+          *,
+          game:games(*),
+          game_stats(*),
+          numerology:numerology_analysis(*),
+          player_stats(*)
+        `)
+        .eq('id', id)
+        .single();
 
       if (error) throw error;
       return data;
     },
+    enabled: !!id,
   });
 }
 
-// Sport-specific stats interface
-export interface SportSpecificStatsData {
-  type: 'hockey' | 'soccer' | 'basketball' | 'ufc' | 'default';
-  stats: Record<string, { value: string | number; confidence: number }>;
+// Fetch detailed game data by prediction ID
+export function useGameDetails(predictionId: string) {
+  return useQuery({
+    queryKey: ['game-details', predictionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('game_predictions_detailed')
+        .select('*')
+        .eq('prediction_id', predictionId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!predictionId,
+  });
 }
 
-// Numerology data interface
+// Fetch numerology analysis for a prediction
+export function useNumerologyAnalysis(predictionId: string) {
+  return useQuery({
+    queryKey: ['numerology', predictionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('numerology_analysis')
+        .select('*')
+        .eq('prediction_id', predictionId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!predictionId,
+  });
+}
+
+// Fetch player stats for a prediction
+export function usePlayerStats(predictionId: string) {
+  return useQuery({
+    queryKey: ['player-stats', predictionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('player_stats')
+        .select('*')
+        .eq('prediction_id', predictionId);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!predictionId,
+  });
+}
+
+// Fetch game stats for a prediction
+export function useGameStats(predictionId: string) {
+  return useQuery({
+    queryKey: ['game-stats', predictionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('game_stats')
+        .select('*')
+        .eq('prediction_id', predictionId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!predictionId,
+  });
+}
+
+// ============ Type exports for components ============
+
+// Numerology data type
 export interface NumerologyData {
-  numerologyScore: number;
   favoredTeam: string;
+  numerologyScore: number;
   dateNumber: number;
   dateMeaning: string;
   gameZodiac: {
@@ -493,267 +558,78 @@ export interface NumerologyData {
   };
 }
 
-// Detailed analysis interface
-export interface DetailedAnalysis {
-  reasoning: string;
-  keyStats: { label: string; homeValue: string; awayValue: string }[];
-  formGuide: {
-    home: { opponent: string; result: 'W' | 'L' | 'D'; score: string; date: string }[];
-    away: { opponent: string; result: 'W' | 'L' | 'D'; score: string; date: string }[];
-  };
-  h2h: { date: string; homeTeam: string; awayTeam: string; homeScore: number; awayScore: number }[];
-  injuries: {
-    home: { player: string; status: string; impact: string }[];
-    away: { player: string; status: string; impact: string }[];
-  };
-  sharpMoney: {
-    direction: string;
-    lineMovement: string;
-    percentage: number;
-    analysis: string;
-  };
-  conditions: {
-    venue: string;
-    weather: string;
-    impact: string;
-    restDays: { home: number; away: number };
-  };
-  riskFactors: { risk: string; severity: 'low' | 'medium' | 'high' }[];
+// Sport specific stats data type
+export interface SportSpecificStatsData {
+  type: 'hockey' | 'soccer' | 'basketball' | 'ufc' | 'default';
+  stats: Record<string, { value: string | number; confidence: number }>;
 }
 
-// Full prediction detail from API
-export interface FullPredictionDetail {
-  id: string;
-  sport: string;
-  league?: string;
-  homeTeam: string;
-  awayTeam: string;
-  gameTime: string;
-  status: string;
-  venue?: string;
-  prediction: {
-    type: string;
-    pick: string;
-    line?: string;
-    odds: string;
-  };
-  confidence: number;
-  expectedValue: number;
-  reasoning: string;
-  fullReasoning?: string;
-  keyFactors?: string[];
-  injuries?: {
-    home: { player: string; status: string; impact: string }[];
-    away: { player: string; status: string; impact: string }[];
-  };
-  bookmakerOdds?: {
-    bookmaker: string;
-    homeOdds: number;
-    awayOdds: number;
-    spreadHome?: number;
-    total?: number;
-  }[];
-  confidenceBreakdown?: {
-    total: number;
-    fromResearch: number;
-    fromOdds: number;
-    fromHistorical: number;
-  };
-  modelVersion?: string;
-  sourcesAnalyzed?: number;
-  result?: 'win' | 'loss' | 'push' | 'pending';
-}
+// ============ Alias exports for backwards compatibility ============
 
-// Transform full API response for single prediction
-function transformFullPrediction(raw: Record<string, unknown>): FullPredictionDetail {
-  const gamesObj = raw.games as Record<string, unknown> | undefined;
-  const featuresObj = raw.features_used as Record<string, unknown> | undefined;
-  const breakdownObj = raw.confidence_breakdown as Record<string, unknown> | undefined;
-  
-  // Parse bookmaker odds
-  let bookmakerOdds: FullPredictionDetail['bookmakerOdds'];
-  const rawOdds = raw.bookmaker_odds || raw.bookmakerOdds;
-  if (Array.isArray(rawOdds)) {
-    bookmakerOdds = rawOdds.map((o: Record<string, unknown>) => ({
-      bookmaker: String(o.bookmaker || ''),
-      homeOdds: Number(o.home_odds || o.homeOdds || 0),
-      awayOdds: Number(o.away_odds || o.awayOdds || 0),
-      spreadHome: o.spread_home ? Number(o.spread_home) : undefined,
-      total: o.total ? Number(o.total) : undefined,
-    }));
-  }
-  
-  // Parse key factors from features_used
-  let keyFactors: string[] | undefined;
-  if (featuresObj && Array.isArray(featuresObj.key_factors)) {
-    keyFactors = featuresObj.key_factors as string[];
-  } else if (Array.isArray(raw.key_factors)) {
-    keyFactors = raw.key_factors as string[];
-  }
-  
-  // Parse injuries from features_used
-  let injuries: FullPredictionDetail['injuries'];
-  if (featuresObj?.injuries) {
-    injuries = featuresObj.injuries as FullPredictionDetail['injuries'];
-  } else if (raw.injuries) {
-    injuries = raw.injuries as FullPredictionDetail['injuries'];
-  }
-  
-  // Parse confidence breakdown
-  let confidenceBreakdown: FullPredictionDetail['confidenceBreakdown'];
-  if (breakdownObj) {
-    confidenceBreakdown = {
-      total: Number(breakdownObj.total || 0),
-      fromResearch: Number(breakdownObj.from_research || breakdownObj.fromResearch || 0),
-      fromOdds: Number(breakdownObj.from_odds || breakdownObj.fromOdds || 0),
-      fromHistorical: Number(breakdownObj.from_historical || breakdownObj.fromHistorical || 0),
-    };
-  }
-  
-  // Sources count
-  const sourcesAnalyzed = featuresObj?.sources_scanned 
-    ? Number(featuresObj.sources_scanned) 
-    : (raw.sources_analyzed ? Number(raw.sources_analyzed) : undefined);
-  
-  return {
-    id: String(raw.id || ''),
-    sport: String(raw.sport || gamesObj?.sport_id || ''),
-    league: String(raw.league || ''),
-    homeTeam: String(raw.home_team || gamesObj?.home_team || ''),
-    awayTeam: String(raw.away_team || gamesObj?.away_team || ''),
-    gameTime: String(raw.game_time || gamesObj?.commence_time || ''),
-    status: String(raw.status || gamesObj?.status || 'scheduled'),
-    venue: gamesObj?.venue ? String(gamesObj.venue) : undefined,
-    prediction: {
-      type: String(raw.prediction_type || 'h2h'),
-      pick: String(raw.predicted_winner || ''),
-      line: raw.predicted_spread ? String(raw.predicted_spread) : undefined,
-      odds: '-110',
-    },
-    confidence: Number(raw.confidence || 0),
-    expectedValue: Number(raw.expected_value || 0),
-    reasoning: String(raw.reasoning || raw.full_reasoning || ''),
-    fullReasoning: raw.full_reasoning ? String(raw.full_reasoning) : undefined,
-    keyFactors,
-    injuries,
-    bookmakerOdds,
-    confidenceBreakdown,
-    modelVersion: String(raw.model_version || 'Edge88'),
-    sourcesAnalyzed,
-    result: raw.is_correct === null ? 'pending' : raw.is_correct === true ? 'win' : 'loss',
-  };
-}
-
-// Fetch single prediction with full details from API
-export function useSinglePrediction(predictionId: string | undefined) {
+// Fetch single prediction by ID from API (returns APIPrediction format)
+export function useSinglePrediction(id: string | undefined) {
   return useQuery({
-    queryKey: ['prediction', 'full', predictionId],
-    queryFn: async (): Promise<FullPredictionDetail | null> => {
-      if (!predictionId) return null;
-      
-      console.log(`[useSinglePrediction] Fetching prediction: ${predictionId}`);
-      
+    queryKey: ['single-prediction', id],
+    queryFn: async (): Promise<APIPrediction | null> => {
+      if (!id) return null;
       try {
-        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}`);
-        console.log(`[useSinglePrediction] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) return null;
-          const errorText = await response.text();
-          console.error(`[useSinglePrediction] API error: ${errorText}`);
-          throw new Error(`API error: ${response.status}`);
+        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${id}`);
+        if (data && typeof data === 'object') {
+          return transformPrediction(data as Record<string, unknown>);
         }
-        
-        const data = await response.json();
-        console.log('[useSinglePrediction] Raw response:', data);
-        
-        return transformFullPrediction(data);
-      } catch (error) {
-        console.error('[useSinglePrediction] Failed:', error);
-        throw error;
-      }
-    },
-    enabled: !!predictionId,
-    staleTime: 30 * 1000,
-    retry: 2,
-    retryDelay: 1000,
-  });
-}
-
-// Legacy hook - keep for backward compatibility
-export function usePredictionDetail(predictionId: string | undefined) {
-  return useQuery({
-    queryKey: ['prediction', 'detail', predictionId],
-    queryFn: async (): Promise<DetailedAnalysis | null> => {
-      if (!predictionId) return null;
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}`);
-        if (!response.ok) {
-          if (response.status === 404) return null;
-          throw new Error(`API error: ${response.status}`);
-        }
-        const data = await response.json();
-        return data.analysis || data.details || null;
-      } catch (error) {
-        console.warn('Prediction detail API not available:', error);
+        return null;
+      } catch {
         return null;
       }
     },
-    enabled: !!predictionId,
-    staleTime: 60 * 1000,
-    retry: false,
+    enabled: !!id,
   });
 }
 
-// Fetch sport-specific stats for a prediction
-export function usePredictionStats(predictionId: string | undefined) {
+// Alias for usePredictionDetail (returns analysis data)
+export function usePredictionDetail(predictionId: string) {
   return useQuery({
-    queryKey: ['prediction', 'stats', predictionId],
-    queryFn: async (): Promise<SportSpecificStatsData | null> => {
-      if (!predictionId) return null;
-      
+    queryKey: ['prediction-detail', predictionId],
+    queryFn: async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/stats`);
-        if (!response.ok) {
-          if (response.status === 404) return null;
-          throw new Error(`API error: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${predictionId}/analysis`);
         return data;
-      } catch (error) {
-        console.warn('Prediction stats API not available:', error);
+      } catch {
         return null;
       }
     },
     enabled: !!predictionId,
-    staleTime: 60 * 1000,
-    retry: false,
   });
 }
 
-// Fetch numerology data for a prediction
-export function usePredictionNumerology(predictionId: string | undefined) {
+// Alias for usePredictionNumerology
+export function usePredictionNumerology(predictionId: string) {
   return useQuery({
-    queryKey: ['prediction', 'numerology', predictionId],
+    queryKey: ['prediction-numerology', predictionId],
     queryFn: async (): Promise<NumerologyData | null> => {
-      if (!predictionId) return null;
-      
       try {
-        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/numerology`);
-        if (!response.ok) {
-          if (response.status === 404) return null;
-          throw new Error(`API error: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${predictionId}/numerology`);
         return data;
-      } catch (error) {
-        console.warn('Numerology API not available:', error);
+      } catch {
         return null;
       }
     },
     enabled: !!predictionId,
-    staleTime: 60 * 1000,
-    retry: false,
+  });
+}
+
+// Alias for usePredictionStats
+export function usePredictionStats(predictionId: string) {
+  return useQuery({
+    queryKey: ['prediction-stats', predictionId],
+    queryFn: async (): Promise<SportSpecificStatsData | null> => {
+      try {
+        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${predictionId}/stats`);
+        return data;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!predictionId,
   });
 }
