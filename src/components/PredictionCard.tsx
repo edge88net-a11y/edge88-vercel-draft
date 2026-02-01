@@ -123,7 +123,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               #{gameNumber}
             </span>
           )}
-          <span className="text-xl sm:text-2xl shrink-0">{getSportEmoji(prediction.sport)}</span>
+          <span className="text-xl sm:text-2xl shrink-0">{getSportEmoji(prediction.sport, prediction.homeTeam, prediction.awayTeam)}</span>
           <span className="rounded-lg bg-muted px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-muted-foreground border border-border truncate max-w-[100px] sm:max-w-none">
             {prediction.league || prediction.sport}
           </span>
