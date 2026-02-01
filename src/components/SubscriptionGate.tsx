@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { isAdminUser } from '@/lib/adminAccess';
 
 interface SubscriptionGateProps {
   children: React.ReactNode;
@@ -12,6 +13,11 @@ interface SubscriptionGateProps {
 export function SubscriptionGate({ children, isLocked }: SubscriptionGateProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
+
+  // Admin users NEVER see locked content
+  if (isAdminUser(user?.email)) {
+    return <>{children}</>;
+  }
 
   if (!isLocked) {
     return <>{children}</>;

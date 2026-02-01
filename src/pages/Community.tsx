@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Trophy, Crown, Flame, Star, Users, MessageCircle, Heart, Medal,
-  TrendingUp, Upload, Image as ImageIcon, Lock, Check, Sparkles
+  TrendingUp, Upload, Image as ImageIcon, Lock, Check, Sparkles, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { isAdminUser, getDisplayTier } from '@/lib/adminAccess';
 
 // Types
 interface LeaderboardUser {
@@ -223,7 +224,12 @@ export default function Community() {
     basic: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     pro: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     elite: 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30',
+    admin: 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 text-yellow-300 border-yellow-400/50 shadow-[0_0_10px_hsl(45,100%,50%,0.2)]',
   };
+
+  // Check if current user is admin
+  const isAdmin = isAdminUser(user?.email);
+  const displayTier = getDisplayTier(user?.email, profile?.subscription_tier);
 
   const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {

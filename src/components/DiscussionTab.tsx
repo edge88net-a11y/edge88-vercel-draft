@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { isAdminUser } from '@/lib/adminAccess';
 
 interface DiscussionTabProps {
   predictionId: string;
@@ -126,7 +127,30 @@ export function DiscussionTab({ predictionId, homeTeam, awayTeam }: DiscussionTa
     });
   };
 
-  const getTierBadge = (tier: string) => {
+  // Helper to check if a user email is admin (for display purposes)
+  const renderAdminBadge = (userEmail?: string) => {
+    if (isAdminUser(userEmail)) {
+      return (
+        <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[10px] px-1.5 py-0 shadow-[0_0_10px_hsl(45,100%,50%,0.3)]">
+          <Crown className="h-2.5 w-2.5 mr-0.5" />
+          👑 ADMIN
+        </Badge>
+      );
+    }
+    return null;
+  };
+
+  const getTierBadge = (tier: string, userEmail?: string) => {
+    // Admin badge takes priority
+    if (isAdminUser(userEmail)) {
+      return (
+        <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[10px] px-1.5 py-0 shadow-[0_0_10px_hsl(45,100%,50%,0.3)]">
+          <Crown className="h-2.5 w-2.5 mr-0.5" />
+          👑 ADMIN
+        </Badge>
+      );
+    }
+    
     switch (tier?.toLowerCase()) {
       case 'pro':
         return (

@@ -2,10 +2,18 @@ import { Link } from 'react-router-dom';
 import { Lock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { TierBadge } from '@/components/TierBadge';
+import { isAdminUser, hasFullAccess } from '@/lib/adminAccess';
 
 export function ElitePickTeaser() {
   const { language } = useLanguage();
+  const { user, profile } = useAuth();
+
+  // Admin and Elite users never see the teaser - they have full access
+  if (hasFullAccess(user?.email, profile?.subscription_tier)) {
+    return null;
+  }
 
   return (
     <div className="betting-slip relative overflow-hidden">

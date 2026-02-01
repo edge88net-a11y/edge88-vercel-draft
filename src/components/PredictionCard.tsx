@@ -19,6 +19,7 @@ import { ShareModal } from '@/components/ShareModal';
 import { APIPrediction } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdminUser, canAccessTier } from '@/lib/adminAccess';
 
 interface PredictionCardProps {
   prediction: APIPrediction;
@@ -59,7 +60,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
   const [isExpanded, setIsExpanded] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const { t, language } = useLanguage();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
 
   // Determine tier based on confidence
   const confidencePercent = normalizeConfidence(prediction.confidence);
@@ -71,13 +72,14 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
   };
   const predictionTier = getTier();
 
-  // Check if user has access
+  // Check if user has access - Admin users ALWAYS have full access
+  const isAdmin = isAdminUser(user?.email);
   const userTier = (profile?.subscription_tier || 'free') as string;
+  const hasFullAccess = isAdmin || canAccessTier(user?.email, userTier, predictionTier);
   const tierOrder = ['free', 'basic', 'pro', 'elite'];
   const userTierIndex = tierOrder.indexOf(userTier);
   const requiredTierIndex = tierOrder.indexOf(predictionTier);
-  const hasFullAccess = userTierIndex >= requiredTierIndex;
-  const canSeePreview = userTierIndex >= requiredTierIndex - 1; // Can see one tier above
+  const canSeePreview = isAdmin || userTierIndex >= requiredTierIndex - 1; // Can see one tier above
 
   // Generate random follower count based on prediction ID
   const followerCount = 100 + parseInt(prediction.id.replace(/[^0-9]/g, '').slice(0, 3) || '0', 10) % 300;
@@ -136,7 +138,8 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
       className={cn(
         'betting-slip group relative overflow-hidden transition-all duration-300',
         confidencePercent >= 70 && 'betting-slip-win',
-        isLocked && 'blur-sm pointer-events-none'
+        // Admin users never see locked/blurred content
+        isLocked && !isAdmin && 'blur-sm pointer-events-none'
       )}
     >
       {/* Header - Game Number, Sport, Tier Badge, Confidence & Save Button */}
@@ -402,8 +405,8 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
         </div>
       </div>
 
-      {/* Lock Overlay */}
-      {isLocked && (
+      {/* Lock Overlay - NEVER show for admin users */}
+      {isLocked && !isAdmin && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm">
           <div className="text-center">
             <div className="mx-auto h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
