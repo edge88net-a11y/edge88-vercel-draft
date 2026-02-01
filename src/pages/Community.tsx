@@ -349,7 +349,10 @@ export default function Community() {
                     </td>
                     <td className="p-3 text-right hidden md:table-cell">
                       <span className="font-mono font-bold text-success">
-                        +{user.estimatedProfit.toLocaleString()} {language === 'cz' ? 'Kč' : '$'}
+                        +{language === 'cz' 
+                          ? user.estimatedProfit.toLocaleString('cs-CZ').replace(/,/g, ' ') + ' Kč'
+                          : '$' + user.estimatedProfit.toLocaleString('en-US')
+                        }
                       </span>
                     </td>
                   </tr>
@@ -394,7 +397,10 @@ export default function Community() {
                       {' '}{activity.message}
                       {activity.amount && (
                         <span className="text-success font-mono font-bold ml-1">
-                          (+{activity.amount.toLocaleString()} {language === 'cz' ? 'Kč' : '$'})
+                          (+{language === 'cz' 
+                            ? activity.amount.toLocaleString('cs-CZ').replace(/,/g, ' ') + ' Kč'
+                            : '$' + activity.amount.toLocaleString('en-US')
+                          })
                         </span>
                       )}
                     </p>

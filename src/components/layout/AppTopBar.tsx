@@ -93,14 +93,20 @@ export function AppTopBar({ onMenuClick, showMenuButton }: AppTopBarProps) {
     navigate('/');
   };
 
-  // Mock notifications
+  // Mock notifications with links
   const notifications = [
-    { id: 1, text: language === 'cz' ? 'Lakers vs Celtics - 82% jistota' : 'Lakers vs Celtics - 82% confidence', time: '5m', unread: true },
-    { id: 2, text: language === 'cz' ? 'Nová predikce pro NHL' : 'New NHL prediction available', time: '1h', unread: true },
-    { id: 3, text: language === 'cz' ? 'Vaše predikce vyhrála! 🎉' : 'Your prediction won! 🎉', time: '2h', unread: false },
+    { id: 1, text: language === 'cz' ? 'Lakers vs Celtics - 82% jistota' : 'Lakers vs Celtics - 82% confidence', time: '5m', unread: true, link: '/predictions', type: 'prediction' },
+    { id: 2, text: language === 'cz' ? 'Nová predikce pro NHL' : 'New NHL prediction available', time: '1h', unread: true, link: '/predictions', type: 'new_picks' },
+    { id: 3, text: language === 'cz' ? 'Vaše predikce vyhrála! 🎉' : 'Your prediction won! 🎉', time: '2h', unread: false, link: '/results', type: 'win' },
+    { id: 4, text: language === 'cz' ? 'Nový článek v blogu' : 'New blog article', time: '3h', unread: false, link: '/blog', type: 'article' },
   ];
 
   const unreadCount = notifications.filter(n => n.unread).length;
+
+  const handleNotificationClick = (link: string) => {
+    setShowNotifications(false);
+    navigate(link);
+  };
 
   return (
     <header className={cn(
@@ -187,39 +193,62 @@ export function AppTopBar({ onMenuClick, showMenuButton }: AppTopBarProps) {
             )}
           </button>
 
-          {/* Notifications Dropdown */}
+          {/* Notifications Dropdown - Desktop */}
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-[hsl(230,20%,10%)] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="px-4 py-3 border-b border-white/10">
-                <h3 className="font-semibold text-[#e6edf3]">
-                  {language === 'cz' ? 'Notifikace' : 'Notifications'}
-                </h3>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.map((notif) => (
-                  <div 
-                    key={notif.id}
-                    className={cn(
-                      "px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors",
-                      notif.unread && "bg-cyan-500/5"
-                    )}
+            <>
+              {/* Mobile: Bottom sheet style */}
+              <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setShowNotifications(false)} />
+              <div className={cn(
+                "z-50 bg-[hsl(230,20%,10%)] border border-white/10 shadow-2xl overflow-hidden animate-in fade-in duration-200",
+                // Mobile: full-width bottom sheet
+                "fixed md:absolute",
+                "bottom-0 left-0 right-0 md:bottom-auto md:left-auto",
+                "md:right-0 md:top-full md:mt-2",
+                "rounded-t-2xl md:rounded-xl",
+                "w-full md:w-80 md:max-w-[90vw]",
+                "slide-in-from-bottom-4 md:slide-in-from-top-2"
+              )}>
+                <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="font-semibold text-[#e6edf3]">
+                    {language === 'cz' ? 'Notifikace' : 'Notifications'}
+                  </h3>
+                  <button 
+                    onClick={() => setShowNotifications(false)}
+                    className="md:hidden text-[#e6edf3]/50 hover:text-[#e6edf3] p-1"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm text-[#e6edf3]/80">{notif.text}</p>
-                      {notif.unread && (
-                        <span className="h-2 w-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="max-h-80 md:max-h-96 overflow-y-auto">
+                  {notifications.map((notif) => (
+                    <button 
+                      key={notif.id}
+                      onClick={() => handleNotificationClick(notif.link)}
+                      className={cn(
+                        "w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/10 active:bg-white/15 transition-colors",
+                        notif.unread && "bg-cyan-500/5"
                       )}
-                    </div>
-                    <span className="text-xs text-[#e6edf3]/40 mt-1">{notif.time}</span>
-                  </div>
-                ))}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm text-[#e6edf3]/80">{notif.text}</p>
+                        {notif.unread && (
+                          <span className="h-2 w-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-xs text-[#e6edf3]/40 mt-1 block">{notif.time}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="px-4 py-3 border-t border-white/10">
+                  <button 
+                    onClick={() => handleNotificationClick('/predictions')}
+                    className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    {language === 'cz' ? 'Zobrazit vše' : 'View all'}
+                  </button>
+                </div>
               </div>
-              <div className="px-4 py-3 border-t border-white/10">
-                <button className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
-                  {language === 'cz' ? 'Zobrazit vše' : 'View all'}
-                </button>
-              </div>
-            </div>
+            </>
           )}
         </div>
 
