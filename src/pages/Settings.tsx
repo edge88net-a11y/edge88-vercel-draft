@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+
 import { Settings as SettingsIcon, Bell, Mail, Globe, Palette, Link2, Trash2, Loader2, Check, DollarSign } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -45,10 +45,7 @@ const Settings = () => {
   // Delete account state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Redirect to login if not authenticated
-  if (!authLoading && !user) {
-    return <Navigate to="/login" replace />;
-  }
+  // Note: Auth protection is handled by ProtectedRoute wrapper in App.tsx
 
   const handleSave = async () => {
     setSaving(true);

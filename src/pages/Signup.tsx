@@ -37,9 +37,8 @@ const Signup = () => {
     const { error } = await signUp(email, password, name);
     setLoading(false);
     
-    if (!error) {
-      // Stay on page - user needs to confirm email
-    }
+    // Note: After email confirmation, the user will be redirected to the app
+    // The dashboard will show the onboarding flow if onboarding_completed is false
   };
 
   return (
