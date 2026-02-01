@@ -106,6 +106,8 @@ export interface APIPrediction {
   injuries?: { home?: { player: string; status: string; impact: string }[]; away?: { player: string; status: string; impact: string }[] };
   fullReasoning?: string;
   fullReasoning_cs?: string;
+  research_summary?: string;
+  research_summary_cs?: string;
   venue?: string;
   keyFactorsList?: string[];
   keyFactorsList_cs?: string[];
