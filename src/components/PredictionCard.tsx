@@ -4,6 +4,7 @@ import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3 } 
 import { cn } from '@/lib/utils';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence, getConfidenceLabel as getConfLabel, getConfidenceColorClass } from '@/lib/confidenceUtils';
+import { formatOdds } from '@/lib/oddsUtils';
 import { Button } from '@/components/ui/button';
 import { GameCountdown } from '@/components/GameCountdown';
 import { ConfidenceMeter } from '@/components/ConfidenceMeter';
@@ -161,13 +162,13 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
                 )}>
                   {prediction.awayTeam}
                 </span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">Away</span>
-              </div>
-              {prediction.prediction.pick.includes(prediction.awayTeam) && (
-                <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-success bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0">
-                  ✓ <span className="hidden sm:inline">PICK</span>
-                </span>
-              )}
+              <span className="text-[10px] sm:text-xs text-muted-foreground">{t.away}</span>
+            </div>
+            {prediction.prediction.pick.includes(prediction.awayTeam) && (
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-success bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0">
+                ✓ <span className="hidden sm:inline">{language === 'cz' ? 'TIP' : 'PICK'}</span>
+              </span>
+            )}
             </Link>
 
             {/* VS Divider */}
@@ -195,13 +196,13 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
                 )}>
                   {prediction.homeTeam}
                 </span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">Home</span>
-              </div>
-              {prediction.prediction.pick.includes(prediction.homeTeam) && (
-                <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-success bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0">
-                  ✓ <span className="hidden sm:inline">PICK</span>
-                </span>
-              )}
+              <span className="text-[10px] sm:text-xs text-muted-foreground">{t.homeLabel}</span>
+            </div>
+            {prediction.prediction.pick.includes(prediction.homeTeam) && (
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-success bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0">
+                ✓ <span className="hidden sm:inline">{language === 'cz' ? 'TIP' : 'PICK'}</span>
+              </span>
+            )}
             </Link>
           </div>
 
@@ -211,7 +212,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
             <span className={cn('font-mono text-lg sm:text-2xl font-black', getConfidenceColorClass())}>
               {confidencePercent}%
             </span>
-            <span className="text-[10px] sm:text-xs text-muted-foreground">Confidence</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">{t.confidence}</span>
           </div>
         </div>
       </div>
@@ -234,7 +235,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
           <div className="text-left sm:text-right shrink-0">
             <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{t.bestOdds}</p>
             <p className="font-mono text-xl sm:text-2xl font-black odds-number">
-              {bookmakerOdds[bestOddsIndex]?.odds || prediction.prediction.odds}
+              {formatOdds(bookmakerOdds[bestOddsIndex]?.odds || prediction.prediction.odds, language)}
             </p>
           </div>
         </div>
