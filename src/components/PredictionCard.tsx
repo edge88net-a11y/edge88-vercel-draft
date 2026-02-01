@@ -65,19 +65,19 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
 
   // Determine tier based on confidence
   const confidencePercent = normalizeConfidence(prediction.confidence);
-  const getTier = () => {
+  const getTier = (): 'elite' | 'pro' | 'starter' | 'none' => {
     if (confidencePercent >= 80) return 'elite';
     if (confidencePercent >= 70) return 'pro';
-    if (confidencePercent >= 60) return 'basic';
-    return 'free';
+    if (confidencePercent >= 60) return 'starter';
+    return 'starter'; // No more 'free' tier
   };
   const predictionTier = getTier();
 
   // Check if user has access - Admin users ALWAYS have full access
   const isAdmin = isAdminUser(user?.email);
-  const userTier = (profile?.subscription_tier || 'free') as string;
+  const userTier = (profile?.subscription_tier || 'none') as string;
   const hasFullAccess = isAdmin || canAccessTier(user?.email, userTier, predictionTier);
-  const tierOrder = ['free', 'basic', 'pro', 'elite'];
+  const tierOrder = ['none', 'starter', 'pro', 'elite'];
   const userTierIndex = tierOrder.indexOf(userTier);
   const requiredTierIndex = tierOrder.indexOf(predictionTier);
   const canSeePreview = isAdmin || userTierIndex >= requiredTierIndex - 1; // Can see one tier above
