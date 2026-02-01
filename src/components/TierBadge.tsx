@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
-import { Lock } from 'lucide-react';
+import { Lock, Crown } from 'lucide-react';
+import { isAdminUser } from '@/lib/adminAccess';
 
-type Tier = 'free' | 'basic' | 'pro' | 'elite';
+export type Tier = 'free' | 'basic' | 'pro' | 'elite' | 'admin';
 
 interface TierBadgeProps {
   tier: Tier;
@@ -14,6 +15,7 @@ const tierConfig: Record<Tier, {
   textClass: string;
   borderClass: string;
   glow?: boolean;
+  icon?: 'lock' | 'crown';
 }> = {
   free: {
     label: 'FREE',
@@ -39,6 +41,15 @@ const tierConfig: Record<Tier, {
     textClass: 'text-yellow-400',
     borderClass: 'border-yellow-500/50',
     glow: true,
+    icon: 'lock',
+  },
+  admin: {
+    label: 'ADMIN',
+    bgClass: 'bg-gradient-to-r from-yellow-500/40 to-orange-500/40',
+    textClass: 'text-yellow-300',
+    borderClass: 'border-yellow-400/60',
+    glow: true,
+    icon: 'crown',
   },
 };
 
@@ -56,8 +67,9 @@ export function TierBadge({ tier, className }: TierBadgeProps) {
         className
       )}
     >
-      {tier === 'elite' && <Lock className="h-2.5 w-2.5" />}
-      {config.label}
+      {config.icon === 'crown' && <Crown className="h-2.5 w-2.5" />}
+      {config.icon === 'lock' && <Lock className="h-2.5 w-2.5" />}
+      {tier === 'admin' ? '👑 ADMIN' : config.label}
     </span>
   );
 }
@@ -70,13 +82,21 @@ export function getPredictionTier(confidence: number): Tier {
   return 'free';
 }
 
-// Helper to check if user can access prediction
-export function canAccessPrediction(predictionTier: Tier, userTier: string | null | undefined): boolean {
+// Helper to check if user can access prediction (includes admin check)
+export function canAccessPrediction(
+  predictionTier: Tier, 
+  userTier: string | null | undefined,
+  userEmail?: string | null
+): boolean {
+  // Admin users can access everything
+  if (isAdminUser(userEmail)) return true;
+  
   const tierHierarchy: Record<Tier, number> = {
     free: 0,
     basic: 1,
     pro: 2,
     elite: 3,
+    admin: 4,
   };
 
   const userTierNormalized = (userTier?.toLowerCase() || 'free') as Tier;

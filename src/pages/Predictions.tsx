@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { isAdminUser, hasFullAccess } from '@/lib/adminAccess';
 
 const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'EPL', 'UFC'];
 const confidenceLevels = [
@@ -44,7 +45,11 @@ const Predictions = () => {
   const { t } = useLanguage();
   const { data: predictions, isLoading, isError, refetch, isFetching, isMaintenanceMode } = useActivePredictions();
 
-  const isPro = profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'elite';
+  // Admin and Elite users have full access - never see locked content
+  const isAdmin = isAdminUser(user?.email);
+  const isPro = hasFullAccess(user?.email, profile?.subscription_tier) || 
+                profile?.subscription_tier === 'pro' || 
+                profile?.subscription_tier === 'elite';
 
   const handleRefresh = () => {
     refetch();
@@ -161,7 +166,9 @@ const Predictions = () => {
     return filtered;
   }, [allPredictions, selectedSport, selectedConfidence, selectedType, searchQuery, sortBy, sortOrder]);
 
+  // Admin users NEVER see locked predictions
   const shouldLockPrediction = (index: number) => {
+    if (isAdmin) return false; // Admin always has full access
     if (isPro) return false;
     if (user) return index >= FREE_PICKS_LIMIT * 2; // Logged in users get 6
     return index >= FREE_PICKS_LIMIT; // Non-logged in get 3

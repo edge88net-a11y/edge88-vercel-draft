@@ -8,8 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { OddsFormat } from '@/components/OddsComparison';
 import { AdminDebugPanel } from '@/components/AdminDebugPanel';
-
-const ADMIN_EMAIL = 'edge88.net@gmail.com';
+import { isAdminUser } from '@/lib/adminAccess';
 
 const Settings = () => {
   const { user, loading: authLoading } = useAuth();
@@ -359,7 +358,7 @@ const Settings = () => {
       </div>
 
       {/* Admin Debug Panel - Only visible for admin user */}
-      {user?.email === ADMIN_EMAIL && (
+      {isAdminUser(user?.email) && (
         <AdminDebugPanel />
       )}
 

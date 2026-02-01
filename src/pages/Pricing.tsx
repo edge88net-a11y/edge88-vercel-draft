@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, X, Zap, Shield, Star, Award, Loader2, ChevronDown, TrendingUp, Users } from 'lucide-react';
+import { Check, X, Zap, Shield, Star, Award, Loader2, ChevronDown, TrendingUp, Users, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { pricingPlans } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { isAdminUser } from '@/lib/adminAccess';
 
 const faqs = {
   en: [
@@ -144,8 +145,29 @@ const Pricing = () => {
     return <span className="text-sm">{value}</span>;
   };
 
+  // Admin users see a special notice
+  const isAdmin = isAdminUser(user?.email);
+
   return (
     <div className="space-y-12">
+      {/* Admin Full Access Notice */}
+      {isAdmin && (
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-2xl bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 border-2 border-yellow-500/50 p-6 text-center shadow-[0_0_30px_hsl(45,100%,50%,0.2)]">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Crown className="h-6 w-6 text-yellow-400" />
+              <h2 className="text-xl font-bold text-yellow-400">👑 {language === 'cz' ? 'Admin přístup' : 'Admin Access'}</h2>
+              <Crown className="h-6 w-6 text-yellow-400" />
+            </div>
+            <p className="text-yellow-200/80">
+              {language === 'cz' 
+                ? 'Máte plný neomezený přístup ke všem funkcím. Žádné předplatné není potřeba.'
+                : 'You have full unrestricted access to all features. No subscription needed.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -157,11 +179,13 @@ const Pricing = () => {
             : 'Start free, upgrade when you\'re ready for unlimited predictions'}
         </p>
 
-        {/* Upgrade counter */}
-        <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary animate-pulse">
-          <TrendingUp className="h-4 w-4" />
-          <span>🔥 {upgradeCount} {language === 'cz' ? 'lidí upgradovalo tento týden' : 'people upgraded this week'}</span>
-        </div>
+        {/* Upgrade counter - hide for admin */}
+        {!isAdmin && (
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary animate-pulse">
+            <TrendingUp className="h-4 w-4" />
+            <span>🔥 {upgradeCount} {language === 'cz' ? 'lidí upgradovalo tento týden' : 'people upgraded this week'}</span>
+          </div>
+        )}
       </div>
 
       {/* Billing Toggle */}

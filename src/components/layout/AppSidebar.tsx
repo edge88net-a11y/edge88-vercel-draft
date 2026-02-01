@@ -16,7 +16,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Flame
+  Flame,
+  Crown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,6 +27,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { isAdminUser, getDisplayTier } from '@/lib/adminAccess';
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -60,6 +62,10 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
   const { winStreak } = useWinStreak();
   const { language } = useLanguage();
 
+  // Check if user is admin for display purposes
+  const isUserAdmin = isAdminUser(user?.email);
+  const displayTier = getDisplayTier(user?.email, profile?.subscription_tier);
+
   const handleNavClick = () => {
     onMobileClose?.();
   };
@@ -74,9 +80,10 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
     basic: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     pro: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     elite: 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30',
+    admin: 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 text-yellow-300 border-yellow-400/50 shadow-[0_0_10px_hsl(45,100%,50%,0.2)]',
   };
 
-  const currentTier = profile?.subscription_tier || 'free';
+  const currentTier = displayTier;
 
   const NavItem = ({ href, label, labelCz, icon: Icon, badge }: {
     href: string;
@@ -235,10 +242,11 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
                 {profile?.display_name || user?.email?.split('@')[0]}
               </p>
               <span className={cn(
-                'inline-block text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border',
+                'inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border',
                 tierColors[currentTier]
               )}>
-                {currentTier}
+                {isUserAdmin && <Crown className="h-2.5 w-2.5" />}
+                {isUserAdmin ? '👑 ADMIN' : currentTier.toUpperCase()}
               </span>
             </div>
           )}
