@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { Loader2, RefreshCw, Zap, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -9,12 +9,12 @@ interface MaintenanceStateProps {
   autoRetrySeconds?: number;
 }
 
-export function MaintenanceState({ 
+export const MaintenanceState = forwardRef<HTMLDivElement, MaintenanceStateProps>(function MaintenanceState({ 
   onRetry, 
   title = "Crunching the Latest Data",
   subtitle = "Our AI is analyzing real-time odds, injury reports, and sharp money movements. Predictions will be available shortly.",
   autoRetrySeconds = 30 
-}: MaintenanceStateProps) {
+}, ref) {
   const [countdown, setCountdown] = useState(autoRetrySeconds);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -47,7 +47,7 @@ export function MaintenanceState({
   };
 
   return (
-    <div className="glass-card p-8 md:p-12 text-center max-w-2xl mx-auto">
+    <div ref={ref} className="glass-card p-8 md:p-12 text-center max-w-2xl mx-auto">
       {/* Animated Logo/Icon */}
       <div className="relative w-24 h-24 mx-auto mb-8">
         {/* Outer ring - pulsing */}
@@ -130,4 +130,6 @@ export function MaintenanceState({
       </p>
     </div>
   );
-}
+});
+
+MaintenanceState.displayName = 'MaintenanceState';
