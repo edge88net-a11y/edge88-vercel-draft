@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Check, X, Zap, Shield, Star, Award, Loader2, ChevronDown, TrendingUp, Users, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { pricingPlans } from '@/lib/mockData';
+import { pricingPlans, PricingPlan } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCheckout } from '@/hooks/useCheckout';
@@ -12,10 +12,6 @@ import { isAdminUser } from '@/lib/adminAccess';
 
 const faqs = {
   en: [
-    {
-      question: 'How does the free plan work?',
-      answer: 'The free plan gives you access to 3 predictions per day across basic sports. You\'ll see all picks after games end, and can track your performance over time.',
-    },
     {
       question: 'Can I cancel anytime?',
       answer: 'Yes! All paid plans can be cancelled anytime with no questions asked. You\'ll keep access until the end of your billing period.',
@@ -32,12 +28,12 @@ const faqs = {
       question: 'Is there a money-back guarantee?',
       answer: 'Yes! If you\'re not satisfied within the first 7 days, we\'ll give you a full refund. No questions asked.',
     },
+    {
+      question: 'What\'s included in annual billing?',
+      answer: 'Annual billing saves you up to 30% compared to monthly. You get the same features with significant savings.',
+    },
   ],
   cz: [
-    {
-      question: 'Jak funguje bezplatný plán?',
-      answer: 'Bezplatný plán vám dává přístup ke 3 tipům denně. Po skončení zápasů uvidíte všechny tipy a můžete sledovat svou výkonnost.',
-    },
     {
       question: 'Mohu kdykoliv zrušit?',
       answer: 'Ano! Všechny placené plány lze kdykoliv zrušit bez otázek. Přístup budete mít do konce fakturačního období.',
@@ -54,6 +50,10 @@ const faqs = {
       question: 'Je zde garance vrácení peněz?',
       answer: 'Ano! Pokud nebudete spokojeni během prvních 7 dní, vrátíme vám peníze. Bez otázek.',
     },
+    {
+      question: 'Co zahrnuje roční platba?',
+      answer: 'Roční platba šetří až 30% oproti měsíční. Získáte stejné funkce s výraznou úsporou.',
+    },
   ],
 };
 
@@ -62,24 +62,26 @@ const getFeatureCategories = (lang: 'en' | 'cz') => [
   {
     name: lang === 'cz' ? 'Predikce' : 'Predictions',
     features: [
-      { name: lang === 'cz' ? 'Tipů denně' : 'Picks per day', free: '3', starter: '10', pro: lang === 'cz' ? 'Vše' : 'All', elite: lang === 'cz' ? 'Vše + Early' : 'All + Early Access' },
-      { name: lang === 'cz' ? 'Plná analýza' : 'Full analysis', free: false, starter: true, pro: true, elite: true },
-      { name: lang === 'cz' ? 'Živé predikce' : 'Live predictions', free: false, starter: true, pro: true, elite: true },
+      { name: lang === 'cz' ? 'Tipů denně' : 'Picks per day', starter: '10', pro: lang === 'cz' ? 'Neomezeno' : 'Unlimited', elite: lang === 'cz' ? 'Neomezeno + Early' : 'Unlimited + Early' },
+      { name: lang === 'cz' ? 'Plná analýza' : 'Full analysis', starter: true, pro: true, elite: true },
+      { name: lang === 'cz' ? 'Živé predikce' : 'Live predictions', starter: true, pro: true, elite: true },
+      { name: lang === 'cz' ? 'Všechny sporty' : 'All sports', starter: false, pro: true, elite: true },
     ],
   },
   {
     name: lang === 'cz' ? 'Komunita' : 'Community',
     features: [
-      { name: lang === 'cz' ? 'Telegram skupina' : 'Telegram group', free: lang === 'cz' ? 'Pouze free' : 'Free only', starter: 'Basic', pro: 'VIP', elite: 'Elite' },
-      { name: lang === 'cz' ? 'Email upozornění' : 'Email alerts', free: false, starter: lang === 'cz' ? 'Denně' : 'Daily', pro: lang === 'cz' ? 'Realtime' : 'Real-time', elite: lang === 'cz' ? 'Realtime' : 'Real-time' },
+      { name: lang === 'cz' ? 'Telegram skupina' : 'Telegram group', starter: 'Basic', pro: 'VIP', elite: 'Elite' },
+      { name: lang === 'cz' ? 'Email upozornění' : 'Email alerts', starter: lang === 'cz' ? 'Denně' : 'Daily', pro: lang === 'cz' ? 'Realtime' : 'Real-time', elite: lang === 'cz' ? 'Realtime' : 'Real-time' },
+      { name: 'Discord', starter: false, pro: false, elite: true },
     ],
   },
   {
     name: lang === 'cz' ? 'Nástroje' : 'Tools',
     features: [
-      { name: lang === 'cz' ? 'Sázenkový lístek' : 'Betting slip', free: false, starter: true, pro: true, elite: true },
-      { name: lang === 'cz' ? 'Referral bonus' : 'Referral bonus', free: '1 tip', starter: '2 ' + (lang === 'cz' ? 'tipy' : 'tips'), pro: '3 ' + (lang === 'cz' ? 'tipy' : 'tips'), elite: '5 ' + (lang === 'cz' ? 'tipů' : 'tips') },
-      { name: lang === 'cz' ? 'Osobní poradce' : 'Personal advisor', free: false, starter: false, pro: false, elite: true },
+      { name: lang === 'cz' ? 'Sázenkový lístek' : 'Betting slip', starter: true, pro: true, elite: true },
+      { name: lang === 'cz' ? 'Export dat' : 'Export data', starter: false, pro: true, elite: true },
+      { name: lang === 'cz' ? 'Vlastní model' : 'Custom model', starter: false, pro: false, elite: true },
     ],
   },
 ];
@@ -94,7 +96,7 @@ const Pricing = () => {
   const [searchParams] = useSearchParams();
 
   // Simulated upgrade counter
-  const [upgradeCount] = useState(() => Math.floor(Math.random() * 20) + 35); // 35-54
+  const [upgradeCount] = useState(() => Math.floor(Math.random() * 20) + 35);
 
   // Handle checkout result from URL
   useEffect(() => {
@@ -107,7 +109,7 @@ const Pricing = () => {
     }
   }, [searchParams, toast, language]);
 
-  const currentTier = profile?.subscription_tier || 'free';
+  const currentTier = profile?.subscription_tier || '';
   const faqList = language === 'cz' ? faqs.cz : faqs.en;
   const featureCategories = getFeatureCategories(language as 'en' | 'cz');
 
@@ -123,15 +125,22 @@ const Pricing = () => {
     checkout(tier);
   };
 
-  const getPrice = (monthlyPrice: number) => {
-    if (monthlyPrice === 0) return 0;
-    return isAnnual ? Math.round(monthlyPrice * 0.8) : monthlyPrice;
+  const formatPrice = (plan: PricingPlan) => {
+    if (language === 'cz') {
+      const price = isAnnual ? plan.annualPriceCzk : plan.priceCzk;
+      return `${price.toLocaleString('cs-CZ')} Kč`;
+    }
+    const price = isAnnual ? plan.annualPriceUsd : plan.priceUsd;
+    return `$${price}`;
   };
 
-  const getPriceCz = (priceUsd: number) => {
-    // Approximate conversion: 1 USD = ~23 CZK
-    const czk = priceUsd * 23;
-    return Math.round(czk / 100) * 100; // Round to nearest 100
+  const formatAnnualTotal = (plan: PricingPlan) => {
+    if (language === 'cz') {
+      const total = plan.annualPriceCzk * 12;
+      return `${total.toLocaleString('cs-CZ')} Kč`;
+    }
+    const total = plan.annualPriceUsd * 12;
+    return `$${total}`;
   };
 
   const renderFeatureValue = (value: string | boolean) => {
@@ -175,8 +184,8 @@ const Pricing = () => {
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           {language === 'cz' 
-            ? 'Začněte zdarma, upgradujte až budete připraveni na neomezené predikce'
-            : 'Start free, upgrade when you\'re ready for unlimited predictions'}
+            ? 'Vyberte plán odpovídající vašemu stylu sázení'
+            : 'Pick a plan that matches your betting style'}
         </p>
 
         {/* Upgrade counter - hide for admin */}
@@ -213,18 +222,17 @@ const Pricing = () => {
         {isAnnual && (
           <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success flex items-center gap-1">
             <Zap className="h-3 w-3" />
-            {language === 'cz' ? 'Ušetřete 20%' : 'Save 20%'}
+            {language === 'cz' ? 'Ušetřete 30%' : 'Save 30%'}
           </span>
         )}
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid gap-6 lg:grid-cols-4">
-        {pricingPlans.map((plan, index) => {
+      {/* Pricing Cards - 3 tiers */}
+      <div className="grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto">
+        {pricingPlans.map((plan) => {
           const isPro = plan.name === 'Pro';
-          const priceDisplay = language === 'cz' 
-            ? `${getPriceCz(getPrice(plan.price)).toLocaleString('cs-CZ')} Kč`
-            : `$${getPrice(plan.price)}`;
+          const isElite = plan.name === 'Elite';
+          const lang = language as 'en' | 'cz';
 
           return (
             <div
@@ -249,35 +257,33 @@ const Pricing = () => {
               <div className="mb-6">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-bold">{plan.name}</h3>
-                  {plan.name === 'Elite' && <Award className="h-5 w-5 text-yellow-400" />}
+                  {isElite && <Award className="h-5 w-5 text-yellow-400" />}
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{plan.description[lang]}</p>
               </div>
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="font-mono text-4xl font-bold">{priceDisplay}</span>
-                  {plan.price > 0 && (
-                    <span className="text-muted-foreground">/{language === 'cz' ? 'měsíc' : plan.period}</span>
-                  )}
+                  <span className="font-mono text-4xl font-bold">{formatPrice(plan)}</span>
+                  <span className="text-muted-foreground">/{language === 'cz' ? 'měsíc' : 'month'}</span>
                 </div>
-                {isAnnual && plan.price > 0 && (
+                {isAnnual && (
                   <p className="mt-1 text-sm text-muted-foreground">
                     {language === 'cz' 
-                      ? `Účtováno ročně (${(getPriceCz(getPrice(plan.price)) * 12).toLocaleString('cs-CZ')} Kč/rok)`
-                      : `Billed annually ($${getPrice(plan.price) * 12}/year)`}
+                      ? `Účtováno ročně (${formatAnnualTotal(plan)}/rok)`
+                      : `Billed annually (${formatAnnualTotal(plan)}/year)`}
                   </p>
                 )}
               </div>
 
               <ul className="mb-8 space-y-3">
-                {plan.features.map((feature) => (
+                {plan.features[lang].map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
                     <span>{feature}</span>
                   </li>
                 ))}
-                {plan.notIncluded.map((feature) => (
+                {plan.notIncluded[lang].map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <X className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span>{feature}</span>
@@ -285,16 +291,11 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              {plan.price === 0 ? (
-                <Link to="/signup">
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    size="lg"
-                  >
-                    {user ? (language === 'cz' ? 'Aktuální plán' : 'Current Plan') : plan.cta}
-                  </Button>
-                </Link>
+              {isAdmin ? (
+                <Button className="w-full" variant="outline" size="lg" disabled>
+                  <Check className="h-4 w-4 mr-2" />
+                  {language === 'cz' ? 'Aktivní' : 'Active'}
+                </Button>
               ) : (
                 <Button
                   className={cn('w-full', isPro && 'btn-gradient')}
@@ -308,7 +309,7 @@ const Pricing = () => {
                   ) : currentTier === plan.name.toLowerCase() ? (
                     language === 'cz' ? 'Aktuální plán' : 'Current Plan'
                   ) : (
-                    language === 'cz' ? `Vybrat ${plan.name}` : `Subscribe to ${plan.name}`
+                    plan.cta[lang]
                   )}
                 </Button>
               )}
@@ -345,13 +346,12 @@ const Pricing = () => {
           {language === 'cz' ? 'Porovnání funkcí' : 'Feature Comparison'}
         </h2>
         
-        <div className="glass-card overflow-hidden overflow-x-auto">
-          <table className="w-full min-w-[640px]">
+        <div className="glass-card overflow-hidden overflow-x-auto max-w-4xl mx-auto">
+          <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="p-4 text-left font-medium">{language === 'cz' ? 'Funkce' : 'Features'}</th>
-                <th className="p-4 text-center font-medium">Free</th>
-                <th className="p-4 text-center font-medium">Basic</th>
+                <th className="p-4 text-center font-medium">Starter</th>
                 <th className="p-4 text-center font-medium bg-primary/5">
                   <div className="flex items-center justify-center gap-1">
                     Pro
@@ -365,14 +365,13 @@ const Pricing = () => {
               {featureCategories.map((category) => (
                 <React.Fragment key={category.name}>
                   <tr className="bg-muted/30">
-                    <td colSpan={5} className="p-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    <td colSpan={4} className="p-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                       {category.name}
                     </td>
                   </tr>
                   {category.features.map((feature) => (
                     <tr key={feature.name} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                       <td className="p-4 text-sm">{feature.name}</td>
-                      <td className="p-4 text-center">{renderFeatureValue(feature.free)}</td>
                       <td className="p-4 text-center">{renderFeatureValue(feature.starter)}</td>
                       <td className="p-4 text-center bg-primary/5">{renderFeatureValue(feature.pro)}</td>
                       <td className="p-4 text-center">{renderFeatureValue(feature.elite)}</td>
@@ -395,48 +394,40 @@ const Pricing = () => {
           {faqList.map((faq, index) => (
             <div key={index} className="p-4">
               <button
-                onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
                 className="flex w-full items-center justify-between text-left"
+                onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
               >
                 <span className="font-medium">{faq.question}</span>
                 <ChevronDown
                   className={cn(
-                    'h-5 w-5 text-primary transition-transform flex-shrink-0 ml-4',
+                    'h-5 w-5 text-muted-foreground transition-transform',
                     expandedFaq === index && 'rotate-180'
                   )}
                 />
               </button>
               {expandedFaq === index && (
-                <p className="mt-3 animate-fade-in text-muted-foreground pr-8">{faq.answer}</p>
+                <p className="mt-3 text-muted-foreground">{faq.answer}</p>
               )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Final CTA */}
-      <div className="glass-card p-8 text-center bg-gradient-to-r from-primary/10 via-transparent to-accent/10">
-        <h2 className="text-2xl font-bold">
-          {language === 'cz' ? 'Připraveni na výhry?' : 'Ready to Get Your Edge?'}
-        </h2>
-        <p className="mt-2 text-muted-foreground">
+      {/* CTA Section */}
+      <div className="text-center py-8">
+        <h3 className="text-2xl font-bold mb-4">
+          {language === 'cz' ? 'Připraveni vyhrát?' : 'Ready to Win?'}
+        </h3>
+        <p className="text-muted-foreground mb-6">
           {language === 'cz' 
-            ? 'Přidejte se k 10 000+ analytiků, kteří vyhrávají s AI predikcemi'
-            : 'Join 10,000+ analysts winning with AI-powered predictions'}
+            ? 'Připojte se k tisícům úspěšných sázkařů' 
+            : 'Join thousands of winning bettors'}
         </p>
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/signup">
-            <Button size="xl" className="btn-gradient gap-2">
-              <Zap className="h-5 w-5" />
-              {language === 'cz' ? 'Začít zdarma' : 'Start Free Trial'}
-            </Button>
-          </Link>
-          <Link to="/predictions">
-            <Button size="xl" variant="outline">
-              {language === 'cz' ? 'Zobrazit živé tipy' : 'View Live Picks'}
-            </Button>
-          </Link>
-        </div>
+        <Link to="/signup">
+          <Button size="lg" className="btn-gradient">
+            {language === 'cz' ? 'Začít nyní' : 'Get Started'}
+          </Button>
+        </Link>
       </div>
     </div>
   );
