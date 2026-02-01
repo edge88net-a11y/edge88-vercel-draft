@@ -37,6 +37,7 @@ const mainNavItems = [
   { href: '/dashboard', label: 'Dashboard', labelCz: 'Přehled', icon: LayoutDashboard },
   { href: '/predictions', label: 'Predictions', labelCz: 'Predikce', icon: Zap },
   { href: '/results', label: 'Results', labelCz: 'Výsledky', icon: BarChart3 },
+  { href: '/community', label: 'Community', labelCz: 'Komunita', icon: Users },
   { href: '/blog', label: 'Blog / Archive', labelCz: 'Blog / Archiv', icon: BookOpen },
 ];
 
