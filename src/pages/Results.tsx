@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, Target, Award, Calendar, Loader2, ArrowUp, ArrowDown, Filter } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { MobileNav } from '@/components/MobileNav';
+import { Link } from 'react-router-dom';
+import { BarChart3, TrendingUp, Target, Award, Calendar, Loader2, ArrowUp, ArrowDown, Filter, Zap } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
 import { AccuracyChart } from '@/components/charts/AccuracyChart';
 import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
@@ -11,6 +9,7 @@ import { ConfidenceAccuracyChart } from '@/components/charts/ConfidenceAccuracyC
 import { TeamLogo } from '@/components/TeamLogo';
 import { useActivePredictions, useStats, useAccuracyStats } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { cn } from '@/lib/utils';
@@ -22,7 +21,8 @@ const sportFilters = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
 const Results = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('30 Days');
   const [selectedSport, setSelectedSport] = useState('All');
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { user } = useAuth();
   
   const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
   const { data: stats, isLoading: statsLoading } = useStats();
@@ -61,17 +61,16 @@ const Results = () => {
   ] : [];
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
-      <Navbar />
-
-      <main className="mx-auto max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">{t.results || 'Results'}</h1>
-          <p className="mt-2 text-muted-foreground">
-            {t.verifiedPerformance || 'Verified performance across all predictions'}
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t.results || 'Results'}</h1>
+        <p className="mt-2 text-muted-foreground">
+          {language === 'cz' 
+            ? 'Ověřený výkon napříč všemi predikcemi – plná transparentnost'
+            : 'Verified performance across all predictions – full transparency'}
+        </p>
+      </div>
 
         {/* Filters Row */}
         <div className="mb-8 glass-card p-4">
@@ -377,15 +376,46 @@ const Results = () => {
             {/* Transparency Notice */}
             <div className="mt-8 glass-card p-6 text-center bg-gradient-to-r from-primary/5 to-accent/5">
               <p className="text-sm text-muted-foreground">
-                🔒 Every prediction is timestamped before game start. Fully verifiable and transparent.
+                🔒 {language === 'cz' 
+                  ? 'Každá predikce je označena časovým razítkem před začátkem zápasu. Plně ověřitelné a transparentní.'
+                  : 'Every prediction is timestamped before game start. Fully verifiable and transparent.'}
               </p>
             </div>
+
+            {/* CTA for non-logged-in users */}
+            {!user && (
+              <div className="mt-8 glass-card p-8 text-center bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium mb-4">
+                  <Zap className="h-4 w-4" />
+                  {language === 'cz' ? 'Premium obsah' : 'Premium Content'}
+                </div>
+                <h3 className="text-2xl font-bold mb-2">
+                  {language === 'cz' 
+                    ? 'Chcete vidět tipy PŘED zápasem?'
+                    : 'Want to see picks BEFORE the game?'}
+                </h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  {language === 'cz'
+                    ? 'Zaregistrujte se zdarma a získejte přístup k našim AI predikcím v reálném čase, než zápas začne.'
+                    : 'Sign up for free and get access to our AI predictions in real-time, before games start.'}
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link to="/signup">
+                    <Button size="lg" className="btn-gradient gap-2">
+                      <Zap className="h-5 w-5" />
+                      {language === 'cz' ? 'Registrace zdarma →' : 'Sign Up Free →'}
+                    </Button>
+                  </Link>
+                  <Link to="/pricing">
+                    <Button size="lg" variant="outline">
+                      {language === 'cz' ? 'Zobrazit plány' : 'View Plans'}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
           </>
         )}
-      </main>
-
-      <Footer />
-      <MobileNav />
     </div>
   );
 };

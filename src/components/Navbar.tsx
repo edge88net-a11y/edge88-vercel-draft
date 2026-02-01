@@ -22,24 +22,23 @@ export function Navbar() {
 
   // Define nav links based on auth state
   const getNavLinks = () => {
-    const baseLinks = [
-      { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
-      { href: '/blog', label: 'Archive', labelCz: 'Archiv', icon: BookOpen },
-      { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
-    ];
-
-    if (user) {
+    // Public navbar - only show pages that don't require login
+    // Predictions is the premium product behind paywall, Dashboard needs auth
+    if (!user) {
       return [
-        { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
-        ...baseLinks,
+        { href: '/blog', label: 'Archive', labelCz: 'Archiv', icon: BookOpen },
         { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
+        { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
       ];
     }
 
+    // Logged-in users get full nav
     return [
       { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
-      ...baseLinks,
+      { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
+      { href: '/blog', label: 'Archive', labelCz: 'Archiv', icon: BookOpen },
       { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
+      { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
     ];
   };
 
