@@ -4,7 +4,7 @@ import { ArrowRight, Zap, TrendingUp, Target, Users, Mail, Star, Activity, Troph
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { LiveTicker } from '@/components/LiveTicker';
+import { LiveStatsTicker } from '@/components/LiveStatsTicker';
 import { PredictionCard } from '@/components/PredictionCard';
 import { MoneyCalculator } from '@/components/MoneyCalculator';
 import { AffiliateCasinos } from '@/components/AffiliateCasinos';
@@ -337,8 +337,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Live Ticker */}
-      <LiveTicker />
+      {/* Live Stats Ticker - Homepage only */}
+      <LiveStatsTicker />
 
       {/* Stats Section - Data Rich */}
       <section className="py-12 border-y border-border bg-card/50" ref={accuracyCounter.ref}>
