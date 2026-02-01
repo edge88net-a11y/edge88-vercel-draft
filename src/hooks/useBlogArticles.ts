@@ -118,7 +118,7 @@ export function useBlogStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('blog_articles')
-        .select('accuracy_pct, total_picks, wins')
+        .select('accuracy_pct, total_picks, wins, losses')
         .eq('published', true);
 
       if (error) {
@@ -130,14 +130,22 @@ export function useBlogStats() {
       const totalArticles = articles.length;
       const totalPicks = articles.reduce((sum, a) => sum + (a.total_picks || 0), 0);
       const totalWins = articles.reduce((sum, a) => sum + (a.wins || 0), 0);
-      const avgAccuracy = articles.length > 0
-        ? articles.reduce((sum, a) => sum + (a.accuracy_pct || 0), 0) / articles.length
+      const totalLosses = articles.reduce((sum, a) => sum + (a.losses || 0), 0);
+      const totalCompleted = totalWins + totalLosses;
+      const totalPending = totalPicks - totalCompleted;
+      
+      // Calculate accuracy only from completed picks
+      const avgAccuracy = totalCompleted > 0
+        ? (totalWins / totalCompleted) * 100
         : 0;
 
       return {
         totalArticles,
         totalPicks,
         totalWins,
+        totalLosses,
+        totalCompleted,
+        totalPending,
         avgAccuracy,
       };
     },
