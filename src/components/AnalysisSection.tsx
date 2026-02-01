@@ -260,7 +260,14 @@ export function AnalysisSection({
             <span>{language === 'cz' ? 'Analýza se načítá...' : 'Analysis loading...'}</span>
           </div>
         ) : analysisText ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
+            {/* Language indicator for Czech users */}
+            {language === 'cz' && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mb-2">
+                <span className="text-base">🌐</span>
+                <span>AI Analýza (anglicky)</span>
+              </div>
+            )}
             {analysisText.split('\n\n').map((paragraph, idx) => (
               <p key={idx} className="text-sm md:text-base text-muted-foreground leading-relaxed">{paragraph}</p>
             ))}
