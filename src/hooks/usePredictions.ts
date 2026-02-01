@@ -149,21 +149,26 @@ export class MaintenanceError extends Error {
 // Transform snake_case API response to camelCase APIPrediction
 function transformPrediction(raw: Record<string, unknown>): APIPrediction {
   const predObj = raw.prediction as Record<string, unknown> | undefined;
+  const featuresUsed = raw.features_used as Record<string, unknown> | undefined;
+  const gamesData = raw.games as Record<string, unknown> | undefined;
   
-  // Parse bookmaker odds
+  // Parse bookmaker odds from the API response
   let bookmakerOdds: BookmakerOdds[] | undefined;
   const rawOdds = raw.bookmaker_odds || raw.bookmakerOdds || predObj?.bookmakerOdds;
   if (Array.isArray(rawOdds)) {
     bookmakerOdds = rawOdds.map((o: Record<string, unknown>) => ({
       bookmaker: String(o.bookmaker || o.name || ''),
-      odds: String(o.odds || o.price || ''),
-      line: o.line ? String(o.line) : undefined,
+      odds: String(o.odds || o.price || o.home_odds || ''),
+      line: o.line ? String(o.line) : (o.spread_home ? String(o.spread_home) : undefined),
+      homeOdds: o.home_odds !== undefined ? Number(o.home_odds) : undefined,
+      awayOdds: o.away_odds !== undefined ? Number(o.away_odds) : undefined,
+      spreadHome: o.spread_home !== undefined ? Number(o.spread_home) : undefined,
     }));
   }
   
-  // Parse key factors
+  // Parse key factors from features_used.key_factors array
   let keyFactors: KeyFactors | undefined;
-  const rawFactors = raw.key_factors || raw.keyFactors || predObj?.keyFactors;
+  const rawFactors = raw.key_factors || raw.keyFactors || predObj?.keyFactors || featuresUsed?.key_factors;
   if (rawFactors && typeof rawFactors === 'object') {
     const factors = rawFactors as Record<string, unknown>;
     keyFactors = {
@@ -175,28 +180,37 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     };
   }
   
-  // Parse confidence breakdown
+  // Parse confidence breakdown from API response
   let confidenceBreakdown: ConfidenceBreakdown | undefined;
   const rawBreakdown = raw.confidence_breakdown || raw.confidenceBreakdown || predObj?.confidenceBreakdown;
   if (rawBreakdown && typeof rawBreakdown === 'object') {
     const breakdown = rawBreakdown as Record<string, unknown>;
     confidenceBreakdown = {
-      research: Number(breakdown.research || 50),
-      odds: Number(breakdown.odds || 30),
-      historical: Number(breakdown.historical || 20),
-      sentiment: breakdown.sentiment ? Number(breakdown.sentiment) : undefined,
-      injuries: breakdown.injuries ? Number(breakdown.injuries) : undefined,
-      weather: breakdown.weather ? Number(breakdown.weather) : undefined,
+      research: Number(breakdown.from_research || breakdown.fromResearch || breakdown.research || 0),
+      odds: Number(breakdown.from_odds || breakdown.fromOdds || breakdown.odds || 0),
+      historical: Number(breakdown.from_historical || breakdown.fromHistorical || breakdown.historical || 0),
+      fromResearch: Number(breakdown.from_research || breakdown.fromResearch || breakdown.research || 0),
+      fromOdds: Number(breakdown.from_odds || breakdown.fromOdds || breakdown.odds || 0),
+      fromHistorical: Number(breakdown.from_historical || breakdown.fromHistorical || breakdown.historical || 0),
     };
   }
 
+  // Extract key factors list from features_used
+  let keyFactorsList: string[] = [];
+  if (featuresUsed && Array.isArray(featuresUsed.key_factors)) {
+    keyFactorsList = featuresUsed.key_factors as string[];
+  }
+
+  // Get game status
+  const status = String(gamesData?.status || raw.status || 'scheduled');
+
   return {
     id: String(raw.id || ''),
-    sport: String(raw.sport || raw.sport_id || ''),
+    sport: String(raw.sport || raw.sport_id || gamesData?.sport_id || ''),
     league: String(raw.league || raw.sport || ''),
-    homeTeam: String(raw.home_team || raw.homeTeam || ''),
-    awayTeam: String(raw.away_team || raw.awayTeam || ''),
-    gameTime: String(raw.game_time || raw.gameTime || raw.commence_time || ''),
+    homeTeam: String(raw.home_team || raw.homeTeam || gamesData?.home_team || ''),
+    awayTeam: String(raw.away_team || raw.awayTeam || gamesData?.away_team || ''),
+    gameTime: String(raw.game_time || raw.gameTime || raw.commence_time || gamesData?.commence_time || ''),
     prediction: {
       type: String(raw.prediction_type || predObj?.type || 'Moneyline'),
       pick: String(raw.predicted_winner || predObj?.pick || ''),
@@ -205,17 +219,19 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     },
     confidence: Number(raw.confidence) || 0.65,
     expectedValue: Number(raw.expected_value ?? predObj?.expectedValue ?? raw.ev ?? 0),
-    reasoning: String(raw.reasoning || raw.analysis || 'AI analysis based on historical data and current conditions.'),
-    result: raw.is_correct === null || raw.result === 'pending'
-      ? 'pending' 
-      : raw.is_correct === true || raw.result === 'win'
-        ? 'win' 
-        : 'loss',
+    reasoning: String(raw.reasoning || raw.analysis || ''),
+    result: status === 'completed' || status === 'settled' 
+      ? (raw.is_correct === true || raw.result === 'win' ? 'win' : raw.is_correct === false || raw.result === 'loss' ? 'loss' : 'pending')
+      : 'pending',
     bookmakerOdds,
     keyFactors,
     confidenceBreakdown,
-    modelVersion: String(raw.model_version || raw.modelVersion || 'Edge88 v3.2'),
-    dataSources: Number(raw.data_sources || raw.dataSources || 12),
+    modelVersion: String(raw.model_version || raw.modelVersion || 'Edge88'),
+    dataSources: Number(featuresUsed?.sources_scanned || raw.data_sources || raw.dataSources || 0),
+    sourcesAnalyzed: Number(featuresUsed?.sources_scanned || 0),
+    keyFactorsList,
+    fullReasoning: String(raw.reasoning || ''),
+    venue: gamesData ? `${gamesData.home_team} Stadium` : undefined,
   };
 }
 
@@ -319,10 +335,17 @@ function extractStats(data: unknown): APIStats | null {
   const statsData = (obj.stats || obj.data || obj) as Record<string, unknown>;
   
   if (typeof statsData === 'object' && statsData !== null) {
+    // Extract wins/losses from the response
+    const wins = Number(statsData.wins || 0);
+    const losses = Number(statsData.losses || 0);
+    const accuracy = Number(statsData.accuracy || statsData.win_rate || 0);
+    const totalPredictions = Number(statsData.total_predictions || statsData.totalPredictions || 0);
+    const upcomingPredictions = Number(statsData.upcoming_predictions || statsData.upcomingPredictions || 0);
+    
     return {
-      totalPredictions: Number(statsData.totalPredictions || statsData.total_predictions || 0),
-      accuracy: Number(statsData.accuracy || 0),
-      activePredictions: Number(statsData.activePredictions || statsData.active_predictions || 0),
+      totalPredictions,
+      accuracy,
+      activePredictions: upcomingPredictions,
       roi: Number(statsData.roi || 0),
       winStreak: Number(statsData.winStreak || statsData.win_streak || 0),
       byConfidence: (statsData.byConfidence || statsData.by_confidence) as APIStats['byConfidence'] || {

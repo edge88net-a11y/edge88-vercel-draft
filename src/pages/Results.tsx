@@ -29,8 +29,9 @@ const Results = () => {
 
   const isLoading = predictionsLoading || statsLoading || accuracyLoading;
 
-  // Filter graded predictions
+  // Filter graded predictions (completed/settled games)
   const gradedPredictions = predictions?.filter((p) => {
+    // Only show predictions with result (win/loss), not pending
     if (p.result === 'pending') return false;
     if (selectedSport !== 'All') {
       const sportKey = p.sport?.toUpperCase();
@@ -39,9 +40,11 @@ const Results = () => {
     return true;
   }) || [];
 
-  const wins = gradedPredictions.filter((p) => p.result === 'win').length;
-  const losses = gradedPredictions.filter((p) => p.result === 'loss').length;
-  const accuracy = wins + losses > 0 ? (wins / (wins + losses)) * 100 : stats?.accuracy || 0;
+  // Get stats from API response
+  const wins = stats?.accuracy ? Math.round((stats.accuracy / 100) * (stats.totalPredictions || 0)) : gradedPredictions.filter((p) => p.result === 'win').length;
+  const losses = (stats?.totalPredictions || 0) - wins || gradedPredictions.filter((p) => p.result === 'loss').length;
+  const accuracy = stats?.accuracy || (wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0);
+  const hasResults = gradedPredictions.length > 0 || (stats?.totalPredictions && stats.totalPredictions > 0);
 
   // Confidence breakdown for chart
   const confidenceBreakdown = stats?.byConfidence ? [
@@ -113,17 +116,39 @@ const Results = () => {
           <div className="flex items-center justify-center py-32">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : !hasResults ? (
+          // No results yet - show friendly message
+          <div className="glass-card p-12 text-center">
+            <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+              <Target className="h-10 w-10 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold mb-3">
+              No Results Yet
+            </h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Predictions are being tracked. Once games complete and are graded, your results will appear here with full accuracy stats.
+            </p>
+            <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                <span>{stats?.totalPredictions || 0} predictions tracking</span>
+              </div>
+              <span>•</span>
+              <span>{stats?.activePredictions || 0} upcoming</span>
+            </div>
+          </div>
         ) : (
           <>
             {/* Stats Grid */}
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title={t.accuracyRate || "Accuracy"}
-                value={(stats?.accuracy ?? accuracy).toFixed(1)}
+                value={accuracy.toFixed(1)}
                 suffix="%"
                 icon={<Target className="h-5 w-5" />}
-                trend="up"
-                trendValue="+2.1%"
               />
               <StatCard
                 title={t.winRate || "Win Rate"}
@@ -134,14 +159,12 @@ const Results = () => {
                 title={t.roi || "ROI"}
                 value={stats?.roi ?? 0}
                 suffix="%"
-                prefix="+"
+                prefix={stats?.roi && stats.roi >= 0 ? "+" : ""}
                 icon={<TrendingUp className="h-5 w-5" />}
-                trend="up"
-                trendValue="+1.8%"
               />
               <StatCard
                 title={t.totalGraded || "Total Graded"}
-                value={stats?.totalPredictions ?? wins + losses}
+                value={stats?.totalPredictions ?? gradedPredictions.length}
                 icon={<BarChart3 className="h-5 w-5" />}
               />
             </div>
