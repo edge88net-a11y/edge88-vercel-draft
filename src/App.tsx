@@ -21,8 +21,13 @@ import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ResponsibleGambling from "./pages/ResponsibleGambling";
-import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+
+// Admin pages
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminPredictions from "./pages/admin/AdminPredictions";
+import AdminAccuracy from "./pages/admin/AdminAccuracy";
+import AdminSystem from "./pages/admin/AdminSystem";
 
 const queryClient = new QueryClient();
 
@@ -57,9 +62,25 @@ const App = () => (
                   <Settings />
                 </ProtectedRoute>
               } />
+              {/* Admin routes */}
               <Route path="/admin" element={
                 <AdminRoute>
-                  <Admin />
+                  <AdminOverview />
+                </AdminRoute>
+              } />
+              <Route path="/admin/predictions" element={
+                <AdminRoute>
+                  <AdminPredictions />
+                </AdminRoute>
+              } />
+              <Route path="/admin/accuracy" element={
+                <AdminRoute>
+                  <AdminAccuracy />
+                </AdminRoute>
+              } />
+              <Route path="/admin/system" element={
+                <AdminRoute>
+                  <AdminSystem />
                 </AdminRoute>
               } />
               <Route path="/terms" element={<Terms />} />
