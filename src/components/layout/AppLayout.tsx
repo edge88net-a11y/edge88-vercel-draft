@@ -15,12 +15,14 @@ export function AppLayout() {
   const isMobile = useIsMobile();
   const location = useLocation();
   
-  // Sidebar state
+  // Sidebar state - default to collapsed on desktop for slim look
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      // Default to collapsed if not set
+      return stored === null ? true : stored === 'true';
     }
-    return false;
+    return true;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
 

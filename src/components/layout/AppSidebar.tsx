@@ -1,17 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Zap, 
+  Crosshair, 
   BarChart3, 
-  BookOpen, 
-  User, 
-  Star, 
   Users, 
-  MessageCircle,
-  Receipt,
-  Bell,
-  Mail,
-  Settings as SettingsIcon,
+  BookOpen,
+  Settings,
   Shield,
   LogOut,
   ChevronLeft,
@@ -35,24 +29,13 @@ interface AppSidebarProps {
   onMobileClose?: () => void;
 }
 
+// Slimmed down to 5 essential items only
 const mainNavItems = [
   { href: '/dashboard', label: 'Dashboard', labelCz: 'Přehled', icon: LayoutDashboard },
-  { href: '/predictions', label: 'Predictions', labelCz: 'Predikce', icon: Zap },
+  { href: '/predictions', label: 'Predictions', labelCz: 'Predikce', icon: Crosshair },
   { href: '/results', label: 'Results', labelCz: 'Výsledky', icon: BarChart3 },
   { href: '/community', label: 'Community', labelCz: 'Komunita', icon: Users },
-  { href: '/blog', label: 'Blog / Archive', labelCz: 'Blog / Archiv', icon: BookOpen },
-];
-
-const accountNavItems = [
-  { href: '/settings', label: 'Profile', labelCz: 'Profil', icon: User },
-  { href: '/pricing', label: 'My Plan', labelCz: 'Můj plán', icon: Star },
-  { href: '/referral', label: 'Referrals', labelCz: 'Doporučení', icon: Users },
-  { href: '/saved-picks', label: 'Saved Picks', labelCz: 'Uložené tipy', icon: Receipt },
-];
-
-const toolsNavItems = [
-  { href: '/settings#notifications', label: 'Notifications', labelCz: 'Oznámení', icon: Bell },
-  { href: '/settings#emails', label: 'Email Preferences', labelCz: 'Emailové preference', icon: Mail },
+  { href: '/blog', label: 'Blog', labelCz: 'Blog', icon: BookOpen },
 ];
 
 export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarProps) {
@@ -76,14 +59,12 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
   };
 
   const tierColors: Record<string, string> = {
-    free: 'bg-muted text-muted-foreground',
-    basic: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    pro: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    elite: 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30',
-    admin: 'bg-gradient-to-r from-yellow-500/30 to-orange-500/30 text-yellow-300 border-yellow-400/50 shadow-[0_0_10px_hsl(45,100%,50%,0.2)]',
+    free: 'text-muted-foreground',
+    basic: 'text-blue-400',
+    pro: 'text-purple-400',
+    elite: 'text-yellow-400',
+    admin: 'text-yellow-300',
   };
-
-  const currentTier = displayTier;
 
   const NavItem = ({ href, label, labelCz, icon: Icon, badge }: {
     href: string;
@@ -100,13 +81,17 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
         to={href}
         onClick={handleNavClick}
         className={cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative',
+          'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 group relative',
           isActive
             ? 'bg-primary/10 text-primary'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-          isActive && 'before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-6 before:rounded-r-full before:bg-primary'
+          collapsed && 'justify-center px-2'
         )}
       >
+        {/* Active indicator bar */}
+        {isActive && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full bg-primary" />
+        )}
         <Icon className={cn('h-5 w-5 shrink-0', isActive && 'text-primary')} />
         {!collapsed && (
           <>
@@ -136,16 +121,16 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
     <aside
       className={cn(
         'flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-300',
-        collapsed ? 'w-[60px]' : 'w-[260px]'
+        collapsed ? 'w-16' : 'w-60'
       )}
     >
       {/* Logo */}
       <div className={cn(
-        'flex items-center h-16 px-4 border-b border-sidebar-border shrink-0',
+        'flex items-center h-16 px-3 border-b border-sidebar-border shrink-0',
         collapsed ? 'justify-center' : 'gap-3'
       )}>
         <Link to="/dashboard" onClick={handleNavClick} className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-black text-primary-foreground text-sm">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-black text-primary-foreground text-sm shrink-0">
             E8
           </div>
           {!collapsed && (
@@ -154,83 +139,53 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
-        {/* Main Navigation */}
-        <div className="space-y-1">
-          {mainNavItems.map((item) => (
-            <NavItem
-              key={item.href}
-              {...item}
-              badge={item.href === '/dashboard' && winStreak?.currentStreak >= 3 ? (
-                <span className={cn(
-                  'flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded',
-                  winStreak.currentStreak >= 5 
-                    ? 'text-orange-400 bg-orange-500/20' 
-                    : 'text-success bg-success/20'
-                )}>
-                  <Flame className={cn('h-3 w-3', winStreak.currentStreak >= 5 && 'animate-pulse')} />
-                  🔥 {winStreak.currentStreak}
-                </span>
-              ) : undefined}
-            />
-          ))}
-        </div>
-
-        {/* Account Section */}
-        <div>
-          {!collapsed && (
-            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {language === 'cz' ? 'Účet' : 'Account'}
-            </p>
-          )}
-          <div className="space-y-1">
-            {accountNavItems.map((item) => (
-              <NavItem key={item.href} {...item} />
-            ))}
-          </div>
-        </div>
-
-        {/* Tools Section */}
-        <div>
-          {!collapsed && (
-            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {language === 'cz' ? 'Nástroje' : 'Tools'}
-            </p>
-          )}
-          <div className="space-y-1">
-            {toolsNavItems.map((item) => (
-              <NavItem key={item.href} {...item} />
-            ))}
-          </div>
-        </div>
-
-        {/* Admin Section */}
-        {isAdmin && (
-          <div>
-            {!collapsed && (
-              <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Admin
-              </p>
-            )}
-            <NavItem
-              href="/admin"
-              label="Admin Panel"
-              labelCz="Admin Panel"
-              icon={Shield}
-            />
-          </div>
-        )}
+      {/* Main Navigation - Clean icon list */}
+      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+        {mainNavItems.map((item) => (
+          <NavItem
+            key={item.href}
+            {...item}
+            badge={item.href === '/dashboard' && winStreak?.currentStreak >= 3 ? (
+              <span className={cn(
+                'flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded',
+                winStreak.currentStreak >= 5 
+                  ? 'text-orange-400 bg-orange-500/20' 
+                  : 'text-success bg-success/20'
+              )}>
+                <Flame className={cn('h-3 w-3', winStreak.currentStreak >= 5 && 'animate-pulse')} />
+                {winStreak.currentStreak}
+              </span>
+            ) : undefined}
+          />
+        ))}
       </nav>
 
-      {/* User Section */}
-      <div className="shrink-0 border-t border-sidebar-border p-3 space-y-3">
-        {/* User Info */}
+      {/* Bottom Section: Settings + Admin + User */}
+      <div className="shrink-0 border-t border-sidebar-border p-2 space-y-1">
+        {/* Settings */}
+        <NavItem
+          href="/settings"
+          label="Settings"
+          labelCz="Nastavení"
+          icon={Settings}
+        />
+
+        {/* Admin Panel - only for admins */}
+        {isAdmin && (
+          <NavItem
+            href="/admin"
+            label="Admin"
+            labelCz="Admin"
+            icon={Shield}
+          />
+        )}
+
+        {/* User Info - Compact */}
         <div className={cn(
-          'flex items-center gap-3 rounded-lg p-2 bg-muted/50',
-          collapsed && 'justify-center p-1'
+          'flex items-center gap-2 rounded-lg p-2 mt-2 bg-muted/30',
+          collapsed && 'justify-center p-1.5'
         )}>
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-8 w-8 border-2 border-primary/30">
             <AvatarImage src={profile?.avatar_url || undefined} />
             <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
               {profile?.display_name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
@@ -238,35 +193,48 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
+              <p className="text-xs font-medium truncate">
                 {profile?.display_name || user?.email?.split('@')[0]}
               </p>
               <span className={cn(
-                'inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border',
-                tierColors[currentTier]
+                'text-[10px] font-bold uppercase flex items-center gap-0.5',
+                tierColors[displayTier]
               )}>
                 {isUserAdmin && <Crown className="h-2.5 w-2.5" />}
-                {isUserAdmin ? '👑 ADMIN' : currentTier.toUpperCase()}
+                {isUserAdmin ? '👑 ADMIN' : displayTier.toUpperCase()}
               </span>
             </div>
           )}
         </div>
 
-        {/* Actions */}
-        <div className={cn('flex gap-2', collapsed ? 'flex-col items-center' : '')}>
+        {/* Logout */}
+        {collapsed ? (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="w-full justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-2"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {language === 'cz' ? 'Odhlásit' : 'Logout'}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleSignOut}
-            className={cn(
-              'text-muted-foreground hover:text-destructive hover:bg-destructive/10',
-              collapsed ? 'w-8 h-8 p-0' : 'flex-1 justify-start gap-2'
-            )}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs"
           >
             <LogOut className="h-4 w-4" />
-            {!collapsed && (language === 'cz' ? 'Odhlásit' : 'Logout')}
+            {language === 'cz' ? 'Odhlásit' : 'Logout'}
           </Button>
-        </div>
+        )}
 
         {/* Collapse Toggle */}
         <Button
@@ -274,8 +242,8 @@ export function AppSidebar({ collapsed, onCollapse, onMobileClose }: AppSidebarP
           size="sm"
           onClick={() => onCollapse(!collapsed)}
           className={cn(
-            'w-full text-muted-foreground hover:text-foreground',
-            collapsed && 'justify-center'
+            'w-full text-muted-foreground hover:text-foreground text-xs',
+            collapsed ? 'justify-center p-2' : 'justify-start'
           )}
         >
           {collapsed ? (
