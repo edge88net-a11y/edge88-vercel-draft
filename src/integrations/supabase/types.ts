@@ -90,6 +90,113 @@ export type Database = {
           },
         ]
       }
+      data_freshness: {
+        Row: {
+          data_type: string | null
+          error_message: string | null
+          id: string
+          last_updated: string | null
+          records_updated: number | null
+          status: string | null
+        }
+        Insert: {
+          data_type?: string | null
+          error_message?: string | null
+          id?: string
+          last_updated?: string | null
+          records_updated?: number | null
+          status?: string | null
+        }
+        Update: {
+          data_type?: string | null
+          error_message?: string | null
+          id?: string
+          last_updated?: string | null
+          records_updated?: number | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      email_logs: {
+        Row: {
+          clicked_at: string | null
+          email_type: string
+          error_message: string | null
+          id: string
+          opened_at: string | null
+          resend_id: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string | null
+          subscriber_id: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          email_type: string
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string | null
+          subscriber_id?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string | null
+          subscriber_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "newsletter_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          created_at: string | null
+          html_content: string
+          id: string
+          subject: string
+          template_name: string
+          text_content: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          html_content: string
+          id?: string
+          subject: string
+          template_name: string
+          text_content?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          html_content?: string
+          id?: string
+          subject?: string
+          template_name?: string
+          text_content?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       event_comments: {
         Row: {
           comment_text: string
@@ -144,6 +251,80 @@ export type Database = {
           },
         ]
       }
+      game_predictions_detailed: {
+        Row: {
+          away_record: string | null
+          coach_matchup_record: string | null
+          created_at: string | null
+          head_to_head_last_5: Json | null
+          historical_conditions: string | null
+          home_record: string | null
+          id: string
+          injury_report: Json | null
+          key_player_stats: Json | null
+          last_10_games_away: Json | null
+          last_10_games_home: Json | null
+          prediction_id: string | null
+          research_sources_count: number | null
+          research_summary: string | null
+          research_timestamp: string | null
+          rest_days_away: number | null
+          rest_days_home: number | null
+          travel_distance_km: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          away_record?: string | null
+          coach_matchup_record?: string | null
+          created_at?: string | null
+          head_to_head_last_5?: Json | null
+          historical_conditions?: string | null
+          home_record?: string | null
+          id?: string
+          injury_report?: Json | null
+          key_player_stats?: Json | null
+          last_10_games_away?: Json | null
+          last_10_games_home?: Json | null
+          prediction_id?: string | null
+          research_sources_count?: number | null
+          research_summary?: string | null
+          research_timestamp?: string | null
+          rest_days_away?: number | null
+          rest_days_home?: number | null
+          travel_distance_km?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          away_record?: string | null
+          coach_matchup_record?: string | null
+          created_at?: string | null
+          head_to_head_last_5?: Json | null
+          historical_conditions?: string | null
+          home_record?: string | null
+          id?: string
+          injury_report?: Json | null
+          key_player_stats?: Json | null
+          last_10_games_away?: Json | null
+          last_10_games_home?: Json | null
+          prediction_id?: string | null
+          research_sources_count?: number | null
+          research_summary?: string | null
+          research_timestamp?: string | null
+          rest_days_away?: number | null
+          rest_days_home?: number | null
+          travel_distance_km?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_predictions_detailed_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: true
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_research: {
         Row: {
           content: string
@@ -187,6 +368,164 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_stats: {
+        Row: {
+          assists_away: number | null
+          assists_home: number | null
+          away_points_prediction: number | null
+          cards_away: number | null
+          cards_home: number | null
+          corners_prediction: number | null
+          created_at: string | null
+          efficiency_away: number | null
+          efficiency_home: number | null
+          first_half_score: string | null
+          goalie_save_pct_away: number | null
+          goalie_save_pct_home: number | null
+          goals_over_under: number | null
+          goals_prediction: string | null
+          height_advantage_cm: number | null
+          home_points_prediction: number | null
+          id: string
+          method_of_victory: string | null
+          pace: number | null
+          period_1_score: string | null
+          period_2_score: string | null
+          period_3_score: string | null
+          possession_away: number | null
+          possession_home: number | null
+          powerplay_pct_away: number | null
+          powerplay_pct_home: number | null
+          prediction_id: string | null
+          q1_score: string | null
+          q2_score: string | null
+          q3_score: string | null
+          q4_score: string | null
+          reach_advantage_cm: number | null
+          rebounds_away: number | null
+          rebounds_home: number | null
+          round_prediction: number | null
+          second_half_score: string | null
+          shots_on_goal_away: number | null
+          shots_on_goal_home: number | null
+          significant_strikes_away: number | null
+          significant_strikes_home: number | null
+          sport: string
+          takedowns_away: number | null
+          takedowns_home: number | null
+          total_points_prediction: number | null
+          updated_at: string | null
+          xg_away: number | null
+          xg_home: number | null
+        }
+        Insert: {
+          assists_away?: number | null
+          assists_home?: number | null
+          away_points_prediction?: number | null
+          cards_away?: number | null
+          cards_home?: number | null
+          corners_prediction?: number | null
+          created_at?: string | null
+          efficiency_away?: number | null
+          efficiency_home?: number | null
+          first_half_score?: string | null
+          goalie_save_pct_away?: number | null
+          goalie_save_pct_home?: number | null
+          goals_over_under?: number | null
+          goals_prediction?: string | null
+          height_advantage_cm?: number | null
+          home_points_prediction?: number | null
+          id?: string
+          method_of_victory?: string | null
+          pace?: number | null
+          period_1_score?: string | null
+          period_2_score?: string | null
+          period_3_score?: string | null
+          possession_away?: number | null
+          possession_home?: number | null
+          powerplay_pct_away?: number | null
+          powerplay_pct_home?: number | null
+          prediction_id?: string | null
+          q1_score?: string | null
+          q2_score?: string | null
+          q3_score?: string | null
+          q4_score?: string | null
+          reach_advantage_cm?: number | null
+          rebounds_away?: number | null
+          rebounds_home?: number | null
+          round_prediction?: number | null
+          second_half_score?: string | null
+          shots_on_goal_away?: number | null
+          shots_on_goal_home?: number | null
+          significant_strikes_away?: number | null
+          significant_strikes_home?: number | null
+          sport: string
+          takedowns_away?: number | null
+          takedowns_home?: number | null
+          total_points_prediction?: number | null
+          updated_at?: string | null
+          xg_away?: number | null
+          xg_home?: number | null
+        }
+        Update: {
+          assists_away?: number | null
+          assists_home?: number | null
+          away_points_prediction?: number | null
+          cards_away?: number | null
+          cards_home?: number | null
+          corners_prediction?: number | null
+          created_at?: string | null
+          efficiency_away?: number | null
+          efficiency_home?: number | null
+          first_half_score?: string | null
+          goalie_save_pct_away?: number | null
+          goalie_save_pct_home?: number | null
+          goals_over_under?: number | null
+          goals_prediction?: string | null
+          height_advantage_cm?: number | null
+          home_points_prediction?: number | null
+          id?: string
+          method_of_victory?: string | null
+          pace?: number | null
+          period_1_score?: string | null
+          period_2_score?: string | null
+          period_3_score?: string | null
+          possession_away?: number | null
+          possession_home?: number | null
+          powerplay_pct_away?: number | null
+          powerplay_pct_home?: number | null
+          prediction_id?: string | null
+          q1_score?: string | null
+          q2_score?: string | null
+          q3_score?: string | null
+          q4_score?: string | null
+          reach_advantage_cm?: number | null
+          rebounds_away?: number | null
+          rebounds_home?: number | null
+          round_prediction?: number | null
+          second_half_score?: string | null
+          shots_on_goal_away?: number | null
+          shots_on_goal_home?: number | null
+          significant_strikes_away?: number | null
+          significant_strikes_home?: number | null
+          sport?: string
+          takedowns_away?: number | null
+          takedowns_home?: number | null
+          total_points_prediction?: number | null
+          updated_at?: string | null
+          xg_away?: number | null
+          xg_home?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_stats_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: true
+            referencedRelation: "predictions"
             referencedColumns: ["id"]
           },
         ]
@@ -293,27 +632,137 @@ export type Database = {
       }
       newsletter_subscribers: {
         Row: {
+          created_at: string | null
           email: string
+          email_preferences: Json | null
+          emails_clicked: number | null
+          emails_opened: number | null
+          emails_sent: number | null
           id: string
-          is_active: boolean
-          source: string | null
-          subscribed_at: string
+          last_email_sent: string | null
+          signup_date: string | null
+          subscription_tier: string | null
+          unsubscribed: boolean | null
+          unsubscribed_at: string | null
         }
         Insert: {
+          created_at?: string | null
           email: string
+          email_preferences?: Json | null
+          emails_clicked?: number | null
+          emails_opened?: number | null
+          emails_sent?: number | null
           id?: string
-          is_active?: boolean
-          source?: string | null
-          subscribed_at?: string
+          last_email_sent?: string | null
+          signup_date?: string | null
+          subscription_tier?: string | null
+          unsubscribed?: boolean | null
+          unsubscribed_at?: string | null
         }
         Update: {
+          created_at?: string | null
           email?: string
+          email_preferences?: Json | null
+          emails_clicked?: number | null
+          emails_opened?: number | null
+          emails_sent?: number | null
           id?: string
-          is_active?: boolean
-          source?: string | null
-          subscribed_at?: string
+          last_email_sent?: string | null
+          signup_date?: string | null
+          subscription_tier?: string | null
+          unsubscribed?: boolean | null
+          unsubscribed_at?: string | null
         }
         Relationships: []
+      }
+      numerology_analysis: {
+        Row: {
+          astrological_forecast: string | null
+          astrology_prediction: string | null
+          away_city_astrology: string | null
+          away_team_numerology: number | null
+          combined_insight: string | null
+          confidence_modifier: number | null
+          created_at: string | null
+          date_significance: string | null
+          game_date_numerology: number | null
+          historical_date_significance: string | null
+          home_city_astrology: string | null
+          home_team_numerology: number | null
+          id: string
+          key_players_zodiac: Json | null
+          moon_phase: string | null
+          moon_phase_win_rate: number | null
+          number_patterns_historic: Json | null
+          numerology_patterns: string | null
+          numerology_prediction: string | null
+          planetary_alignments: string | null
+          prediction_id: string | null
+          team_away_founding_date: string | null
+          team_home_founding_date: string | null
+          winning_dates_pattern: string | null
+        }
+        Insert: {
+          astrological_forecast?: string | null
+          astrology_prediction?: string | null
+          away_city_astrology?: string | null
+          away_team_numerology?: number | null
+          combined_insight?: string | null
+          confidence_modifier?: number | null
+          created_at?: string | null
+          date_significance?: string | null
+          game_date_numerology?: number | null
+          historical_date_significance?: string | null
+          home_city_astrology?: string | null
+          home_team_numerology?: number | null
+          id?: string
+          key_players_zodiac?: Json | null
+          moon_phase?: string | null
+          moon_phase_win_rate?: number | null
+          number_patterns_historic?: Json | null
+          numerology_patterns?: string | null
+          numerology_prediction?: string | null
+          planetary_alignments?: string | null
+          prediction_id?: string | null
+          team_away_founding_date?: string | null
+          team_home_founding_date?: string | null
+          winning_dates_pattern?: string | null
+        }
+        Update: {
+          astrological_forecast?: string | null
+          astrology_prediction?: string | null
+          away_city_astrology?: string | null
+          away_team_numerology?: number | null
+          combined_insight?: string | null
+          confidence_modifier?: number | null
+          created_at?: string | null
+          date_significance?: string | null
+          game_date_numerology?: number | null
+          historical_date_significance?: string | null
+          home_city_astrology?: string | null
+          home_team_numerology?: number | null
+          id?: string
+          key_players_zodiac?: Json | null
+          moon_phase?: string | null
+          moon_phase_win_rate?: number | null
+          number_patterns_historic?: Json | null
+          numerology_patterns?: string | null
+          numerology_prediction?: string | null
+          planetary_alignments?: string | null
+          prediction_id?: string | null
+          team_away_founding_date?: string | null
+          team_home_founding_date?: string | null
+          winning_dates_pattern?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "numerology_analysis_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: true
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       odds_history: {
         Row: {
@@ -371,6 +820,95 @@ export type Database = {
           },
         ]
       }
+      player_stats: {
+        Row: {
+          assists_avg: number | null
+          assists_season: number | null
+          created_at: string | null
+          double_double_rate: number | null
+          games_played: number | null
+          goals_season: number | null
+          height_cm: number | null
+          id: string
+          knockouts: number | null
+          losses: number | null
+          player_name: string
+          plus_minus: number | null
+          points_avg: number | null
+          prediction_id: string | null
+          reach_cm: number | null
+          rebounds_avg: number | null
+          season_stats: Json | null
+          shots_per_game: number | null
+          sport: string | null
+          submissions: number | null
+          team: string | null
+          updated_at: string | null
+          weight_kg: number | null
+          wins: number | null
+        }
+        Insert: {
+          assists_avg?: number | null
+          assists_season?: number | null
+          created_at?: string | null
+          double_double_rate?: number | null
+          games_played?: number | null
+          goals_season?: number | null
+          height_cm?: number | null
+          id?: string
+          knockouts?: number | null
+          losses?: number | null
+          player_name: string
+          plus_minus?: number | null
+          points_avg?: number | null
+          prediction_id?: string | null
+          reach_cm?: number | null
+          rebounds_avg?: number | null
+          season_stats?: Json | null
+          shots_per_game?: number | null
+          sport?: string | null
+          submissions?: number | null
+          team?: string | null
+          updated_at?: string | null
+          weight_kg?: number | null
+          wins?: number | null
+        }
+        Update: {
+          assists_avg?: number | null
+          assists_season?: number | null
+          created_at?: string | null
+          double_double_rate?: number | null
+          games_played?: number | null
+          goals_season?: number | null
+          height_cm?: number | null
+          id?: string
+          knockouts?: number | null
+          losses?: number | null
+          player_name?: string
+          plus_minus?: number | null
+          points_avg?: number | null
+          prediction_id?: string | null
+          reach_cm?: number | null
+          rebounds_avg?: number | null
+          season_stats?: Json | null
+          shots_per_game?: number | null
+          sport?: string | null
+          submissions?: number | null
+          team?: string | null
+          updated_at?: string | null
+          weight_kg?: number | null
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_stats_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       predictions: {
         Row: {
           confidence: number
@@ -382,11 +920,13 @@ export type Database = {
           id: string
           is_correct: boolean | null
           model_version: string | null
+          perplexity_queries_used: number | null
           predicted_spread: number | null
           predicted_total: number | null
           predicted_winner: string | null
           prediction_type: string
           reasoning: string | null
+          research_summary: Json | null
         }
         Insert: {
           confidence: number
@@ -398,11 +938,13 @@ export type Database = {
           id?: string
           is_correct?: boolean | null
           model_version?: string | null
+          perplexity_queries_used?: number | null
           predicted_spread?: number | null
           predicted_total?: number | null
           predicted_winner?: string | null
           prediction_type: string
           reasoning?: string | null
+          research_summary?: Json | null
         }
         Update: {
           confidence?: number
@@ -414,11 +956,13 @@ export type Database = {
           id?: string
           is_correct?: boolean | null
           model_version?: string | null
+          perplexity_queries_used?: number | null
           predicted_spread?: number | null
           predicted_total?: number | null
           predicted_winner?: string | null
           prediction_type?: string
           reasoning?: string | null
+          research_summary?: Json | null
         }
         Relationships: [
           {
@@ -626,6 +1170,42 @@ export type Database = {
           tier?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          reputation: number | null
+          total_comments: number | null
+          total_upvotes: number | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          reputation?: number | null
+          total_comments?: number | null
+          total_upvotes?: number | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          reputation?: number | null
+          total_comments?: number | null
+          total_upvotes?: number | null
+          username?: string | null
         }
         Relationships: []
       }
