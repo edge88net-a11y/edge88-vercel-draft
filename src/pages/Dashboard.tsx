@@ -141,6 +141,15 @@ const Dashboard = () => {
     }
   }, [profile]);
 
+  // Debug: Log predictions data
+  useEffect(() => {
+    if (predictions) {
+      console.log('Dashboard predictions:', predictions);
+      console.log('Dashboard predictions count:', predictions.length);
+      console.log('Dashboard wins:', predictions.filter(p => p.result === 'win').length);
+    }
+  }, [predictions]);
+
   // Deduplicate predictions
   const deduplicatedPredictions = useMemo(() => {
     if (!predictions) return [];
@@ -154,12 +163,24 @@ const Dashboard = () => {
     return Array.from(seenGames.values());
   }, [predictions]);
 
-  // Top picks for today, sorted by confidence
-  const topPicks = useMemo(() => {
+  // ALL active predictions (pending) - show ALL, not just 5
+  const activePredictions = useMemo(() => {
     return deduplicatedPredictions
       .filter(p => p.result === 'pending')
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 5);
+      .sort((a, b) => b.confidence - a.confidence);
+  }, [deduplicatedPredictions]);
+
+  // Top 5 picks for display in horizontal scroll
+  const topPicks = useMemo(() => {
+    return activePredictions.slice(0, 5);
+  }, [activePredictions]);
+
+  // Completed predictions for Recent Results
+  const completedPredictions = useMemo(() => {
+    return deduplicatedPredictions
+      .filter(p => p.result === 'win' || p.result === 'loss')
+      .sort((a, b) => new Date(b.gameTime).getTime() - new Date(a.gameTime).getTime())
+      .slice(0, 10);
   }, [deduplicatedPredictions]);
 
   // Calculate estimated monthly profit (simplified calculation)
@@ -247,8 +268,55 @@ const Dashboard = () => {
     });
   }, [chartPeriod, stats?.accuracy]);
 
-  // Sport performance data
+  // Sport performance data - use stats from API if available, otherwise mock
   const sportPerformance = useMemo(() => {
+    // If we have bySport data from API stats, use it
+    if (stats?.bySport && stats.bySport.length > 0) {
+      return stats.bySport
+        .map(s => ({
+          name: s.sport,
+          emoji: getSportEmoji(s.sport),
+          accuracy: s.accuracy,
+          wins: s.wins,
+          losses: s.losses,
+          trend: (s.roi || 0), // Use ROI as trend indicator
+        }))
+        .sort((a, b) => b.accuracy - a.accuracy);
+    }
+    
+    // Calculate from predictions data if available
+    if (deduplicatedPredictions.length > 0) {
+      const sportMap = new Map<string, { wins: number; losses: number }>();
+      deduplicatedPredictions.forEach(p => {
+        const sport = p.sport || 'Sports';
+        const current = sportMap.get(sport) || { wins: 0, losses: 0 };
+        if (p.result === 'win') current.wins++;
+        if (p.result === 'loss') current.losses++;
+        sportMap.set(sport, current);
+      });
+      
+      const sportsFromData = Array.from(sportMap.entries())
+        .filter(([_, data]) => data.wins + data.losses > 0)
+        .map(([sport, data]) => {
+          const total = data.wins + data.losses;
+          const accuracy = total > 0 ? Math.round((data.wins / total) * 100) : 0;
+          return {
+            name: sport,
+            emoji: getSportEmoji(sport),
+            accuracy,
+            wins: data.wins,
+            losses: data.losses,
+            trend: 0,
+          };
+        })
+        .sort((a, b) => b.accuracy - a.accuracy);
+      
+      if (sportsFromData.length > 0) {
+        return sportsFromData;
+      }
+    }
+    
+    // Fallback to mock data
     const sports = [
       { name: 'NHL', emoji: '🏒', accuracy: 78, wins: 45, losses: 13, trend: 2.5 },
       { name: 'NBA', emoji: '🏀', accuracy: 74, wins: 38, losses: 14, trend: -1.2 },
@@ -258,14 +326,47 @@ const Dashboard = () => {
     ].sort((a, b) => b.accuracy - a.accuracy);
     
     return sports;
-  }, []);
+  }, [stats?.bySport, deduplicatedPredictions]);
+
+  // Debug: Log stats data
+  useEffect(() => {
+    if (stats) {
+      console.log('Dashboard stats:', stats);
+      console.log('Dashboard winStreak from stats:', stats.winStreak);
+    }
+    console.log('Dashboard winStreak from Supabase:', winStreak);
+  }, [stats, winStreak]);
 
   const isLoading = authLoading || (predictionsLoading && !isMaintenanceMode);
   const showMaintenanceState = isMaintenanceMode || statsMaintenanceMode;
 
   // Win rate trend (mock - compare to last week)
   const winRateTrend = 3.2; // +3.2% vs last week
-  const currentStreak = winStreak?.currentStreak || stats?.winStreak || 0;
+  
+  // Calculate current streak - try multiple sources
+  const currentStreak = useMemo(() => {
+    // 1. First try Supabase win_streaks table
+    if (winStreak?.currentStreak && winStreak.currentStreak > 0) {
+      return winStreak.currentStreak;
+    }
+    // 2. Try stats API
+    if (stats?.winStreak && stats.winStreak > 0) {
+      return stats.winStreak;
+    }
+    // 3. Calculate from predictions data
+    if (completedPredictions.length > 0) {
+      let streak = 0;
+      for (const p of completedPredictions) {
+        if (p.result === 'win') {
+          streak++;
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+    return 0;
+  }, [winStreak?.currentStreak, stats?.winStreak, completedPredictions]);
 
   // Show onboarding flow if needed
   if (showOnboarding && user && profile) {
@@ -342,11 +443,11 @@ const Dashboard = () => {
             <AnimatedStatCard
               icon={Target}
               iconColor="bg-primary/10 text-primary"
-              label={language === 'cz' ? 'Dnešní tipy' : "Today's Picks"}
-              value={topPicks.length}
+              label={language === 'cz' ? 'Aktivní tipy' : "Active Picks"}
+              value={activePredictions.length}
               link="/predictions"
               linkText={language === 'cz' ? 'Zobrazit' : 'View'}
-              isLoading={statsLoading}
+              isLoading={predictionsLoading}
               animationDelay={0}
             />
             
@@ -747,6 +848,87 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </section>
+
+          {/* Recent Results */}
+          <section className="glass-card overflow-hidden">
+            <div className="border-b border-border p-4 flex items-center justify-between">
+              <h3 className="font-bold flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-success" />
+                {language === 'cz' ? 'Nedávné výsledky' : 'Recent Results'}
+              </h3>
+              <Link to="/results" className="text-xs text-primary hover:underline flex items-center gap-1">
+                {language === 'cz' ? 'Všechny výsledky' : 'All results'}
+                <ChevronRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="p-4">
+              {completedPredictions.length > 0 ? (
+                <div className="space-y-2">
+                  {completedPredictions.slice(0, 5).map((pred) => (
+                    <Link 
+                      key={pred.id}
+                      to={`/predictions/${pred.id}`}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-lg border transition-all hover:border-primary/50",
+                        pred.result === 'win' 
+                          ? "bg-success/5 border-success/20" 
+                          : "bg-destructive/5 border-destructive/20"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">
+                          {pred.result === 'win' ? '✅' : '❌'}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {pred.homeTeam} vs {pred.awayTeam}
+                          </p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-2">
+                            <span>{getSportEmoji(pred.sport || 'Sports')}</span>
+                            <span>{language === 'cz' ? 'Tip' : 'Pick'}: {pred.prediction.pick}</span>
+                            <span>•</span>
+                            <span>{Math.round(normalizeConfidence(pred.confidence))}%</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className={cn(
+                        "text-sm font-semibold",
+                        pred.result === 'win' ? "text-success" : "text-destructive"
+                      )}>
+                        {pred.result === 'win' 
+                          ? (language === 'cz' ? 'VÝHRA' : 'WIN') 
+                          : (language === 'cz' ? 'PROHRA' : 'LOSS')
+                        }
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : activePredictions.length > 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-medium">
+                    {language === 'cz' 
+                      ? 'Čekáme na dokončení zápasů'
+                      : 'Waiting for games to finish'
+                    }
+                  </p>
+                  <p className="text-xs mt-1">
+                    {language === 'cz' 
+                      ? `${activePredictions.length} aktivních predikcí`
+                      : `${activePredictions.length} active predictions`
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">
+                    {language === 'cz' ? 'Žádné výsledky' : 'No results yet'}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
