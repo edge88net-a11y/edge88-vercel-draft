@@ -10,6 +10,7 @@ import { PredictionCard } from '@/components/PredictionCard';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { HeroMeshBackground } from '@/components/HeroMeshBackground';
 
 // Animated counter hook
 function useAnimatedCounter(target: number, duration: number = 2000) {
@@ -206,12 +207,15 @@ const Index = () => {
 
       {/* Hero Section - Premium Sportsbook Style */}
       <section className="hero-bg-animated relative pt-28 pb-20 md:pt-40 md:pb-28 overflow-hidden">
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 grid-pattern opacity-50" />
+        {/* Animated mesh grid background */}
+        <HeroMeshBackground />
         
-        {/* Glow orbs */}
-        <div className="absolute top-20 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[100px]" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-[80px]" />
+        {/* Subtle radial gradient overlay for depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsla(217,91%,60%,0.06)_0%,_transparent_70%)]" />
+        
+        {/* Glow orbs - reduced opacity */}
+        <div className="absolute top-20 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 rounded-full bg-accent/5 blur-[100px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
