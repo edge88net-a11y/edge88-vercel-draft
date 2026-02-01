@@ -149,21 +149,17 @@ const Dashboard = () => {
           </div>
         ) : (
           <>
-            {/* Stats Grid */}
+            {/* Stats Grid - All from real API data */}
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title={t.totalPredictions}
                 value={stats?.totalPredictions ?? 0}
-                trend="up"
-                trendValue="+12%"
                 icon={<BarChart3 className="h-5 w-5" />}
               />
               <StatCard
                 title={t.accuracyRate}
                 value={stats?.accuracy ?? 0}
                 suffix="%"
-                trend="up"
-                trendValue="+2.3%"
                 icon={<Target className="h-5 w-5" />}
               />
               <StatCard
@@ -176,9 +172,7 @@ const Dashboard = () => {
                 title={t.roi}
                 value={stats?.roi ?? 0}
                 suffix="%"
-                prefix="+"
-                trend="up"
-                trendValue="+1.4%"
+                prefix={stats?.roi && stats.roi >= 0 ? "+" : ""}
                 icon={<TrendingUp className="h-5 w-5" />}
               />
             </div>

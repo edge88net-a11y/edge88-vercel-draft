@@ -110,40 +110,42 @@ export default function PredictionDetail() {
     ? Math.round(prediction.confidence * 100) 
     : Math.round(prediction.confidence);
 
-  // Get bookmaker odds from full prediction or transform from list
-  const bookmakerOdds = fullPrediction?.bookmakerOdds?.map(o => ({
-    bookmaker: o.bookmaker.charAt(0).toUpperCase() + o.bookmaker.slice(1).replace(/([A-Z])/g, ' $1'),
+  // Get bookmaker odds from prediction - use list prediction first since it has the data from API
+  const predictionWithOdds = listPrediction || fullPrediction;
+  const bookmakerOdds = predictionWithOdds?.bookmakerOdds?.map(o => ({
+    bookmaker: o.bookmaker.charAt(0).toUpperCase() + o.bookmaker.slice(1).replace(/([A-Z])/g, ' $1').replace('ag', ' AG'),
     odds: typeof o.homeOdds === 'number' ? (o.homeOdds > 0 ? `+${o.homeOdds}` : String(o.homeOdds)) : (o.odds || ''),
     awayOdds: typeof o.awayOdds === 'number' ? (o.awayOdds > 0 ? `+${o.awayOdds}` : String(o.awayOdds)) : '',
     line: o.spreadHome ? String(o.spreadHome) : (o.line || undefined),
-  })) || listPrediction?.bookmakerOdds || [];
+  })) || [];
 
-  // Get confidence breakdown from full prediction
-  const breakdown = fullPrediction?.confidenceBreakdown 
+  // Get confidence breakdown from prediction - values are already decimals (0-1), convert to percentages
+  const predictionBreakdown = predictionWithOdds?.confidenceBreakdown;
+  const breakdown = predictionBreakdown 
     ? {
-        research: Math.round((fullPrediction.confidenceBreakdown.fromResearch ?? fullPrediction.confidenceBreakdown.research ?? 0.5) * 100),
-        odds: Math.round((fullPrediction.confidenceBreakdown.fromOdds ?? fullPrediction.confidenceBreakdown.odds ?? 0.3) * 100),
-        historical: Math.round((fullPrediction.confidenceBreakdown.fromHistorical ?? fullPrediction.confidenceBreakdown.historical ?? 0.2) * 100),
+        research: Math.round((predictionBreakdown.fromResearch ?? predictionBreakdown.research ?? 0) * 100),
+        odds: Math.round((predictionBreakdown.fromOdds ?? predictionBreakdown.odds ?? 0) * 100),
+        historical: Math.round((predictionBreakdown.fromHistorical ?? predictionBreakdown.historical ?? 0) * 100),
       }
-    : { research: 50, odds: 30, historical: 20 };
+    : { research: 0, odds: 0, historical: 0 };
 
-  // Research stats from full prediction
+  // Research stats from prediction
   const researchStats = {
-    sources: fullPrediction?.sourcesAnalyzed || fullPrediction?.dataSources || 0,
-    modelVersion: fullPrediction?.modelVersion || 'Edge88',
+    sources: predictionWithOdds?.sourcesAnalyzed || predictionWithOdds?.dataSources || 0,
+    modelVersion: predictionWithOdds?.modelVersion || 'Edge88',
     ev: typeof prediction.expectedValue === 'number' 
       ? (prediction.expectedValue * 100).toFixed(1) 
       : prediction.expectedValue,
   };
 
-  // Get key factors from full prediction as array of strings
-  const keyFactorsArray: string[] = fullPrediction?.keyFactorsList || [];
+  // Get key factors from prediction as array of strings
+  const keyFactorsArray: string[] = predictionWithOdds?.keyFactorsList || [];
 
   // Get injuries from full prediction
-  const injuries = fullPrediction?.injuries;
+  const injuries = predictionWithOdds?.injuries;
 
-  // Get full analysis text
-  const analysisText = fullPrediction?.fullReasoning || fullPrediction?.reasoning || prediction.reasoning;
+  // Get full analysis text - use the reasoning from the API
+  const analysisText = prediction.reasoning || 'Analysis pending...';
 
   const live = isGameLive();
 
