@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown, Flame, TrendingUp, Target, Trophy } from 'lucide-react';
-import { PredictionCard } from '@/components/PredictionCard';
+import { Filter, RefreshCw, Zap, Grid3X3, List, Search, ArrowUpDown, Flame, Target, Trophy } from 'lucide-react';
+import { PredictionCardSimple } from '@/components/PredictionCardSimple';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { MaintenanceState } from '@/components/MaintenanceState';
@@ -412,26 +412,31 @@ const Predictions = () => {
         </div>
       )}
 
-      {/* Predictions Grid */}
+      {/* Predictions Grid - Consistent card heights with CSS Grid */}
       {isLoading && !isMaintenanceMode ? (
         <div className={cn(
-          'grid gap-6',
-          viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+          'grid gap-4 md:gap-6',
+          viewMode === 'grid' 
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr' 
+            : 'grid-cols-1'
         )}>
           <PredictionCardSkeletonList count={6} />
         </div>
       ) : !isMaintenanceMode && filteredAndSortedPredictions.length > 0 ? (
         <div className={cn(
-          'grid gap-6',
-          viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+          'grid gap-4 md:gap-6',
+          viewMode === 'grid' 
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr' 
+            : 'grid-cols-1'
         )}>
           {filteredAndSortedPredictions.map((prediction, index) => {
             const isLocked = shouldLockPrediction(index);
             return (
               <SubscriptionGate key={prediction.id} isLocked={isLocked}>
-                <PredictionCard 
+                <PredictionCardSimple 
                   prediction={prediction} 
                   gameNumber={index + 1}
+                  isLocked={isLocked}
                 />
               </SubscriptionGate>
             );
