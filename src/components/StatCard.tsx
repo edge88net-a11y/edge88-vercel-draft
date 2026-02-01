@@ -75,28 +75,28 @@ export function StatCard({
   };
 
   return (
-    <div className="glass-card relative overflow-hidden p-6 transition-all duration-300 hover:border-primary/30">
+    <div className="glass-card relative overflow-hidden p-3 sm:p-6 transition-all duration-300 hover:border-primary/30">
       {/* Background Glow */}
-      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-primary/10 to-accent/5 blur-3xl" />
+      <div className="absolute -right-10 -top-10 h-24 sm:h-32 w-24 sm:w-32 rounded-full bg-gradient-to-br from-primary/10 to-accent/5 blur-3xl" />
 
       <div className="relative">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        <div className="mb-2 sm:mb-4 flex items-center justify-between gap-2">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</h3>
           {icon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
               {icon}
             </div>
           )}
         </div>
 
         <div className="flex items-baseline gap-1">
-          <span className="font-mono text-3xl font-bold tracking-tight text-foreground">
+          <span className="font-mono text-xl sm:text-3xl font-bold tracking-tight text-foreground">
             {prefix}
             {typeof value === 'number' ? Math.round(displayValue).toLocaleString() : value}
             {suffix}
           </span>
           {isLive && (
-            <span className="relative ml-2 flex h-2 w-2">
+            <span className="relative ml-1.5 sm:ml-2 flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
             </span>
@@ -104,10 +104,10 @@ export function StatCard({
         </div>
 
         {trend && trendValue && (
-          <div className={cn('mt-2 flex items-center gap-1 text-sm', getTrendColor())}>
+          <div className={cn('mt-1.5 sm:mt-2 flex items-center gap-1 text-xs sm:text-sm', getTrendColor())}>
             {getTrendIcon()}
             <span className="font-medium">{trendValue}</span>
-            <span className="text-muted-foreground">vs last period</span>
+            <span className="text-muted-foreground hidden sm:inline">vs last period</span>
           </div>
         )}
       </div>

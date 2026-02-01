@@ -147,22 +147,22 @@ const Dashboard = () => {
         ) : (
           <>
             {/* Stats Grid - All from real API data */}
-            <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title={t.totalPredictions}
                 value={stats?.totalPredictions ?? 0}
-                icon={<BarChart3 className="h-5 w-5" />}
+                icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
               />
               <StatCard
                 title={t.accuracyRate}
                 value={stats?.accuracy ?? 0}
                 suffix="%"
-                icon={<Target className="h-5 w-5" />}
+                icon={<Target className="h-4 w-4 sm:h-5 sm:w-5" />}
               />
               <StatCard
                 title={t.activePredictions}
                 value={stats?.activePredictions ?? activePredictions.length}
-                icon={<Activity className="h-5 w-5" />}
+                icon={<Activity className="h-4 w-4 sm:h-5 sm:w-5" />}
                 isLive
               />
               <StatCard
@@ -170,23 +170,25 @@ const Dashboard = () => {
                 value={stats?.roi ?? 0}
                 suffix="%"
                 prefix={stats?.roi && stats.roi >= 0 ? "+" : ""}
-                icon={<TrendingUp className="h-5 w-5" />}
+                icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />}
               />
             </div>
 
-            {/* Charts Row - 3 columns on desktop */}
-            <div className="mb-8 grid gap-6 lg:grid-cols-3">
+            {/* Charts Row - 3 columns on desktop, stacked on mobile */}
+            <div className="mb-6 sm:mb-8 grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {/* Accuracy Over Time Chart */}
               <div className="glass-card overflow-hidden animate-fade-in">
-                <div className="border-b border-border p-4 flex items-center justify-between">
-                  <h3 className="font-semibold">{t.accuracyOverTime}</h3>
-                  <span className="text-xs text-muted-foreground">{t.last30Days}</span>
+                <div className="border-b border-border p-3 sm:p-4 flex items-center justify-between">
+                  <h3 className="font-semibold text-sm sm:text-base">{t.accuracyOverTime}</h3>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{t.last30Days}</span>
                 </div>
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                   {stats?.dailyAccuracy ? (
-                    <AccuracyChart data={stats.dailyAccuracy} />
+                    <div className="h-[180px] sm:h-[200px]">
+                      <AccuracyChart data={stats.dailyAccuracy} />
+                    </div>
                   ) : (
-                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                    <div className="flex items-center justify-center h-[180px] sm:h-[200px] text-muted-foreground text-sm">
                       {t.noChartData}
                     </div>
                   )}
@@ -195,15 +197,17 @@ const Dashboard = () => {
 
               {/* Sport Performance Chart */}
               <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '100ms' }}>
-                <div className="border-b border-border p-4 flex items-center justify-between">
-                  <h3 className="font-semibold">{t.performanceBySport}</h3>
-                  <span className="text-xs text-muted-foreground">{t.allTime}</span>
+                <div className="border-b border-border p-3 sm:p-4 flex items-center justify-between">
+                  <h3 className="font-semibold text-sm sm:text-base">{t.performanceBySport}</h3>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{t.allTime}</span>
                 </div>
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                   {stats?.bySport && stats.bySport.length > 0 ? (
-                    <SportPerformanceChart data={stats.bySport} />
+                    <div className="h-[180px] sm:h-[200px]">
+                      <SportPerformanceChart data={stats.bySport} />
+                    </div>
                   ) : (
-                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                    <div className="flex items-center justify-center h-[180px] sm:h-[200px] text-muted-foreground text-sm">
                       {t.noSportData}
                     </div>
                   )}
@@ -211,19 +215,21 @@ const Dashboard = () => {
               </div>
 
               {/* Sport Distribution Donut Chart */}
-              <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
-                <div className="border-b border-border p-4 flex items-center justify-between">
+              <div className="glass-card overflow-hidden animate-fade-in md:col-span-2 lg:col-span-1" style={{ animationDelay: '200ms' }}>
+                <div className="border-b border-border p-3 sm:p-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <PieChart className="h-4 w-4 text-primary" />
-                    <h3 className="font-semibold">{t.sport} Distribution</h3>
+                    <h3 className="font-semibold text-sm sm:text-base">{t.sport} Distribution</h3>
                   </div>
-                  <span className="text-xs text-muted-foreground">{t.activePredictions}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{t.activePredictions}</span>
                 </div>
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                   {sportDistribution.length > 0 ? (
-                    <SportDistributionChart data={sportDistribution} />
+                    <div className="h-[180px] sm:h-[200px]">
+                      <SportDistributionChart data={sportDistribution} />
+                    </div>
                   ) : (
-                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                    <div className="flex items-center justify-center h-[180px] sm:h-[200px] text-muted-foreground text-sm">
                       {t.noSportData}
                     </div>
                   )}
@@ -237,13 +243,13 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid gap-8 lg:grid-cols-3">
+            <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
               {/* Live Predictions */}
               <div className="lg:col-span-2">
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">{t.activePredictions}</h2>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 rounded-full bg-success/10 px-3 py-1 text-sm text-success">
+                <div className="mb-4 sm:mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-lg sm:text-xl font-semibold">{t.activePredictions}</h2>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-success/10 px-2.5 sm:px-3 py-1 text-xs sm:text-sm text-success">
                       <span className="relative flex h-2 w-2">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
@@ -251,20 +257,20 @@ const Dashboard = () => {
                       {t.liveUpdates}
                     </div>
                     <Link to="/predictions">
-                      <Button variant="ghost" size="sm" className="gap-2">
+                      <Button variant="ghost" size="sm" className="gap-1.5 sm:gap-2 h-9 text-xs sm:text-sm">
                         {t.viewAll}
-                        <Zap className="h-4 w-4" />
+                        <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                     </Link>
                   </div>
                 </div>
 
                 {predictionsLoading ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                     <PredictionCardSkeletonList count={4} />
                   </div>
                 ) : activePredictions.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                     {activePredictions.map((prediction, index) => (
                       <div key={prediction.id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                         <PredictionCard prediction={prediction} />
@@ -272,57 +278,57 @@ const Dashboard = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="glass-card py-16 text-center">
-                    <Activity className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                    <h3 className="mt-4 text-lg font-semibold">{t.noActivePredictions}</h3>
-                    <p className="mt-2 text-muted-foreground">{t.checkBackSoon}</p>
+                  <div className="glass-card py-12 sm:py-16 text-center">
+                    <Activity className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/50" />
+                    <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">{t.noActivePredictions}</h3>
+                    <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">{t.checkBackSoon}</p>
                   </div>
                 )}
               </div>
 
               {/* Sidebar */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Win Streak */}
                 <div className="glass-card overflow-hidden animate-fade-in">
-                  <div className="border-b border-border p-4">
-                    <h3 className="font-semibold flex items-center gap-2">
+                  <div className="border-b border-border p-3 sm:p-4">
+                    <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
                       <Flame className="h-4 w-4 text-orange-400" />
                       {t.currentStreak}
                     </h3>
                   </div>
-                  <div className="p-6 text-center">
-                    <div className="mb-2 text-5xl">🔥</div>
-                    <div className="font-mono text-4xl font-bold text-success">
+                  <div className="p-4 sm:p-6 text-center">
+                    <div className="mb-2 text-4xl sm:text-5xl">🔥</div>
+                    <div className="font-mono text-3xl sm:text-4xl font-bold text-success">
                       {stats?.winStreak ?? 0} {t.wins}
                     </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{t.keepItGoing}</p>
+                    <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground">{t.keepItGoing}</p>
                   </div>
                 </div>
 
                 {/* Sport Breakdown */}
                 <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '100ms' }}>
-                  <div className="border-b border-border p-4">
-                    <h3 className="font-semibold">{t.accuracyBySport}</h3>
+                  <div className="border-b border-border p-3 sm:p-4">
+                    <h3 className="font-semibold text-sm sm:text-base">{t.accuracyBySport}</h3>
                   </div>
-                  <div className="p-4">
-                    <div className="space-y-3">
+                  <div className="p-3 sm:p-4">
+                    <div className="space-y-2.5 sm:space-y-3">
                       {(stats?.bySport || []).slice(0, 5).map((sport, index) => {
                         const sportKey = sport.sport?.toUpperCase() || sport.sport;
                         return (
                           <div 
                             key={sport.sport} 
-                            className="flex items-center gap-3 animate-fade-in"
+                            className="flex items-center gap-2 sm:gap-3 animate-fade-in"
                             style={{ animationDelay: `${(index + 1) * 100}ms` }}
                           >
-                            <span className="text-xl">{sportIcons[sportKey] || sportIcons[sport.sport] || '🏆'}</span>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="font-medium">{sport.sport}</span>
-                                <span className="font-mono text-muted-foreground">
+                            <span className="text-lg sm:text-xl shrink-0">{sportIcons[sportKey] || sportIcons[sport.sport] || '🏆'}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
+                                <span className="font-medium truncate">{sport.sport}</span>
+                                <span className="font-mono text-muted-foreground shrink-0">
                                   {sport.accuracy.toFixed(1)}%
                                 </span>
                               </div>
-                              <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                              <div className="mt-1 h-1.5 sm:h-2 overflow-hidden rounded-full bg-muted">
                                 <div
                                   className={cn(
                                     'h-full rounded-full transition-all duration-1000 ease-out',
@@ -344,29 +350,29 @@ const Dashboard = () => {
 
                 {/* Recent Results */}
                 <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
-                  <div className="border-b border-border p-4">
-                    <h3 className="font-semibold">{t.recentResults}</h3>
+                  <div className="border-b border-border p-3 sm:p-4">
+                    <h3 className="font-semibold text-sm sm:text-base">{t.recentResults}</h3>
                   </div>
                   <div className="divide-y divide-border">
                     {recentResults.length > 0 ? (
                       recentResults.map((prediction, index) => (
                         <div 
                           key={prediction.id} 
-                          className="flex items-center justify-between p-4 animate-fade-in"
+                          className="flex items-center justify-between p-3 sm:p-4 gap-2 animate-fade-in"
                           style={{ animationDelay: `${(index + 1) * 50}ms` }}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                             <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="sm" />
-                            <div>
-                              <p className="text-sm font-medium">{prediction.prediction.pick}</p>
-                              <p className="text-xs text-muted-foreground">
+                            <div className="min-w-0">
+                              <p className="text-xs sm:text-sm font-medium truncate">{prediction.prediction.pick}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                                 {prediction.awayTeam} @ {prediction.homeTeam}
                               </p>
                             </div>
                           </div>
                           <span
                             className={cn(
-                              'rounded-full px-2.5 py-1 text-xs font-bold uppercase',
+                              'rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase shrink-0',
                               prediction.result === 'win'
                                 ? 'bg-success/20 text-success'
                                 : 'bg-destructive/20 text-destructive'
@@ -377,7 +383,7 @@ const Dashboard = () => {
                         </div>
                       ))
                     ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
+                      <div className="p-4 text-center text-xs sm:text-sm text-muted-foreground">
                         {t.noRecentResults}
                       </div>
                     )}

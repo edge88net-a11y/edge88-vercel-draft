@@ -138,14 +138,14 @@ export function OddsComparison({
   };
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn('space-y-3 sm:space-y-4', className)}>
       {/* Country Filter Tabs */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5 overflow-x-auto">
           <button
             onClick={() => setCountryFilter('all')}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+              'rounded-md px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[36px]',
               countryFilter === 'all'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -156,18 +156,18 @@ export function OddsComparison({
           <button
             onClick={() => setCountryFilter('cz')}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+              'rounded-md px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[36px]',
               countryFilter === 'cz'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            🇨🇿 Czech
+            🇨🇿 CZ
           </button>
           <button
             onClick={() => setCountryFilter('us')}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+              'rounded-md px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[36px]',
               countryFilter === 'us'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -178,13 +178,13 @@ export function OddsComparison({
         </div>
 
         {/* Odds Format Toggle */}
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs overflow-x-auto">
           {(['american', 'decimal', 'fractional'] as OddsFormat[]).map((f) => (
             <button
               key={f}
               onClick={() => handleFormatChange(f)}
               className={cn(
-                'rounded px-2 py-1 transition-all',
+                'rounded px-1.5 sm:px-2 py-1 transition-all whitespace-nowrap min-h-[32px]',
                 format === f
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -197,29 +197,30 @@ export function OddsComparison({
       </div>
 
       {/* Odds Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+        <table className="w-full min-w-[320px]">
           <thead>
             <tr className="border-b border-border">
-              <th className="pb-3 text-left text-sm font-medium text-muted-foreground">
-                {language === 'cz' ? 'Sázková kancelář' : 'Bookmaker'}
+              <th className="pb-2 sm:pb-3 text-left text-[10px] sm:text-sm font-medium text-muted-foreground">
+                {language === 'cz' ? 'Sázkovka' : 'Book'}
               </th>
-              <th className="pb-3 text-right text-sm font-medium text-muted-foreground">
+              <th className="pb-2 sm:pb-3 text-right text-[10px] sm:text-sm font-medium text-muted-foreground">
                 {language === 'cz' ? 'Kurz' : 'Odds'}
               </th>
-              <th className="pb-3 text-right text-sm font-medium text-muted-foreground">
-                {language === 'cz' ? 'Výplata' : 'Payout'} (${betAmount})
+              <th className="pb-2 sm:pb-3 text-right text-[10px] sm:text-sm font-medium text-muted-foreground">
+                <span className="hidden sm:inline">{language === 'cz' ? 'Výplata' : 'Payout'}</span>
+                <span className="sm:hidden">$</span>
               </th>
-              <th className="pb-3 text-right text-sm font-medium text-muted-foreground">
-                {language === 'cz' ? 'Hodnota' : 'Value'}
+              <th className="pb-2 sm:pb-3 text-right text-[10px] sm:text-sm font-medium text-muted-foreground w-16 sm:w-auto">
+                {language === 'cz' ? '' : ''}
               </th>
             </tr>
           </thead>
           <tbody>
             {filteredOdds.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-muted-foreground">
-                  {language === 'cz' ? 'Žádné kurzy k dispozici pro tento region' : 'No odds available for this region'}
+                <td colSpan={4} className="py-4 sm:py-6 text-center text-xs sm:text-sm text-muted-foreground">
+                  {language === 'cz' ? 'Žádné kurzy' : 'No odds available'}
                 </td>
               </tr>
             ) : (
@@ -237,35 +238,35 @@ export function OddsComparison({
                       isBest && 'bg-success/5'
                     )}
                   >
-                    <td className="py-3">
+                    <td className="py-2 sm:py-3">
                       <a 
                         href={config.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 hover:text-primary transition-colors"
+                        className="flex items-center gap-1.5 sm:gap-2 hover:text-primary transition-colors min-h-[36px]"
                       >
-                        <span className="text-lg">{config.logo}</span>
-                        <span className="font-medium capitalize">{bk.bookmaker}</span>
-                        <ExternalLink className="h-3 w-3 opacity-50" />
+                        <span className="text-base sm:text-lg">{config.logo}</span>
+                        <span className="font-medium capitalize text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">{bk.bookmaker}</span>
+                        <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-50 shrink-0 hidden sm:block" />
                       </a>
                     </td>
                     <td className={cn(
-                      'py-3 text-right font-mono font-bold',
+                      'py-2 sm:py-3 text-right font-mono text-xs sm:text-sm font-bold',
                       isBest && 'text-success'
                     )}>
                       {convertOdds(bk.odds, format)}
                     </td>
                     <td className={cn(
-                      'py-3 text-right font-mono',
+                      'py-2 sm:py-3 text-right font-mono text-xs sm:text-sm',
                       isBest && 'text-success'
                     )}>
-                      ${payout.toFixed(2)}
+                      ${payout.toFixed(0)}
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-2 sm:py-3 text-right">
                       {isBest && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-success/20 px-2 py-1 text-xs font-medium text-success">
-                          <Check className="h-3 w-3" />
-                          {language === 'cz' ? 'Nejlepší' : 'Best Value'}
+                        <span className="inline-flex items-center gap-0.5 sm:gap-1 rounded-full bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-success">
+                          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span className="hidden sm:inline">{language === 'cz' ? 'Best' : 'Best'}</span>
                         </span>
                       )}
                     </td>
@@ -278,12 +279,12 @@ export function OddsComparison({
       </div>
 
       {/* Bankroll Calculator Note */}
-      <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-sm">
-        <DollarSign className="h-4 w-4 text-primary shrink-0" />
+      <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5 sm:p-3 text-[10px] sm:text-sm">
+        <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
         <span className="text-muted-foreground">
           {language === 'cz' 
-            ? `Výplaty vypočítány pro sázku $${betAmount}. Nejlepší hodnota zvýrazněna.`
-            : `Payouts calculated for $${betAmount} bet. Best value highlighted.`
+            ? `Výplaty pro $${betAmount}. Best = nejlepší.`
+            : `Payouts for $${betAmount} bet. Best value highlighted.`
           }
         </span>
       </div>
