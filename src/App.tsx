@@ -23,6 +23,8 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ResponsibleGambling from "./pages/ResponsibleGambling";
 import Referral from "./pages/Referral";
+import Blog from "./pages/Blog";
+import BlogArticle from "./pages/BlogArticle";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -88,6 +90,8 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:id" element={<BlogArticle />} />
               <Route path="/referral" element={
                 <ProtectedRoute>
                   <Referral />

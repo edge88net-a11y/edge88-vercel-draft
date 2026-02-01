@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark, Shield, HelpCircle, Gift } from 'lucide-react';
+import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark, Shield, HelpCircle, Gift, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +24,7 @@ export function Navbar() {
   const getNavLinks = () => {
     const baseLinks = [
       { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
+      { href: '/blog', label: 'Archive', labelCz: 'Archiv', icon: BookOpen },
       { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
     ];
 
@@ -69,6 +70,9 @@ export function Navbar() {
           <div className="hidden md:flex md:items-center md:gap-1">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href;
+              const linkLabel = 'labelKey' in link && link.labelKey 
+                ? t[link.labelKey] 
+                : ('label' in link ? (language === 'cz' && 'labelCz' in link ? link.labelCz : link.label) : '');
               return (
                 <Link
                   key={link.href}
@@ -81,7 +85,7 @@ export function Navbar() {
                   )}
                 >
                   <link.icon className="h-4 w-4" />
-                  {t[link.labelKey]}
+                  {linkLabel}
                 </Link>
               );
             })}
@@ -162,6 +166,9 @@ export function Navbar() {
           <div className="space-y-1 px-4 py-4">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href;
+              const linkLabel = 'labelKey' in link && link.labelKey 
+                ? t[link.labelKey] 
+                : ('label' in link ? (language === 'cz' && 'labelCz' in link ? link.labelCz : link.label) : '');
               return (
                 <Link
                   key={link.href}
@@ -175,7 +182,7 @@ export function Navbar() {
                   )}
                 >
                   <link.icon className="h-5 w-5" />
-                  {t[link.labelKey]}
+                  {linkLabel}
                 </Link>
               );
             })}

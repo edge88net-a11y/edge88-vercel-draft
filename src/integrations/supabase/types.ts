@@ -129,6 +129,69 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_articles: {
+        Row: {
+          accuracy_pct: number | null
+          article_date: string
+          author: string | null
+          content: string | null
+          created_at: string | null
+          featured: boolean | null
+          id: string
+          losses: number | null
+          prediction_ids: string[] | null
+          published: boolean | null
+          slug: string
+          sport: string | null
+          summary: string | null
+          title: string
+          total_picks: number | null
+          updated_at: string | null
+          views: number | null
+          wins: number | null
+        }
+        Insert: {
+          accuracy_pct?: number | null
+          article_date: string
+          author?: string | null
+          content?: string | null
+          created_at?: string | null
+          featured?: boolean | null
+          id?: string
+          losses?: number | null
+          prediction_ids?: string[] | null
+          published?: boolean | null
+          slug: string
+          sport?: string | null
+          summary?: string | null
+          title: string
+          total_picks?: number | null
+          updated_at?: string | null
+          views?: number | null
+          wins?: number | null
+        }
+        Update: {
+          accuracy_pct?: number | null
+          article_date?: string
+          author?: string | null
+          content?: string | null
+          created_at?: string | null
+          featured?: boolean | null
+          id?: string
+          losses?: number | null
+          prediction_ids?: string[] | null
+          published?: boolean | null
+          slug?: string
+          sport?: string | null
+          summary?: string | null
+          title?: string
+          total_picks?: number | null
+          updated_at?: string | null
+          views?: number | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       comment_votes: {
         Row: {
           comment_id: string
