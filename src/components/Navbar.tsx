@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark, Shield } from 'lucide-react';
+import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark, Shield, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,13 +8,15 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { UserDropdownMenu } from '@/components/UserDropdownMenu';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { ContactModal } from '@/components/ContactModal';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { isAdmin } = useAdminCheck();
 
   // Define nav links based on auth state
@@ -102,6 +104,13 @@ export function Navbar() {
                     <Shield className="h-4 w-4" />
                   </Link>
                 )}
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  title={language === 'cz' ? 'Kontakt' : 'Contact'}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </button>
                 <Link 
                   to="/saved-picks"
                   className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -220,6 +229,9 @@ export function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Contact Modal */}
+      <ContactModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
     </nav>
   );
 }

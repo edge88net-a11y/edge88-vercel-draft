@@ -10,6 +10,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { OddsFormat } from '@/components/OddsComparison';
+import { AdminDebugPanel } from '@/components/AdminDebugPanel';
+
+const ADMIN_EMAIL = 'edge88.net@gmail.com';
 
 const Settings = () => {
   const { user, loading: authLoading } = useAuth();
@@ -361,6 +364,11 @@ const Settings = () => {
               )}
             </div>
           </div>
+
+          {/* Admin Debug Panel - Only visible for admin user */}
+          {user?.email === ADMIN_EMAIL && (
+            <AdminDebugPanel />
+          )}
 
           {/* Save Button */}
           <div className="flex justify-end">

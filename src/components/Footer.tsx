@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, Twitter, Send, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ContactModal } from '@/components/ContactModal';
 
 const socialLinks = [
   { icon: Twitter, href: 'https://twitter.com/edge88net', label: 'Twitter' },
@@ -11,6 +13,7 @@ const socialLinks = [
 
 export function Footer() {
   const { t, language } = useLanguage();
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const footerLinks = {
     product: [
@@ -22,7 +25,7 @@ export function Footer() {
     company: [
       { label: language === 'cz' ? 'O nás' : 'About', href: '#' },
       { label: 'Blog', href: '#' },
-      { label: language === 'cz' ? 'Kontakt' : 'Contact', href: 'mailto:support@edge88.net' },
+      { label: language === 'cz' ? 'Kontakt' : 'Contact', href: '#contact', isContact: true },
     ],
     legal: [
       { label: t.termsOfService, href: '/terms' },
@@ -107,7 +110,14 @@ export function Footer() {
             <ul className="mt-4 space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
-                  {link.href.startsWith('/') ? (
+                  {'isContact' in link && link.isContact ? (
+                    <button
+                      onClick={() => setShowContactModal(true)}
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </button>
+                  ) : link.href.startsWith('/') ? (
                     <Link
                       to={link.href}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -157,6 +167,9 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Contact Modal */}
+      <ContactModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
     </footer>
   );
 }
