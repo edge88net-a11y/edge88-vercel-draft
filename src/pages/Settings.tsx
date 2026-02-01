@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { OddsFormat } from '@/components/OddsComparison';
 import { AdminDebugPanel } from '@/components/AdminDebugPanel';
 import { BillingSection } from '@/components/BillingSection';
+import { TelegramNotificationSettings } from '@/components/TelegramNotificationSettings';
 import { isAdminUser } from '@/lib/adminAccess';
 
 const Settings = () => {
@@ -71,6 +72,9 @@ const Settings = () => {
 
       {/* Billing Section - First! */}
       <BillingSection />
+
+      {/* Telegram Notification Settings */}
+      <TelegramNotificationSettings />
 
       {/* Language Section */}
       <div className="glass-card overflow-hidden">
@@ -297,22 +301,6 @@ const Settings = () => {
             <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
               {language === 'cz' ? 'Propojeno' : 'Connected'}
             </span>
-          </div>
-          <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-lg">📱</span>
-              </div>
-              <div>
-                <p className="font-medium">Telegram</p>
-                <p className="text-sm text-muted-foreground">
-                  {language === 'cz' ? 'Dostávejte tipy přímo do Telegramu' : 'Get picks directly in Telegram'}
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm">
-              {language === 'cz' ? 'Propojit' : 'Connect'}
-            </Button>
           </div>
         </div>
       </div>
