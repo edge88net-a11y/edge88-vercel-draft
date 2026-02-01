@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getSportEmoji } from '@/lib/sportEmoji';
 import { cn } from '@/lib/utils';
 
 type SortField = 'sport' | 'confidence' | 'gameTime';
@@ -116,7 +117,9 @@ export default function AdminPredictions() {
           <SelectContent>
             <SelectItem value="all">All Sports</SelectItem>
             {uniqueSports.map(sport => (
-              <SelectItem key={sport} value={sport.toLowerCase()}>{sport}</SelectItem>
+              <SelectItem key={sport} value={sport.toLowerCase()}>
+                {getSportEmoji(sport)} {sport}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -200,7 +203,7 @@ export default function AdminPredictions() {
                 <TableRow key={prediction.id}>
                   <TableCell>
                     <Badge variant="secondary" className="font-mono text-xs">
-                      {prediction.sport}
+                      {getSportEmoji(prediction.sport)} {prediction.sport}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">

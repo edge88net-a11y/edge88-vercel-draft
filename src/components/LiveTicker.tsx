@@ -1,5 +1,5 @@
 import { useActivePredictions } from '@/hooks/usePredictions';
-import { sportIcons } from '@/lib/types';
+import { getSportEmoji } from '@/lib/sportEmoji';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LiveTicker() {
@@ -41,7 +41,6 @@ export function LiveTicker() {
 
       <div className="flex animate-ticker">
         {duplicatedItems.map((prediction, index) => {
-          const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
           const confidencePercent = formatConfidence(prediction.confidence);
           
           return (
@@ -50,7 +49,7 @@ export function LiveTicker() {
               className="flex flex-shrink-0 items-center gap-6 px-8"
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}</span>
+                <span className="text-xl">{getSportEmoji(prediction.sport)}</span>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-foreground">
                     {prediction.awayTeam} @ {prediction.homeTeam}
