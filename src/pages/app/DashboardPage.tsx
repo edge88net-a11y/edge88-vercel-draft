@@ -11,6 +11,8 @@ import { TonightsGames } from '@/components/TonightsGames';
 import { TeamLogo } from '@/components/TeamLogo';
 import { MaintenanceState } from '@/components/MaintenanceState';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
+import { ReferralWidget } from '@/components/dashboard/ReferralWidget';
+import { TelegramWidget } from '@/components/dashboard/TelegramWidget';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
@@ -294,6 +296,12 @@ export default function DashboardPage() {
 
             {/* Sidebar */}
             <div className="space-y-4 sm:space-y-6">
+              {/* Referral Widget */}
+              <ReferralWidget />
+
+              {/* Telegram Widget */}
+              <TelegramWidget />
+
               {/* Win Streak */}
               <div className="glass-card overflow-hidden animate-fade-in">
                 <div className="border-b border-border p-3 sm:p-4">

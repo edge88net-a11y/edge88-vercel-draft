@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Layouts
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -22,6 +23,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ResponsibleGambling from "./pages/ResponsibleGambling";
 import NotFound from "./pages/NotFound";
+import InvitePage from "./pages/InvitePage";
 
 // Payment Pages
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
@@ -50,23 +52,28 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <LanguageProvider>
+      <ErrorBoundary>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <LanguageProvider>
             <Routes>
               {/* Public routes - uses PublicLayout with Navbar/Footer */}
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
-              <Route path="/payment/success" element={<PaymentSuccess />} />
-              <Route path="/payment/cancel" element={<PaymentCancel />} />
-            </Route>
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/cancel" element={<PaymentCancel />} />
+              </Route>
+
+              {/* Invite pages - standalone without layout */}
+              <Route path="/invite/:code" element={<InvitePage />} />
+              <Route path="/ref/:code" element={<InvitePage />} />
 
             {/* Conditional routes - PublicLayout if not logged in, AppLayout if logged in */}
             <Route element={<ConditionalLayout />}>
@@ -101,6 +108,7 @@ const App = () => (
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
+      </ErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>
 );
