@@ -1,50 +1,29 @@
 import { useState } from 'react';
-import { Calculator, DollarSign } from 'lucide-react';
+import { Calculator, DollarSign, Coins } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { BookmakerOdds } from '@/hooks/usePredictions';
+import { toDecimalOdds, formatOdds, formatCurrency, calculateProfit, calculatePayout } from '@/lib/oddsUtils';
 
 interface BankrollCalculatorProps {
   bookmakerOdds: BookmakerOdds[];
   className?: string;
 }
 
-// Calculate potential payout
-function calculatePayout(americanOdds: string, betAmount: number): number {
-  const num = parseInt(americanOdds.replace('+', ''));
-  if (isNaN(num) || betAmount <= 0) return 0;
-  
-  if (num > 0) {
-    return betAmount * (num / 100) + betAmount;
-  } else {
-    return betAmount * (100 / Math.abs(num)) + betAmount;
-  }
-}
-
-// Calculate profit
-function calculateProfit(americanOdds: string, betAmount: number): number {
-  const payout = calculatePayout(americanOdds, betAmount);
-  return payout - betAmount;
-}
-
 export function BankrollCalculator({ bookmakerOdds, className }: BankrollCalculatorProps) {
-  const [betAmount, setBetAmount] = useState<number>(100);
+  const [betAmount, setBetAmount] = useState<number>(1000);
   const { language } = useLanguage();
 
-  // Find best odds
+  // Find best odds (highest decimal value)
   const bestOdds = bookmakerOdds.reduce((best, curr) => {
-    const currValue = parseInt(curr.odds.replace('+', ''));
-    const bestValue = parseInt(best.odds.replace('+', ''));
-    if (isNaN(currValue)) return best;
-    if (isNaN(bestValue)) return curr;
-    return currValue > bestValue || (currValue < 0 && bestValue < 0 && currValue > bestValue) 
-      ? curr 
-      : best;
+    const currValue = toDecimalOdds(curr.odds);
+    const bestValue = toDecimalOdds(best.odds);
+    return currValue > bestValue ? curr : best;
   }, bookmakerOdds[0]);
 
-  const bestPayout = calculatePayout(bestOdds?.odds || '-110', betAmount);
-  const bestProfit = calculateProfit(bestOdds?.odds || '-110', betAmount);
+  const bestPayout = calculatePayout(bestOdds?.odds || '1.85', betAmount);
+  const bestProfit = calculateProfit(bestOdds?.odds || '1.85', betAmount);
 
   return (
     <div className={cn('glass-card p-4', className)}>
@@ -58,16 +37,20 @@ export function BankrollCalculator({ bookmakerOdds, className }: BankrollCalcula
       {/* Bet Amount Input */}
       <div className="mb-4">
         <label className="text-xs text-muted-foreground mb-1.5 block">
-          {language === 'cz' ? 'Výše sázky ($)' : 'Bet Amount ($)'}
+          {language === 'cz' ? 'Výše sázky (Kč)' : 'Bet Amount ($)'}
         </label>
         <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {language === 'cz' ? (
+            <Coins className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          ) : (
+            <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          )}
           <Input
             type="number"
             value={betAmount}
             onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
             className="pl-9 font-mono"
-            placeholder="100"
+            placeholder={language === 'cz' ? '1000' : '100'}
           />
         </div>
       </div>
@@ -92,21 +75,26 @@ export function BankrollCalculator({ bookmakerOdds, className }: BankrollCalcula
                   isBest ? 'bg-success/10 ring-1 ring-success/30' : 'bg-muted/50'
                 )}
               >
-                <span className={cn(
-                  'text-sm font-medium capitalize',
-                  isBest && 'text-success'
-                )}>
-                  {bk.bookmaker}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    'text-sm font-medium capitalize',
+                    isBest && 'text-success'
+                  )}>
+                    {bk.bookmaker}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    ({formatOdds(bk.odds, language)})
+                  </span>
+                </div>
                 <div className="text-right">
                   <div className={cn(
                     'font-mono text-sm font-bold',
                     isBest && 'text-success'
                   )}>
-                    ${payout.toFixed(2)}
+                    {formatCurrency(payout, language)}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    +${profit.toFixed(2)} {language === 'cz' ? 'zisk' : 'profit'}
+                    {formatCurrency(profit, language, { showSign: true })} {language === 'cz' ? 'zisk' : 'profit'}
                   </div>
                 </div>
               </div>
@@ -123,14 +111,16 @@ export function BankrollCalculator({ bookmakerOdds, className }: BankrollCalcula
               <div className="text-xs text-muted-foreground">
                 {language === 'cz' ? 'Nejlepší hodnota' : 'Best Value'}
               </div>
-              <div className="font-medium capitalize">{bestOdds.bookmaker}</div>
+              <div className="font-medium capitalize">
+                {bestOdds.bookmaker} <span className="text-xs text-muted-foreground">({formatOdds(bestOdds.odds, language)})</span>
+              </div>
             </div>
             <div className="text-right">
               <div className="text-2xl font-mono font-bold text-success">
-                ${bestPayout.toFixed(2)}
+                {formatCurrency(bestPayout, language)}
               </div>
               <div className="text-xs text-success">
-                +${bestProfit.toFixed(2)} {language === 'cz' ? 'zisk' : 'profit'}
+                {formatCurrency(bestProfit, language, { showSign: true })} {language === 'cz' ? 'zisk' : 'profit'}
               </div>
             </div>
           </div>

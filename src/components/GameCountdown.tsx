@@ -39,10 +39,11 @@ export function GameCountdown({ gameTime, compact = false, showLabel = false }: 
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      // Starting soon (less than 1 hour)
+      // Starting soon (less than 1 hour) - Critical
       if (hours < 1) {
         setStatus('starting-soon');
       } else if (hours < 3) {
+        // Within 3 hours - urgent
         setStatus('starting-soon');
       } else {
         setStatus('upcoming');

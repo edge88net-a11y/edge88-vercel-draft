@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3, Users, Zap, Share2 } from 'lucide-react';
+import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3, Users, Zap, Share2, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence, getConfidenceLabel as getConfLabel, getConfidenceColorClass } from '@/lib/confidenceUtils';
-import { formatOdds } from '@/lib/oddsUtils';
+import { formatOdds, formatCurrency, calculateProfit, toDecimalOdds } from '@/lib/oddsUtils';
 import { Button } from '@/components/ui/button';
 import { GameCountdown } from '@/components/GameCountdown';
 import { ConfidenceMeter } from '@/components/ConfidenceMeter';
@@ -20,6 +20,7 @@ import { APIPrediction } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUser, canAccessTier } from '@/lib/adminAccess';
+import { differenceInHours, differenceInMinutes } from 'date-fns';
 
 interface PredictionCardProps {
   prediction: APIPrediction;
@@ -114,6 +115,25 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
     return diffHours >= 0 && diffHours < 4;
   };
 
+  // Check time urgency
+  const timeUrgency = useMemo(() => {
+    const gameDate = new Date(prediction.gameTime);
+    const now = new Date();
+    const hoursUntil = differenceInHours(gameDate, now);
+    const minutesUntil = differenceInMinutes(gameDate, now);
+    
+    if (hoursUntil < 1 && minutesUntil > 0) return 'critical'; // < 1 hour
+    if (hoursUntil < 3) return 'urgent'; // < 3 hours
+    return 'normal';
+  }, [prediction.gameTime]);
+
+  // Calculate potential profit (based on 1000 Kč default bet)
+  const defaultBet = language === 'cz' ? 1000 : 100;
+  const potentialProfit = useMemo(() => {
+    const bestOdds = prediction.bookmakerOdds?.[0]?.odds || prediction.prediction.odds;
+    return calculateProfit(bestOdds, defaultBet);
+  }, [prediction.bookmakerOdds, prediction.prediction.odds, defaultBet]);
+
   // Get bookmaker odds (use API data or generate defaults)
   const bookmakerOdds = prediction.bookmakerOdds || [
     { bookmaker: 'DraftKings', odds: prediction.prediction.odds },
@@ -133,11 +153,16 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
 
   const teaser = generateTeaser(prediction, language);
 
+  // Is hot pick (confidence >= 75%)
+  const isHotPick = confidencePercent >= 75;
+
   return (
     <div
       className={cn(
         'betting-slip group relative overflow-hidden transition-all duration-300',
         confidencePercent >= 70 && 'betting-slip-win',
+        // Hot pick glow effect for high confidence
+        isHotPick && 'ring-2 ring-success/30 shadow-[0_0_20px_rgba(34,197,94,0.15)]',
         // Admin users never see locked/blurred content
         isLocked && !isAdmin && 'blur-sm pointer-events-none'
       )}
@@ -277,16 +302,30 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
           </div>
         </div>
         
-        {/* EV Badge */}
+        {/* EV Badge + Potential Profit */}
         <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2 flex-wrap">
-          <div className="ev-badge text-[10px] sm:text-xs">
-            <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span>+{expectedValue.toFixed(1)}% EV</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="ev-badge text-[10px] sm:text-xs">
+              <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span>+{expectedValue.toFixed(1)}% EV</span>
+            </div>
+            {/* Potential profit display */}
+            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">
+              <Coins className="h-3 w-3" />
+              <span>
+                {formatCurrency(potentialProfit, language, { showSign: true })} 
+                <span className="text-muted-foreground font-normal ml-1">
+                  {language === 'cz' ? `z ${formatCurrency(defaultBet, language)}` : `from ${formatCurrency(defaultBet, language)}`}
+                </span>
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
-            <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-            <span>{t.updatedAgo} 2m</span>
-          </div>
+          {/* Urgency indicator */}
+          {timeUrgency === 'critical' && (
+            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full animate-pulse">
+              ⚡ {language === 'cz' ? 'ZAČÍNÁ BRZY' : 'STARTING SOON'}
+            </div>
+          )}
         </div>
       </div>
 

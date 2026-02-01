@@ -75,15 +75,14 @@ function CollapsibleSection({ icon: Icon, title, color, children, defaultOpen = 
   );
 }
 
-// Loading placeholder for analysis
-function AnalysisLoading() {
+// Placeholder when analysis is not available
+function AnalysisComingSoon() {
   const { language } = useLanguage();
   
   return (
-    <div className="flex flex-col items-center justify-center py-8">
-      <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-      <p className="text-muted-foreground">
-        {language === 'cz' ? 'Analýza se aktualizuje...' : 'Analysis updating...'}
+    <div className="text-center py-6 text-muted-foreground">
+      <p className="text-sm">
+        {language === 'cz' ? 'Analýza bude brzy dostupná.' : 'Analysis coming soon.'}
       </p>
     </div>
   );
@@ -125,10 +124,8 @@ export function AnalysisSection({
   const analysisData = apiAnalysis || null;
   const hasRealAnalysis = !isGenericReasoning(reasoning);
   
-  // Show loading state if reasoning is generic and we're fetching
-  if (isGenericReasoning(reasoning) && analysisLoading) {
-    return <AnalysisLoading />;
-  }
+  // No loading spinner - if no data after fetch, show "coming soon"
+  const isDataMissing = isGenericReasoning(reasoning) && !analysisLoading && !analysisData;
 
   // Get analysis text - use Czech version if available when language is CZ
   const getAnalysisText = () => {
@@ -267,22 +264,16 @@ export function AnalysisSection({
         </div>
         <p className="text-xl md:text-2xl font-bold text-foreground mb-4">{pick}</p>
         
-        {analysisLoading && !analysisText ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{language === 'cz' ? 'Analýza se načítá...' : 'Analysis loading...'}</span>
-          </div>
-        ) : analysisText ? (
+        {analysisText ? (
           <div className="space-y-3">
             {analysisText.split('\n\n').map((paragraph, idx) => (
               <p key={idx} className="text-sm md:text-base text-muted-foreground leading-relaxed">{paragraph}</p>
             ))}
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{language === 'cz' ? 'Analýza se aktualizuje...' : 'Analysis updating...'}</span>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            {language === 'cz' ? 'Detailní analýza bude brzy dostupná.' : 'Detailed analysis coming soon.'}
+          </p>
         )}
       </div>
 
@@ -310,12 +301,11 @@ export function AnalysisSection({
               </div>
             ))}
           </div>
-        ) : (
-          <div className="flex items-center gap-2 text-muted-foreground py-4">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{language === 'cz' ? 'Statistiky se načítají...' : 'Stats loading...'}</span>
-          </div>
-        )}
+        ) : !analysisLoading ? (
+          <p className="text-sm text-muted-foreground py-4">
+            {language === 'cz' ? 'Statistiky budou brzy dostupné.' : 'Stats coming soon.'}
+          </p>
+        ) : null}
       </CollapsibleSection>
 
       {/* Form Guide */}
@@ -379,12 +369,11 @@ export function AnalysisSection({
               </div>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 text-muted-foreground py-4">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{language === 'cz' ? 'Forma se načítá...' : 'Form loading...'}</span>
-          </div>
-        )}
+        ) : !analysisLoading ? (
+          <p className="text-sm text-muted-foreground py-4">
+            {language === 'cz' ? 'Údaje o formě budou brzy dostupné.' : 'Form data coming soon.'}
+          </p>
+        ) : null}
       </CollapsibleSection>
 
       {/* Head to Head */}
@@ -421,12 +410,11 @@ export function AnalysisSection({
               </div>
             ))}
           </div>
-        ) : (
-          <div className="flex items-center gap-2 text-muted-foreground py-4">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{language === 'cz' ? 'H2H se načítá...' : 'H2H loading...'}</span>
-          </div>
-        )}
+        ) : !analysisLoading ? (
+          <p className="text-sm text-muted-foreground py-4">
+            {language === 'cz' ? 'Vzájemné zápasy budou brzy dostupné.' : 'H2H data coming soon.'}
+          </p>
+        ) : null}
       </CollapsibleSection>
 
       {/* Injury Report */}
