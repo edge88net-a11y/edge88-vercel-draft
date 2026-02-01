@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Loader2, FileText, BarChart3, AlertTriangle, DollarSign, History, Sparkles, MessageCircle, Database, Cpu, TrendingUp } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { MobileNav } from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidenceMeter } from '@/components/ConfidenceMeter';
@@ -66,34 +63,26 @@ export default function PredictionDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0">
-        <Navbar />
-        <div className="flex flex-col items-center justify-center pt-32 gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">{language === 'cz' ? 'Načítám analýzu...' : 'Loading analysis...'}</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">{language === 'cz' ? 'Načítám analýzu...' : 'Loading analysis...'}</p>
       </div>
     );
   }
 
   if (!prediction) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0">
-        <Navbar />
-        <div className="mx-auto max-w-4xl px-4 pt-24 text-center">
-          <h1 className="text-2xl font-bold">{t.noPredictions}</h1>
-          <p className="mt-2 text-muted-foreground">
-            {language === 'cz' ? 'Tato predikce nebyla nalezena.' : 'This prediction could not be found.'}
-          </p>
-          <Link to="/predictions">
-            <Button className="mt-4 gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              {t.viewAll} {t.predictions}
-            </Button>
-          </Link>
-        </div>
-        <Footer />
-        <MobileNav />
+      <div className="text-center py-16">
+        <h1 className="text-2xl font-bold">{t.noPredictions}</h1>
+        <p className="mt-2 text-muted-foreground">
+          {language === 'cz' ? 'Tato predikce nebyla nalezena.' : 'This prediction could not be found.'}
+        </p>
+        <Link to="/predictions">
+          <Button className="mt-4 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            {t.viewAll} {t.predictions}
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -170,10 +159,7 @@ export default function PredictionDetail() {
   };
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
-      <Navbar />
-
-      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
+    <div className="space-y-8">
         {/* Back Button */}
         <Link to="/predictions" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" />
@@ -525,10 +511,6 @@ export default function PredictionDetail() {
             />
           </TabsContent>
         </Tabs>
-      </main>
-
-      <Footer />
-      <MobileNav />
     </div>
   );
 }
