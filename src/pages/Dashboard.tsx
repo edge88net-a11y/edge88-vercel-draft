@@ -11,13 +11,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ProfitTracker } from '@/components/dashboard/ProfitTracker';
 import { BettingSlip } from '@/components/dashboard/BettingSlip';
 import { HotPicksCarousel } from '@/components/dashboard/HotPicksCarousel';
+import { HeroNextGame } from '@/components/dashboard/HeroNextGame';
+import { StreakDisplay } from '@/components/dashboard/StreakDisplay';
 import { useActivePredictions, useStats, DailyAccuracy } from '@/hooks/usePredictions';
 import { useWinStreak } from '@/hooks/useWinStreak';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { getSportEmoji } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
-import { formatCurrency } from '@/lib/oddsUtils';
+import { formatCurrency, toDecimalOdds } from '@/lib/oddsUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -412,6 +414,9 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Hero - Next Live Game */}
+          <HeroNextGame predictions={deduplicatedPredictions} isLoading={predictionsLoading} />
+
           {/* 4 Stat Cards */}
           <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
             <StatCard
@@ -471,10 +476,10 @@ const Dashboard = () => {
           {/* Profit Tracker */}
           <ProfitTracker predictions={deduplicatedPredictions} isLoading={predictionsLoading} />
 
-          {/* Main Content Grid: Picks + Betting Slip */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Hot Picks - 2 columns */}
-            <section className="lg:col-span-2">
+          {/* Main Content Grid: Picks + Betting Slip + Streak */}
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Hot Picks - 7 columns */}
+            <section className="lg:col-span-7">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   🔥 {language === 'cz' ? 'Dnešní HOT tipy' : "Today's HOT Picks"}
@@ -487,9 +492,13 @@ const Dashboard = () => {
               <HotPicksCarousel predictions={deduplicatedPredictions} isLoading={predictionsLoading} />
             </section>
 
-            {/* Betting Slip - 1 column */}
-            <section className="lg:col-span-1">
+            {/* Right Column: Betting Slip + Streak */}
+            <section className="lg:col-span-5 space-y-4">
               <BettingSlip />
+              <StreakDisplay 
+                currentStreak={currentStreak} 
+                recentResults={completedPredictions.slice(0, 10).map(p => p.result === 'win' ? 'win' : 'loss')}
+              />
             </section>
           </div>
 

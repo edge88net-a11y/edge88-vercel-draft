@@ -4,6 +4,9 @@
 
 const ADMIN_EMAIL = 'edge88.net@gmail.com';
 
+// Updated tier types - no more 'free' or 'basic'
+export type TierType = 'none' | 'starter' | 'pro' | 'elite' | 'admin';
+
 /**
  * Check if the user is the admin account
  * Note: Use only for UI display purposes. Server-side security uses has_role() in RLS.
@@ -28,12 +31,12 @@ export function hasFullAccess(email: string | undefined | null, tier: string | u
 export function canAccessTier(
   email: string | undefined | null,
   userTier: string | undefined | null,
-  requiredTier: 'free' | 'basic' | 'pro' | 'elite'
+  requiredTier: TierType
 ): boolean {
   if (isAdminUser(email)) return true;
   
-  const tierOrder = ['free', 'basic', 'pro', 'elite'];
-  const userTierNormalized = (userTier?.toLowerCase() || 'free') as typeof requiredTier;
+  const tierOrder: TierType[] = ['none', 'starter', 'pro', 'elite', 'admin'];
+  const userTierNormalized = normalizeTier(userTier);
   const userTierIndex = tierOrder.indexOf(userTierNormalized);
   const requiredTierIndex = tierOrder.indexOf(requiredTier);
   
@@ -41,9 +44,33 @@ export function canAccessTier(
 }
 
 /**
+ * Normalize tier string to standard tier type
+ */
+export function normalizeTier(tier: string | undefined | null): TierType {
+  const tierLower = tier?.toLowerCase() || 'none';
+  
+  // Map old tier names to new ones
+  switch (tierLower) {
+    case 'admin':
+      return 'admin';
+    case 'elite':
+      return 'elite';
+    case 'pro':
+      return 'pro';
+    case 'starter':
+    case 'basic': // Legacy mapping
+      return 'starter';
+    case 'free': // Legacy mapping
+    case 'none':
+    default:
+      return 'none';
+  }
+}
+
+/**
  * Get display tier for user (shows "admin" for admin user)
  */
-export function getDisplayTier(email: string | undefined | null, tier: string | undefined | null): string {
+export function getDisplayTier(email: string | undefined | null, tier: string | undefined | null): TierType {
   if (isAdminUser(email)) return 'admin';
-  return tier?.toLowerCase() || 'none';
+  return normalizeTier(tier);
 }

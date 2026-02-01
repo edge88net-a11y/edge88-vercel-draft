@@ -55,11 +55,11 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
   const isSaved = isPicked(prediction.id);
   
   // Determine tier based on confidence
-  const getTier = () => {
+  const getTier = (): 'elite' | 'pro' | 'starter' | 'none' => {
     if (confidencePercent >= 80) return 'elite';
     if (confidencePercent >= 70) return 'pro';
-    if (confidencePercent >= 60) return 'basic';
-    return 'free';
+    if (confidencePercent >= 60) return 'starter';
+    return 'starter'; // No more 'free' tier
   };
   const predictionTier = getTier();
   
