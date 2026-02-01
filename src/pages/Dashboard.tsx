@@ -17,6 +17,8 @@ import { useWinStreak } from '@/hooks/useWinStreak';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
+import { formatCurrency, formatOdds, calculateProfit } from '@/lib/oddsUtils';
+import { isAdminUser, getDisplayTier } from '@/lib/adminAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -416,9 +418,15 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-gradient-to-r from-primary/20 to-accent/10 px-4 py-1.5 text-sm font-semibold text-primary capitalize border border-primary/20">
-            {profile?.subscription_tier || 'Free'} {language === 'cz' ? 'Člen' : 'Member'}
-          </span>
+          {isAdminUser(user?.email) ? (
+            <span className="rounded-full bg-gradient-to-r from-yellow-500/30 to-amber-500/20 px-4 py-1.5 text-sm font-bold text-yellow-400 border border-yellow-500/30">
+              👑 ADMIN
+            </span>
+          ) : (
+            <span className="rounded-full bg-gradient-to-r from-primary/20 to-accent/10 px-4 py-1.5 text-sm font-semibold text-primary capitalize border border-primary/20">
+              {profile?.subscription_tier || 'Free'} {language === 'cz' ? 'Člen' : 'Member'}
+            </span>
+          )}
         </div>
       </div>
 

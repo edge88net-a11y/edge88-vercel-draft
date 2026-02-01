@@ -16,28 +16,102 @@ export function americanToDecimal(americanOdds: number): number {
 }
 
 /**
- * Formats odds based on locale
- * Czech (cz) users see decimal odds: 1.91, 2.50
- * English (en) users see American odds: -110, +150
+ * Parse odds string to number (handles +150, -110, 1.85 formats)
  */
-export function formatOdds(americanOdds: string | number, locale: 'en' | 'cz'): string {
-  // Parse the American odds
-  const oddsStr = String(americanOdds).trim();
-  const numericValue = parseInt(oddsStr.replace('+', ''), 10);
+export function parseOddsToNumber(odds: string | number): number {
+  if (typeof odds === 'number') return odds;
   
-  if (isNaN(numericValue)) {
-    return oddsStr; // Return as-is if can't parse
+  const cleanedOdds = String(odds).trim().replace(/,/g, '.');
+  
+  // Check if already decimal format (has dot and value between 1.01 and 100)
+  if (cleanedOdds.includes('.')) {
+    const decimalValue = parseFloat(cleanedOdds);
+    if (!isNaN(decimalValue) && decimalValue >= 1.01 && decimalValue <= 100) {
+      return decimalValue;
+    }
   }
+  
+  // Parse as American odds
+  const numericValue = parseInt(cleanedOdds.replace('+', ''), 10);
+  return isNaN(numericValue) ? 0 : numericValue;
+}
+
+/**
+ * Check if odds are in decimal format
+ */
+export function isDecimalOdds(odds: string | number): boolean {
+  const strOdds = String(odds).trim();
+  if (strOdds.includes('.') || strOdds.includes(',')) {
+    const value = parseFloat(strOdds.replace(',', '.'));
+    return !isNaN(value) && value >= 1.01 && value <= 100;
+  }
+  return false;
+}
+
+/**
+ * Convert any odds format to decimal
+ */
+export function toDecimalOdds(odds: string | number): number {
+  const strOdds = String(odds).trim();
+  
+  // Already decimal
+  if (isDecimalOdds(strOdds)) {
+    return parseFloat(strOdds.replace(',', '.'));
+  }
+  
+  // Parse American odds
+  const numericValue = parseInt(strOdds.replace('+', ''), 10);
+  if (isNaN(numericValue) || numericValue === 0) {
+    return 1.85; // Default fallback
+  }
+  
+  return americanToDecimal(numericValue);
+}
+
+/**
+ * Formats odds based on locale
+ * Czech (cz) users see decimal odds: 1,91
+ * English (en) users see decimal odds: 1.91
+ * 
+ * NOTE: We now show decimal odds for BOTH locales since they're more universally understood
+ * The only difference is comma vs dot as decimal separator
+ */
+export function formatOdds(odds: string | number, locale: 'en' | 'cz'): string {
+  const decimalOdds = toDecimalOdds(odds);
   
   if (locale === 'cz') {
-    // Convert to decimal for Czech users
-    const decimal = americanToDecimal(numericValue);
-    // Format with comma as decimal separator (Czech format)
-    return decimal.toFixed(2).replace('.', ',');
+    // Czech format: comma as decimal separator
+    return decimalOdds.toFixed(2).replace('.', ',');
   } else {
-    // Return American format for English users
-    return numericValue > 0 ? `+${numericValue}` : String(numericValue);
+    // English format: dot as decimal separator
+    return decimalOdds.toFixed(2);
   }
+}
+
+/**
+ * Formats odds for display with label
+ * Returns "Kurz: 1,91" for CZ or "Odds: 1.91" for EN
+ */
+export function formatOddsWithLabel(odds: string | number, locale: 'en' | 'cz'): string {
+  const formattedOdds = formatOdds(odds, locale);
+  const label = locale === 'cz' ? 'Kurz' : 'Odds';
+  return `${label}: ${formattedOdds}`;
+}
+
+/**
+ * Calculate potential profit from decimal odds and stake
+ */
+export function calculateProfit(odds: string | number, stake: number): number {
+  const decimalOdds = toDecimalOdds(odds);
+  return stake * (decimalOdds - 1);
+}
+
+/**
+ * Calculate total payout from decimal odds and stake
+ */
+export function calculatePayout(odds: string | number, stake: number): number {
+  const decimalOdds = toDecimalOdds(odds);
+  return stake * decimalOdds;
 }
 
 /**
@@ -101,4 +175,32 @@ export function formatDate(date: Date | string, locale: 'en' | 'cz'): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+/**
+ * Format currency based on locale
+ * CZ: "10 000 Kč" with space as thousands separator
+ * EN: "$10,000" with comma as thousands separator
+ */
+export function formatCurrency(amount: number, locale: 'en' | 'cz', options?: { showSign?: boolean }): string {
+  const absAmount = Math.abs(amount);
+  const sign = options?.showSign && amount > 0 ? '+' : (amount < 0 ? '-' : '');
+  
+  if (locale === 'cz') {
+    // Czech format: space as thousands separator, Kč suffix
+    const formatted = formatNumberCz(absAmount, 0);
+    return `${sign}${formatted} Kč`;
+  } else {
+    // English format: comma as thousands separator, $ prefix
+    const formatted = absAmount.toLocaleString('en-US');
+    return `${sign}$${formatted}`;
+  }
+}
+
+/**
+ * Format potential profit from a bet
+ */
+export function formatPotentialProfit(odds: string | number, stake: number, locale: 'en' | 'cz'): string {
+  const profit = calculateProfit(odds, stake);
+  return formatCurrency(profit, locale, { showSign: true });
 }

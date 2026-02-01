@@ -521,10 +521,9 @@ export default function PredictionDetail() {
                 </p>
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
-                <p>{language === 'cz' ? 'Analýza se generuje...' : 'Analysis generating...'}</p>
-              </div>
+              <p className="text-sm text-muted-foreground py-4">
+                {language === 'cz' ? 'Detailní analýza bude brzy dostupná.' : 'Detailed analysis coming soon.'}
+              </p>
             )}
           </div>
 
