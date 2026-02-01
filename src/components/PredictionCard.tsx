@@ -157,7 +157,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="md" />
               <div className="flex-1 min-w-0">
                 <span className={cn(
-                  'font-bold text-sm sm:text-lg block truncate',
+                  'font-bold text-xs sm:text-base leading-tight block',
                   prediction.prediction.pick.includes(prediction.awayTeam) && 'text-success'
                 )}>
                   {prediction.awayTeam}
@@ -191,7 +191,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="md" />
               <div className="flex-1 min-w-0">
                 <span className={cn(
-                  'font-bold text-sm sm:text-lg block truncate',
+                  'font-bold text-xs sm:text-base leading-tight block',
                   prediction.prediction.pick.includes(prediction.homeTeam) && 'text-success'
                 )}>
                   {prediction.homeTeam}

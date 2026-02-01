@@ -52,14 +52,18 @@ export function getConfidenceColorClass(confidence: number | undefined | null): 
 
 /**
  * Get confidence label based on normalized value
+ * - 75%+ = HIGH VALUE (top-tier pick with strong edge)
+ * - 70%+ = STRONG (very confident)
+ * - 60%+ = SOLID (good pick)
+ * - Below = VALUE (standard pick)
  * @param confidence - Raw confidence value
- * @returns Label like "🔒 LOCK", "🔥 HOT", etc.
+ * @returns Label like "🔥 HIGH VALUE", "💪 STRONG", etc.
  */
 export function getConfidenceLabel(confidence: number | undefined | null): string {
   const normalized = normalizeConfidence(confidence);
   
-  if (normalized >= 75) return '🔒 LOCK';
-  if (normalized >= 70) return '🔥 HOT';
-  if (normalized >= 60) return '💪 STRONG';
+  if (normalized >= 75) return '🔥 HIGH VALUE';
+  if (normalized >= 70) return '💪 STRONG';
+  if (normalized >= 60) return '✓ SOLID';
   return '📊 VALUE';
 }
