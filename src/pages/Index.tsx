@@ -405,11 +405,11 @@ const Index = () => {
       {/* Testimonials Section */}
       <section 
         ref={testimonialsReveal.ref}
-        className={`py-20 md:py-28 bg-card/30 border-y border-border transition-all duration-700 ${testimonialsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        className={`py-12 md:py-16 bg-card/30 border-y border-border transition-all duration-700 ${testimonialsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
-          <div className="mx-auto max-w-2xl text-center mb-16">
+          <div className="mx-auto max-w-2xl text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 border border-success/30 text-sm font-medium text-success mb-4">
               <Trophy className="h-4 w-4" />
               <span>{t.successStories}</span>
@@ -469,7 +469,7 @@ const Index = () => {
       {/* Featured Predictions */}
       <section 
         ref={predictionsReveal.ref}
-        className={`py-20 md:py-28 transition-all duration-700 ${predictionsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        className={`py-12 md:py-16 transition-all duration-700 ${predictionsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
@@ -522,7 +522,7 @@ const Index = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 border-t border-border bg-card/30">
+      <section className="py-10 border-t border-border bg-card/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-xl text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
