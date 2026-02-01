@@ -86,14 +86,18 @@ function parseOddsValue(odds: string): number {
 
 export function OddsComparison({ 
   bookmakerOdds, 
-  oddsFormat = 'american',
+  oddsFormat,
   onFormatChange,
   betAmount = 100,
   className 
 }: OddsComparisonProps) {
   const [countryFilter, setCountryFilter] = useState<CountryFilter>('all');
-  const [localFormat, setLocalFormat] = useState<OddsFormat>(oddsFormat);
   const { language } = useLanguage();
+  
+  // Default to decimal odds for Czech users, American for English
+  const [localFormat, setLocalFormat] = useState<OddsFormat>(
+    oddsFormat || (language === 'cz' ? 'decimal' : 'american')
+  );
 
   const format = localFormat;
   const handleFormatChange = (f: OddsFormat) => {
