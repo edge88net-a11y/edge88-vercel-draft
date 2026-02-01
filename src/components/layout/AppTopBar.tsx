@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, Search, Bell, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Search, Bell, ChevronRight, X, User, CreditCard, LogOut, Crown, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { TierBadge } from '@/components/TierBadge';
+import { isAdminUser } from '@/lib/adminAccess';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,13 +34,40 @@ const pageTitles: Record<string, { en: string; cz: string }> = {
   '/referral': { en: 'Referrals', cz: 'Doporučení' },
   '/saved-picks': { en: 'Saved Picks', cz: 'Uložené tipy' },
   '/admin': { en: 'Admin Panel', cz: 'Admin Panel' },
+  '/community': { en: 'Community', cz: 'Komunita' },
 };
 
 export function AppTopBar({ onMenuClick, showMenuButton }: AppTopBarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  const isAdmin = isAdminUser(user?.email);
+  const tier = isAdmin ? 'admin' : (profile?.subscription_tier || 'FREE');
+
+  // Focus search input when expanded
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Get current page title
   const getPageTitle = () => {
@@ -48,7 +76,6 @@ export function AppTopBar({ onMenuClick, showMenuButton }: AppTopBarProps) {
     if (titleObj) {
       return language === 'cz' ? titleObj.cz : titleObj.en;
     }
-    // Handle dynamic routes
     if (location.pathname.startsWith('/predictions/')) {
       return language === 'cz' ? 'Detail predikce' : 'Prediction Detail';
     }
@@ -61,114 +88,207 @@ export function AppTopBar({ onMenuClick, showMenuButton }: AppTopBarProps) {
     return 'Edge88';
   };
 
-  // Get breadcrumbs
-  const getBreadcrumbs = () => {
-    const parts = location.pathname.split('/').filter(Boolean);
-    if (parts.length <= 1) return null;
-
-    return parts.map((part, index) => {
-      const path = '/' + parts.slice(0, index + 1).join('/');
-      const isLast = index === parts.length - 1;
-      const titleObj = pageTitles['/' + part];
-      const label = titleObj
-        ? (language === 'cz' ? titleObj.cz : titleObj.en)
-        : part.charAt(0).toUpperCase() + part.slice(1);
-
-      return (
-        <span key={path} className="flex items-center">
-          <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
-          {isLast ? (
-            <span className="text-foreground font-medium">{label}</span>
-          ) : (
-            <Link to={path} className="text-muted-foreground hover:text-foreground transition-colors">
-              {label}
-            </Link>
-          )}
-        </span>
-      );
-    });
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
+  // Mock notifications
+  const notifications = [
+    { id: 1, text: language === 'cz' ? 'Lakers vs Celtics - 82% jistota' : 'Lakers vs Celtics - 82% confidence', time: '5m', unread: true },
+    { id: 2, text: language === 'cz' ? 'Nová predikce pro NHL' : 'New NHL prediction available', time: '1h', unread: true },
+    { id: 3, text: language === 'cz' ? 'Vaše predikce vyhrála! 🎉' : 'Your prediction won! 🎉', time: '2h', unread: false },
+  ];
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-border bg-background/95 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
-      {/* Left: Menu button (mobile) + Title */}
+    <header className={cn(
+      "relative z-30 h-14 flex items-center justify-between px-4 md:px-6",
+      "bg-transparent"
+    )}>
+      {/* Left: Menu button (mobile) + Breadcrumb */}
       <div className="flex items-center gap-3">
         {showMenuButton && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onMenuClick}
-            className="md:hidden"
+            className="md:hidden text-[#e6edf3]/70 hover:text-[#e6edf3] hover:bg-white/5"
           >
             <Menu className="h-5 w-5" />
           </Button>
         )}
 
+        {/* Breadcrumb */}
         <div className="flex items-center text-sm">
-          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link 
+            to="/dashboard" 
+            className="text-[#e6edf3]/50 hover:text-cyan-400 transition-colors"
+          >
             Edge88
           </Link>
-          {getBreadcrumbs() || (
-            <>
-              <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
-              <span className="font-semibold">{getPageTitle()}</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Center: Search (hidden on mobile) */}
-      <div className="hidden md:flex flex-1 max-w-md mx-8">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={language === 'cz' ? 'Hledat predikce, články...' : 'Search predictions, articles...'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-muted/50 border-transparent focus:border-primary focus:bg-background"
-          />
+          <ChevronRight className="h-4 w-4 mx-1.5 text-[#e6edf3]/30" />
+          <span className="text-[#e6edf3]/70">{getPageTitle()}</span>
         </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        {/* Language Switcher */}
-        <LanguageSwitcher />
+        {/* Expandable Search */}
+        <div className="relative hidden md:block">
+          {isSearchExpanded ? (
+            <div className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-200">
+              <Input
+                ref={searchInputRef}
+                placeholder={language === 'cz' ? 'Hledat predikce, články...' : 'Search predictions, articles...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64 h-9 bg-white/5 border-white/10 text-[#e6edf3] placeholder:text-[#e6edf3]/40 focus:border-cyan-500/50"
+                onBlur={() => {
+                  if (!searchQuery) setIsSearchExpanded(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchQuery('');
+                    setIsSearchExpanded(false);
+                  }
+                }}
+              />
+              <button 
+                onClick={() => {
+                  setSearchQuery('');
+                  setIsSearchExpanded(false);
+                }}
+                className="text-[#e6edf3]/50 hover:text-[#e6edf3]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsSearchExpanded(true)}
+              className="p-2 text-[#e6edf3]/50 hover:text-[#e6edf3] hover:bg-white/5 rounded-lg transition-colors"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+          )}
+        </div>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
-        </Button>
+        <div className="relative" ref={notificationRef}>
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2 text-[#e6edf3]/50 hover:text-[#e6edf3] hover:bg-white/5 rounded-lg transition-colors"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            )}
+          </button>
 
-        {/* User Dropdown */}
+          {/* Notifications Dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 top-full mt-2 w-80 bg-[hsl(230,20%,10%)] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-3 border-b border-white/10">
+                <h3 className="font-semibold text-[#e6edf3]">
+                  {language === 'cz' ? 'Notifikace' : 'Notifications'}
+                </h3>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifications.map((notif) => (
+                  <div 
+                    key={notif.id}
+                    className={cn(
+                      "px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors",
+                      notif.unread && "bg-cyan-500/5"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm text-[#e6edf3]/80">{notif.text}</p>
+                      {notif.unread && (
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
+                      )}
+                    </div>
+                    <span className="text-xs text-[#e6edf3]/40 mt-1">{notif.time}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-3 border-t border-white/10">
+                <button className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
+                  {language === 'cz' ? 'Zobrazit vše' : 'View all'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Language Toggle */}
+        <div className="hidden sm:flex items-center gap-1 text-xs px-2">
+          <button
+            onClick={() => setLanguage('en')}
+            className={cn(
+              "transition-colors duration-200",
+              language === 'en' ? "text-cyan-400 font-medium" : "text-[#e6edf3]/40 hover:text-[#e6edf3]/60"
+            )}
+          >
+            EN
+          </button>
+          <span className="text-[#e6edf3]/20">|</span>
+          <button
+            onClick={() => setLanguage('cz')}
+            className={cn(
+              "transition-colors duration-200",
+              language === 'cz' ? "text-cyan-400 font-medium" : "text-[#e6edf3]/40 hover:text-[#e6edf3]/60"
+            )}
+          >
+            CZ
+          </button>
+        </div>
+
+        {/* User Avatar Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
+            <button className="flex items-center gap-2 p-1 rounded-full hover:bg-white/5 transition-colors">
+              <Avatar className="h-8 w-8 ring-2 ring-cyan-500/50">
                 <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-cyan-500/20 to-blue-600/20 text-cyan-400 text-sm font-bold">
                   {profile?.display_name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-            </Button>
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col">
-                <span>{profile?.display_name || user?.email?.split('@')[0]}</span>
-                <span className="text-xs text-muted-foreground font-normal">{user?.email}</span>
+          <DropdownMenuContent align="end" className="w-64 bg-[hsl(230,20%,10%)] border-white/10">
+            <DropdownMenuLabel className="py-3">
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold text-[#e6edf3]">
+                  {profile?.display_name || user?.email?.split('@')[0]}
+                </span>
+                <span className="text-xs text-[#e6edf3]/50 font-normal">{user?.email}</span>
+                <div className="mt-2">
+                  <TierBadge tier={tier as any} />
+                </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/settings">{language === 'cz' ? 'Nastavení' : 'Settings'}</Link>
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem asChild className="py-2.5 cursor-pointer hover:bg-white/5">
+              <Link to="/settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-[#e6edf3]/50" />
+                <span>{language === 'cz' ? 'Profil' : 'Profile'}</span>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/pricing">{language === 'cz' ? 'Můj plán' : 'My Plan'}</Link>
+            <DropdownMenuItem asChild className="py-2.5 cursor-pointer hover:bg-white/5">
+              <Link to="/pricing" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-[#e6edf3]/50" />
+                <span>{language === 'cz' ? 'Můj plán' : 'My Plan'}</span>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="text-destructive">
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem 
+              onClick={handleSignOut} 
+              className="py-2.5 cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
               {language === 'cz' ? 'Odhlásit se' : 'Sign Out'}
             </DropdownMenuItem>
           </DropdownMenuContent>
