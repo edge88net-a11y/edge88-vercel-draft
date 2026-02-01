@@ -609,50 +609,60 @@ export function useSinglePrediction(id: string | undefined) {
   });
 }
 
-// Alias for usePredictionDetail (returns analysis data)
+// Fetch detailed analysis from API (single retry, silent fail)
 export function usePredictionDetail(predictionId: string) {
   return useQuery({
     queryKey: ['prediction-detail', predictionId],
     queryFn: async () => {
+      // Only try once - endpoint may not exist for all predictions
       try {
-        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${predictionId}/analysis`);
-        return data;
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/analysis`);
+        if (!response.ok) return null;
+        return await response.json();
       } catch {
         return null;
       }
     },
     enabled: !!predictionId,
+    retry: false, // Don't retry on failure
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-// Alias for usePredictionNumerology
+// Fetch numerology data from API (single request, silent fail)
 export function usePredictionNumerology(predictionId: string) {
   return useQuery({
     queryKey: ['prediction-numerology', predictionId],
     queryFn: async (): Promise<NumerologyData | null> => {
       try {
-        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${predictionId}/numerology`);
-        return data;
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/numerology`);
+        if (!response.ok) return null;
+        return await response.json();
       } catch {
         return null;
       }
     },
     enabled: !!predictionId,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-// Alias for usePredictionStats
+// Fetch stats from API (single request, silent fail)
 export function usePredictionStats(predictionId: string) {
   return useQuery({
     queryKey: ['prediction-stats', predictionId],
     queryFn: async (): Promise<SportSpecificStatsData | null> => {
       try {
-        const data = await fetchWithRetry(`${API_BASE_URL}/predictions/${predictionId}/stats`);
-        return data;
+        const response = await fetch(`${API_BASE_URL}/predictions/${predictionId}/stats`);
+        if (!response.ok) return null;
+        return await response.json();
       } catch {
         return null;
       }
     },
     enabled: !!predictionId,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
