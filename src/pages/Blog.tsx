@@ -1,23 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, TrendingUp, Search, Trophy, BookOpen, ChevronRight, Target, CheckCircle2 } from 'lucide-react';
+import { Calendar, Search, BookOpen, ChevronRight, ChevronLeft, Target, CheckCircle2, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBlogArticles, useBlogStats } from '@/hooks/useBlogArticles';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getSportEmoji } from '@/lib/sportEmoji';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const SPORTS_FILTER = [
-  { value: 'all', label: 'All Sports', labelCz: 'Všechny', emoji: '🏆' },
+  { value: 'all', label: 'All Sports', labelCz: 'Všechny sporty', emoji: '🏆' },
   { value: 'NHL', label: 'NHL', labelCz: 'NHL', emoji: '🏒' },
   { value: 'NBA', label: 'NBA', labelCz: 'NBA', emoji: '🏀' },
-  { value: 'NFL', label: 'NFL', labelCz: 'NFL', emoji: '🏈' },
-  { value: 'MLB', label: 'MLB', labelCz: 'MLB', emoji: '⚾' },
   { value: 'Soccer', label: 'Soccer', labelCz: 'Fotbal', emoji: '⚽' },
   { value: 'UFC', label: 'UFC', labelCz: 'UFC', emoji: '🥊' },
+  { value: 'NFL', label: 'NFL', labelCz: 'NFL', emoji: '🏈' },
+  { value: 'MLB', label: 'MLB', labelCz: 'MLB', emoji: '⚾' },
 ];
 
 export default function Blog() {
@@ -25,6 +26,7 @@ export default function Blog() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { language } = useLanguage();
+  const { user } = useAuth();
   const ITEMS_PER_PAGE = 12;
 
   const { data: articles, isLoading } = useBlogArticles({
@@ -48,85 +50,99 @@ export default function Blog() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const getAccuracyColor = (accuracy: number | null) => {
-    if (!accuracy) return 'bg-muted text-muted-foreground';
-    if (accuracy >= 65) return 'bg-success/20 text-success border-success/30';
-    if (accuracy >= 50) return 'bg-warning/20 text-warning border-warning/30';
-    return 'bg-destructive/20 text-destructive border-destructive/30';
+  const getAccuracyBadge = (accuracy: number | null) => {
+    if (!accuracy) return { text: '—', className: 'bg-muted text-muted-foreground' };
+    if (accuracy >= 65) return { 
+      text: `✅ ${accuracy.toFixed(0)}%`, 
+      className: 'bg-success/20 text-success border-success/30' 
+    };
+    if (accuracy >= 50) return { 
+      text: `${accuracy.toFixed(0)}%`, 
+      className: 'bg-warning/20 text-warning border-warning/30' 
+    };
+    return { 
+      text: `❌ ${accuracy.toFixed(0)}%`, 
+      className: 'bg-destructive/20 text-destructive border-destructive/30' 
+    };
   };
 
-  const getAccuracyBadgeText = (accuracy: number | null) => {
-    if (!accuracy) return '—';
-    return `${accuracy.toFixed(0)}%`;
+  // Extract preview text from content
+  const getPreviewText = (content: string | null, maxLength = 100): string => {
+    if (!content) return '';
+    // Remove markdown formatting and references
+    let text = content
+      .replace(/\[\d+\]/g, '')
+      .replace(/[#*_`]/g, '')
+      .replace(/\n+/g, ' ')
+      .trim();
+    if (text.length > maxLength) {
+      text = text.substring(0, maxLength).trim() + '...';
+    }
+    return text;
   };
 
   return (
     <div className="space-y-8">
       {/* Hero Section */}
       <div className="text-center py-8 md:py-12">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-          <BookOpen className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-primary">
-            {language === 'cz' ? 'Ověřený track record' : 'Verified Track Record'}
-          </span>
-        </div>
-        
         <h1 className="text-4xl md:text-5xl font-black mb-4">
           📚 {language === 'cz' ? 'Blog & Archiv' : 'Blog & Archive'}
         </h1>
         
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           {language === 'cz' 
-            ? 'Naše predikce po zápasech. Ověřená přesnost. Žádné cherry-picking.'
-            : 'Our predictions after games. Verified accuracy. No cherry-picking.'
+            ? 'Ověřené predikce po zápasech. Kompletní transparentnost.'
+            : 'Verified predictions after games. Full transparency.'
           }
         </p>
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 max-w-3xl mx-auto">
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl md:text-3xl font-mono font-black text-foreground">
-              {stats?.totalArticles || 0}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 max-w-3xl mx-auto">
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl md:text-3xl font-mono font-black text-foreground">
+                {stats.totalArticles}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'cz' ? 'Článků' : 'Articles'}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'cz' ? 'Článků' : 'Articles'}
-            </p>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl md:text-3xl font-mono font-black text-foreground">
-              {stats?.totalPicks || 0}
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl md:text-3xl font-mono font-black text-foreground">
+                {stats.totalPicks}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'cz' ? 'Tipů' : 'Total Picks'}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'cz' ? 'Tipů' : 'Total Picks'}
-            </p>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-2xl md:text-3xl font-mono font-black text-success">
-              {stats?.totalWins || 0}
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl md:text-3xl font-mono font-black text-success">
+                {stats.totalWins}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'cz' ? 'Výher' : 'Wins'}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'cz' ? 'Výher' : 'Wins'}
-            </p>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <div className={cn(
-              'text-2xl md:text-3xl font-mono font-black',
-              (stats?.avgAccuracy || 0) >= 65 ? 'text-success' : 
-              (stats?.avgAccuracy || 0) >= 50 ? 'text-warning' : 'text-destructive'
-            )}>
-              {(stats?.avgAccuracy || 0).toFixed(0)}%
+            <div className="glass-card p-4 text-center">
+              <div className={cn(
+                'text-2xl md:text-3xl font-mono font-black',
+                stats.avgAccuracy >= 65 ? 'text-success' : 
+                stats.avgAccuracy >= 50 ? 'text-warning' : 'text-destructive'
+              )}>
+                {stats.avgAccuracy.toFixed(0)}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'cz' ? 'Přesnost' : 'Accuracy'}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {language === 'cz' ? 'Přesnost' : 'Accuracy'}
-            </p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Filter Bar */}
-      <div className="space-y-4">
+      <div className="glass-card p-4 space-y-4">
         {/* Sport Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
           {SPORTS_FILTER.map(sport => (
             <button
               key={sport.value}
@@ -135,10 +151,10 @@ export default function Blog() {
                 setCurrentPage(1);
               }}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap min-h-[44px]',
+                'flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
                 sportFilter === sport.value
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                  : 'bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                  : 'bg-muted/50 border border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
               )}
             >
               <span>{sport.emoji}</span>
@@ -157,7 +173,7 @@ export default function Blog() {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="pl-11 h-12 bg-card"
+            className="pl-11 h-12 bg-background"
           />
         </div>
       </div>
@@ -169,10 +185,11 @@ export default function Blog() {
             <div key={i} className="glass-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-8 w-8 rounded-lg" />
-                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-5 w-20" />
               </div>
               <Skeleton className="h-6 w-full" />
               <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-16 w-full" />
               <div className="flex gap-2">
                 <Skeleton className="h-6 w-16" />
                 <Skeleton className="h-6 w-20" />
@@ -183,66 +200,74 @@ export default function Blog() {
       ) : paginatedArticles.length > 0 ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {paginatedArticles.map((article) => (
-              <Link
-                key={article.id}
-                to={`/blog/${article.slug}`}
-                className="glass-card p-5 hover:border-primary/50 transition-all duration-200 group flex flex-col"
-              >
-                {/* Header: Sport + Accuracy */}
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">
-                      {article.sport ? getSportEmoji(article.sport) : '📊'}
-                    </span>
-                    <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-muted text-muted-foreground uppercase tracking-wide">
-                      {article.sport || 'Mixed'}
+            {paginatedArticles.map((article) => {
+              const accuracyBadge = getAccuracyBadge(article.accuracy_pct);
+              const previewText = getPreviewText(article.content);
+              
+              return (
+                <Link
+                  key={article.id}
+                  to={`/blog/${article.slug}`}
+                  className="glass-card p-5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 group flex flex-col"
+                >
+                  {/* Header: Sport Badge + Date */}
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">
+                        {article.sport ? getSportEmoji(article.sport) : '📊'}
+                      </span>
+                      <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-muted text-muted-foreground uppercase tracking-wide">
+                        {article.sport || 'Mixed'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>{format(new Date(article.article_date), 'MMM d')}</span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-bold text-base mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                    {article.title}
+                  </h3>
+
+                  {/* Accuracy Badge */}
+                  <div className="mb-3">
+                    <span className={cn(
+                      'text-xs font-bold px-2.5 py-1 rounded-lg border inline-flex items-center gap-1',
+                      accuracyBadge.className
+                    )}>
+                      {accuracyBadge.text}
                     </span>
                   </div>
-                  <span className={cn(
-                    'text-xs font-bold px-2.5 py-1 rounded-lg border',
-                    getAccuracyColor(article.accuracy_pct)
-                  )}>
-                    {getAccuracyBadgeText(article.accuracy_pct)}
-                  </span>
-                </div>
 
-                {/* Title */}
-                <h3 className="font-bold text-base mb-2 group-hover:text-primary transition-colors line-clamp-2 flex-1">
-                  {article.title}
-                </h3>
-
-                {/* Date */}
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>{format(new Date(article.article_date), 'MMM d, yyyy')}</span>
-                </div>
-
-                {/* Stats Row */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center gap-1.5 text-sm">
-                    <Target className="h-3.5 w-3.5 text-primary" />
-                    <span className="font-mono font-semibold">{article.total_picks}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {language === 'cz' ? 'tipů' : 'picks'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  {/* Stats Row */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                    <span className="font-mono font-semibold text-foreground">{article.total_picks}</span>
+                    <span>{language === 'cz' ? 'tipů' : 'picks'}</span>
+                    <span>·</span>
                     <span className="font-mono font-semibold text-success">{article.wins}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {language === 'cz' ? 'výher' : 'wins'}
-                    </span>
+                    <span>{language === 'cz' ? 'výher' : 'wins'}</span>
+                    <span>·</span>
+                    <span className="font-mono font-semibold text-destructive">{article.losses}</span>
+                    <span>{language === 'cz' ? 'proher' : 'losses'}</span>
                   </div>
-                </div>
 
-                {/* Read More Link */}
-                <div className="flex items-center gap-1 text-sm text-primary font-medium group-hover:gap-2 transition-all mt-auto pt-3 border-t border-border">
-                  {language === 'cz' ? 'Číst více' : 'Read more'}
-                  <ChevronRight className="h-4 w-4" />
-                </div>
-              </Link>
-            ))}
+                  {/* Preview Text */}
+                  {previewText && (
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
+                      {previewText}
+                    </p>
+                  )}
+
+                  {/* Read More Link */}
+                  <div className="flex items-center gap-1 text-sm text-primary font-medium group-hover:gap-2 transition-all mt-auto pt-3 border-t border-border">
+                    {language === 'cz' ? 'Číst více' : 'Read more'}
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           {/* Pagination */}
@@ -253,11 +278,13 @@ export default function Blog() {
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
+                className="gap-1"
               >
-                {language === 'cz' ? '← Předchozí' : '← Previous'}
+                <ChevronLeft className="h-4 w-4" />
+                {language === 'cz' ? 'Předchozí' : 'Previous'}
               </Button>
               
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 px-2">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
                   if (totalPages <= 5) {
@@ -292,14 +319,16 @@ export default function Blog() {
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
+                className="gap-1"
               >
-                {language === 'cz' ? 'Další →' : 'Next →'}
+                {language === 'cz' ? 'Další' : 'Next'}
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}
         </>
       ) : (
-        <div className="text-center py-16">
+        <div className="text-center py-16 glass-card">
           <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-xl font-bold mb-2">
             {searchQuery 
@@ -314,35 +343,38 @@ export default function Blog() {
                   : 'Try a different search query or change the filters.'
                 )
               : (language === 'cz'
-                  ? 'Články se generují automaticky každý den po skončení zápasů.'
-                  : 'Articles are generated automatically every day after games finish.'
+                  ? 'Články se generují automaticky každý den po vyhodnocení zápasů.'
+                  : 'Articles are generated automatically every day after games are evaluated.'
                 )
             }
           </p>
         </div>
       )}
 
-      {/* CTA Section */}
-      <div className="glass-card p-8 md:p-10 text-center bg-gradient-to-br from-primary/10 via-background to-accent/10 border-primary/30">
-        <div className="text-4xl mb-4">🎯</div>
-        <h3 className="text-2xl md:text-3xl font-black mb-3">
-          {language === 'cz' 
-            ? 'Chcete tipy PŘED zápasy?'
-            : 'Want picks BEFORE the games?'
-          }
-        </h3>
-        <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-          {language === 'cz'
-            ? 'Zaregistrujte se zdarma a získejte přístup k našim AI predikcím v reálném čase, ještě než zápasy začnou.'
-            : 'Sign up for free and get access to our AI predictions in real-time, before games start.'
-          }
-        </p>
-        <Link to="/signup">
-          <Button size="lg" className="btn-gradient text-base px-8">
-            {language === 'cz' ? 'Registrujte se zdarma →' : 'Sign up free →'}
-          </Button>
-        </Link>
-      </div>
+      {/* CTA Section - only for non-logged users */}
+      {!user && (
+        <div className="glass-card p-8 md:p-10 text-center bg-gradient-to-br from-primary/10 via-background to-accent/10 border-2 border-primary/20">
+          <div className="text-4xl mb-4">🎯</div>
+          <h3 className="text-2xl md:text-3xl font-black mb-3">
+            {language === 'cz' 
+              ? 'Chcete tipy PŘED zápasy?'
+              : 'Want picks BEFORE the games?'
+            }
+          </h3>
+          <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+            {language === 'cz'
+              ? 'Zaregistrujte se zdarma a získejte přístup k našim AI predikcím v reálném čase, ještě než zápasy začnou.'
+              : 'Sign up for free and get access to our AI predictions in real-time, before games start.'
+            }
+          </p>
+          <Link to="/signup">
+            <Button size="lg" className="text-base px-8 gap-2">
+              {language === 'cz' ? 'Registrujte se zdarma' : 'Sign up free'}
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
