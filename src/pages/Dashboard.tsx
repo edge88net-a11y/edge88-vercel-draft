@@ -16,7 +16,7 @@ import { MaintenanceState } from '@/components/MaintenanceState';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
-import { sportIcons } from '@/lib/types';
+import { getSportEmoji } from '@/lib/sportEmoji';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -313,14 +313,13 @@ const Dashboard = () => {
                   <div className="p-3 sm:p-4">
                     <div className="space-y-2.5 sm:space-y-3">
                       {(stats?.bySport || []).slice(0, 5).map((sport, index) => {
-                        const sportKey = sport.sport?.toUpperCase() || sport.sport;
                         return (
                           <div 
                             key={sport.sport} 
                             className="flex items-center gap-2 sm:gap-3 animate-fade-in"
                             style={{ animationDelay: `${(index + 1) * 100}ms` }}
                           >
-                            <span className="text-lg sm:text-xl shrink-0">{sportIcons[sportKey] || sportIcons[sport.sport] || '🏆'}</span>
+                            <span className="text-lg sm:text-xl shrink-0">{getSportEmoji(sport.sport)}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
                                 <span className="font-medium truncate">{sport.sport}</span>

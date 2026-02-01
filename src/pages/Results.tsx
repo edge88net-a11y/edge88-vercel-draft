@@ -11,7 +11,7 @@ import { ConfidenceAccuracyChart } from '@/components/charts/ConfidenceAccuracyC
 import { TeamLogo } from '@/components/TeamLogo';
 import { useActivePredictions, useStats, useAccuracyStats } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { sportIcons } from '@/lib/types';
+import { getSportEmoji } from '@/lib/sportEmoji';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -103,7 +103,7 @@ const Results = () => {
                         : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >
-                    {sport !== 'All' && <span className="mr-1">{sportIcons[sport]}</span>}
+                    {sport !== 'All' && <span className="mr-1">{getSportEmoji(sport)}</span>}
                     {sport}
                   </button>
                 ))}
@@ -239,12 +239,11 @@ const Results = () => {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {stats.bySport.map((sport, index) => {
-                          const sportKey = sport.sport?.toUpperCase() || sport.sport;
                           return (
                             <tr key={sport.sport} className="hover:bg-muted/50 transition-colors">
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-lg">{sportIcons[sportKey] || sportIcons[sport.sport] || '🏆'}</span>
+                                  <span className="text-lg">{getSportEmoji(sport.sport)}</span>
                                   <span className="font-medium">{sport.sport}</span>
                                   {index === 0 && <span className="text-yellow-400">👑</span>}
                                 </div>
@@ -319,7 +318,6 @@ const Results = () => {
               <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
                 {gradedPredictions.length > 0 ? (
                   gradedPredictions.slice(0, 20).map((prediction) => {
-                    const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
                     return (
                       <div
                         key={prediction.id}
@@ -333,7 +331,7 @@ const Results = () => {
                             'flex h-10 w-10 items-center justify-center rounded-full text-lg',
                             prediction.result === 'win' ? 'bg-success/20' : 'bg-destructive/20'
                           )}>
-                            {sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}
+                            {getSportEmoji(prediction.sport)}
                           </div>
                           <div className="flex items-center gap-2">
                             <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="sm" />

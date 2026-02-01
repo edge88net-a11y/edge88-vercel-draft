@@ -10,7 +10,7 @@ import { MaintenanceState } from '@/components/MaintenanceState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useActivePredictions } from '@/hooks/usePredictions';
-import { sportIcons } from '@/lib/types';
+import { getSportEmoji } from '@/lib/sportEmoji';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
@@ -283,7 +283,7 @@ const Predictions = () => {
                         : 'filter-chip'
                     )}
                   >
-                    {sport !== 'All' && <span>{sportIcons[sport] || sportIcons[sport.toUpperCase()]}</span>}
+                    {sport !== 'All' && <span>{getSportEmoji(sport)}</span>}
                     {sport === 'All' ? t.all : sport}
                   </button>
                 ))}
