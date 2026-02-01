@@ -18,6 +18,7 @@ export function HotPickBadge({ type, value, className }: HotPickBadgeProps) {
       bgClass: 'bg-gradient-to-r from-orange-500/20 to-red-500/20',
       textClass: 'text-orange-400',
       borderClass: 'border-orange-500/40',
+      glow: true,
     },
     trending: {
       icon: TrendingUp,
@@ -25,25 +26,28 @@ export function HotPickBadge({ type, value, className }: HotPickBadgeProps) {
       bgClass: 'bg-blue-500/20',
       textClass: 'text-blue-400',
       borderClass: 'border-blue-500/40',
+      glow: false,
     },
     followers: {
       icon: Users,
-      label: `👥 ${value} ${language === 'cz' ? 'analytiků sleduje' : 'analysts following'}`,
+      label: `👥 ${value} ${language === 'cz' ? 'sledujících' : 'following'}`,
       bgClass: 'bg-muted/50',
       textClass: 'text-muted-foreground',
       borderClass: 'border-border',
+      glow: false,
     },
     'starting-soon': {
       icon: Clock,
-      label: language === 'cz' ? 'BRZY ZAČÍNÁ' : 'STARTING SOON',
+      label: language === 'cz' ? '🔴 BRZY ZAČÍNÁ' : '🔴 STARTING SOON',
       bgClass: 'bg-destructive/20',
       textClass: 'text-destructive',
       borderClass: 'border-destructive/40',
       pulse: true,
+      glow: false,
     },
   };
 
-  const { icon: Icon, label, bgClass, textClass, borderClass, pulse } = config[type] as any;
+  const { icon: Icon, label, bgClass, textClass, borderClass, pulse, glow } = config[type] as any;
 
   return (
     <span
@@ -53,10 +57,24 @@ export function HotPickBadge({ type, value, className }: HotPickBadgeProps) {
         textClass,
         borderClass,
         pulse && 'animate-pulse',
+        glow && 'shadow-[0_0_10px_hsl(25,100%,50%,0.3)]',
         className
       )}
     >
+      {type === 'hot' && <Flame className="h-3 w-3 animate-pulse" />}
       {label}
     </span>
   );
+}
+
+// Generate a random but consistent follower count based on prediction ID
+export function generateFollowerCount(predictionId: string): number {
+  const hash = predictionId.replace(/[^0-9]/g, '').slice(0, 4) || '100';
+  return 50 + (parseInt(hash, 10) % 450); // 50-500 range
+}
+
+// Determine if a prediction should show trending badge
+export function isTrending(predictionId: string): boolean {
+  const hash = predictionId.replace(/[^0-9]/g, '').slice(0, 2) || '0';
+  return parseInt(hash, 10) % 5 === 0; // ~20% of predictions
 }

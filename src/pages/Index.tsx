@@ -11,6 +11,7 @@ import { AffiliateCasinos } from '@/components/AffiliateCasinos';
 import { WinStreakBadge } from '@/components/WinStreakBadge';
 import { ProveItSection } from '@/components/ProveItSection';
 import { TrackRecordSection } from '@/components/TrackRecordSection';
+import { SocialProofToast } from '@/components/SocialProofToast';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useWinStreak } from '@/hooks/useWinStreak';
@@ -211,6 +212,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Social Proof Toast */}
+      <SocialProofToast />
+
       {/* Hero Section - Premium Sportsbook Style */}
       <section className="hero-bg-animated relative pt-8 pb-20 md:pt-20 md:pb-28 overflow-hidden">
         {/* Animated mesh grid background */}
@@ -403,6 +407,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Money Calculator - After How It Works */}
+      <MoneyCalculator />
 
       {/* Testimonials Section */}
       <section 
