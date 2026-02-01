@@ -17,14 +17,13 @@ export function Footer() {
 
   const footerLinks = {
     product: [
-      { label: t.dashboard, href: '/dashboard' },
       { label: t.predictions, href: '/predictions' },
-      { label: t.results, href: '/results' },
+      { label: 'Blog', href: '/blog' },
       { label: t.pricing, href: '/pricing' },
     ],
     company: [
-      { label: language === 'cz' ? 'O nás' : 'About', href: '#' },
-      { label: 'Blog', href: '#' },
+      { label: language === 'cz' ? 'O nás' : 'About Us', href: '#about' },
+      { label: language === 'cz' ? 'Pro investory' : 'For Investors', href: '#investors' },
       { label: language === 'cz' ? 'Kontakt' : 'Contact', href: '#contact', isContact: true },
     ],
     legal: [

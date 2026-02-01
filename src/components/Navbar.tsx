@@ -26,8 +26,8 @@ export function Navbar() {
     // Predictions is the premium product behind paywall, Dashboard needs auth
     if (!user) {
       return [
-        { href: '/blog', label: 'Archive', labelCz: 'Archiv', icon: BookOpen },
-        { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
+        { href: '/#how-it-works', label: 'How It Works', labelCz: 'Jak to funguje', icon: Zap, isAnchor: true },
+        { href: '/blog', label: 'Blog', labelCz: 'Blog', icon: BookOpen },
         { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
       ];
     }
@@ -36,13 +36,31 @@ export function Navbar() {
     return [
       { href: '/dashboard', labelKey: 'dashboard' as const, icon: TrendingUp },
       { href: '/predictions', labelKey: 'predictions' as const, icon: Zap },
-      { href: '/blog', label: 'Archive', labelCz: 'Archiv', icon: BookOpen },
+      { href: '/blog', label: 'Blog', labelCz: 'Blog', icon: BookOpen },
       { href: '/results', labelKey: 'results' as const, icon: BarChart3 },
       { href: '/pricing', labelKey: 'pricing' as const, icon: DollarSign },
     ];
   };
 
   const navLinks = getNavLinks();
+
+  // Handle anchor link clicks for smooth scrolling
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.includes('#')) {
+      const [path, hash] = href.split('#');
+      
+      // If we're already on the homepage, just scroll
+      if (location.pathname === '/' || path === '/') {
+        e.preventDefault();
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          setIsOpen(false);
+        }
+      }
+      // Otherwise navigate will handle it
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -68,14 +86,18 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:gap-1">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.href;
+              const isActive = location.pathname === link.href || 
+                (link.href.startsWith('/#') && location.pathname === '/');
               const linkLabel = 'labelKey' in link && link.labelKey 
                 ? t[link.labelKey] 
                 : ('label' in link ? (language === 'cz' && 'labelCz' in link ? link.labelCz : link.label) : '');
+              const isAnchor = 'isAnchor' in link && link.isAnchor;
+              
               return (
                 <Link
                   key={link.href}
                   to={link.href}
+                  onClick={(e) => isAnchor && handleAnchorClick(e, link.href)}
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200',
                     isActive
@@ -164,15 +186,21 @@ export function Navbar() {
         <div className="animate-slide-up border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden">
           <div className="space-y-1 px-4 py-4">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.href;
+              const isActive = location.pathname === link.href ||
+                (link.href.startsWith('/#') && location.pathname === '/');
               const linkLabel = 'labelKey' in link && link.labelKey 
                 ? t[link.labelKey] 
                 : ('label' in link ? (language === 'cz' && 'labelCz' in link ? link.labelCz : link.label) : '');
+              const isAnchor = 'isAnchor' in link && link.isAnchor;
+              
               return (
                 <Link
                   key={link.href}
                   to={link.href}
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    if (isAnchor) handleAnchorClick(e, link.href);
+                    setIsOpen(false);
+                  }}
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all',
                     isActive
