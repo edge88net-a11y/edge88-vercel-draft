@@ -125,6 +125,7 @@ export interface APIStats {
   activePredictions: number;
   roi: number;
   winStreak: number;
+  picksToday?: number;
   byConfidence: {
     lock: { total: number; wins: number };
     high: { total: number; wins: number };
@@ -356,19 +357,25 @@ function extractStats(data: unknown): APIStats | null {
   const statsData = (obj.stats || obj.data || obj) as Record<string, unknown>;
   
   if (typeof statsData === 'object' && statsData !== null) {
-    // Extract wins/losses from the response
+    // Extract wins/losses from the response - support both snake_case and camelCase
     const wins = Number(statsData.wins || 0);
     const losses = Number(statsData.losses || 0);
-    const accuracy = Number(statsData.accuracy || statsData.win_rate || 0);
+    const accuracy = Number(statsData.accuracy_pct || statsData.accuracy || statsData.win_rate || 0);
     const totalPredictions = Number(statsData.total_predictions || statsData.totalPredictions || 0);
-    const upcomingPredictions = Number(statsData.upcoming_predictions || statsData.upcomingPredictions || 0);
+    // Use active_count for pending predictions count
+    const activePredictions = Number(statsData.active_count || statsData.upcoming_predictions || statsData.upcomingPredictions || 0);
+    // Use picks_today for today's pick count
+    const picksToday = Number(statsData.picks_today || statsData.picksToday || 0);
+    // Use current_streak for win streak
+    const currentStreak = Number(statsData.current_streak || statsData.winStreak || statsData.win_streak || 0);
     
     return {
       totalPredictions,
       accuracy,
-      activePredictions: upcomingPredictions,
+      activePredictions,
       roi: Number(statsData.roi || 0),
-      winStreak: Number(statsData.winStreak || statsData.win_streak || 0),
+      winStreak: currentStreak,
+      picksToday,
       byConfidence: (statsData.byConfidence || statsData.by_confidence) as APIStats['byConfidence'] || {
         lock: { total: 0, wins: 0 },
         high: { total: 0, wins: 0 },
