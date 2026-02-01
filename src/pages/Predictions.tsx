@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown } from 'lucide-react';
+import { Filter, RefreshCw, Zap, Loader2, Grid3X3, List, Search, ArrowUpDown, Flame, TrendingUp, Target, Trophy } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils';
 
 const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
 const confidenceLevels = [
-  { label: 'All', min: 0 },
-  { label: 'Lock 75%+', min: 75 },
-  { label: 'High 65%+', min: 65 },
-  { label: 'Medium 55%+', min: 55 },
+  { label: 'All', min: 0, icon: null },
+  { label: '🔒 Lock 75%+', min: 75, color: 'success' },
+  { label: '🔥 High 65%+', min: 65, color: 'warning' },
+  { label: '📊 Medium 55%+', min: 55, color: 'orange' },
 ];
 const predictionTypes = ['All', 'Moneyline', 'Spread', 'Over/Under', 'Prop'];
 const sortOptions = [
@@ -61,6 +61,14 @@ const Predictions = () => {
   const normalizeConfidence = (confidence: number) => {
     return confidence <= 1 ? confidence * 100 : confidence;
   };
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = activePredictions.length;
+    const highConfidence = activePredictions.filter(p => normalizeConfidence(p.confidence) >= 70).length;
+    const locks = activePredictions.filter(p => normalizeConfidence(p.confidence) >= 75).length;
+    return { total, highConfidence, locks };
+  }, [activePredictions]);
 
   const filteredAndSortedPredictions = useMemo(() => {
     let filtered = activePredictions.filter((prediction) => {
@@ -137,61 +145,98 @@ const Predictions = () => {
       <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{t.predictions}</h1>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-                {activePredictions.length} {t.active}
-              </span>
+        {/* Header with Stats */}
+        <div className="mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-black tracking-tight">{t.predictions}</h1>
+                <div className="live-badge">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                  </span>
+                  <span>LIVE</span>
+                </div>
+              </div>
+              <p className="text-muted-foreground">
+                {t.aiPoweredPicks}
+              </p>
             </div>
-            <p className="mt-2 text-muted-foreground">
-              {t.aiPoweredPicks}
-            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center rounded-xl border border-border p-1 bg-card">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    'rounded-lg p-2.5 transition-all duration-200',
+                    viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    'rounded-lg p-2.5 transition-all duration-200',
+                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleRefresh}
+                disabled={isFetching}
+                className="gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary"
+              >
+                <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                {isFetching ? t.loading : t.refresh}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center rounded-lg border border-border p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  'rounded-md p-2 transition-colors',
-                  viewMode === 'grid' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  'rounded-md p-2 transition-colors',
-                  viewMode === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <List className="h-4 w-4" />
-              </button>
+
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="stat-card flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
+                <Target className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-mono text-2xl font-black text-foreground">{stats.total}</div>
+                <div className="text-xs text-muted-foreground">Active Picks</div>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleRefresh}
-              disabled={isFetching}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-              {isFetching ? t.loading : t.refresh}
-            </Button>
+            <div className="stat-card flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/20">
+                <Flame className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <div className="font-mono text-2xl font-black text-success">{stats.highConfidence}</div>
+                <div className="text-xs text-muted-foreground">High Confidence</div>
+              </div>
+            </div>
+            <div className="stat-card flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/20">
+                <Trophy className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <div className="font-mono text-2xl font-black text-warning">{stats.locks}</div>
+                <div className="text-xs text-muted-foreground">🔒 Locks</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Search & Sort Bar */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={`${t.search} teams...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-11 h-12 bg-card border-border focus:border-primary"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -199,7 +244,7 @@ const Predictions = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
             >
               {translatedSortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -207,23 +252,23 @@ const Predictions = () => {
                 </option>
               ))}
             </select>
-            <Button variant="ghost" size="icon" onClick={toggleSortOrder}>
+            <Button variant="outline" size="icon" onClick={toggleSortOrder} className="border-border hover:border-primary hover:bg-primary/10">
               <ArrowUpDown className={cn('h-4 w-4', sortOrder === 'asc' && 'rotate-180')} />
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="glass-card mb-8 p-4">
+        <div className="glass-card mb-8 p-5">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Filter className="h-4 w-4" />
-            {t.filter}
+            <Filter className="h-4 w-4 text-primary" />
+            <span className="font-semibold">{t.filter}</span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-3">
             {/* Sport Filter */}
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t.sport}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -231,11 +276,12 @@ const Predictions = () => {
                   <button
                     key={sport}
                     onClick={() => setSelectedSport(sport)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
                       selectedSport === sport
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-                    }`}
+                        ? 'filter-chip-active'
+                        : 'filter-chip'
+                    )}
                   >
                     {sport !== 'All' && <span>{sportIcons[sport] || sportIcons[sport.toUpperCase()]}</span>}
                     {sport === 'All' ? t.all : sport}
@@ -246,7 +292,7 @@ const Predictions = () => {
 
             {/* Confidence Filter */}
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t.confidence}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -254,11 +300,12 @@ const Predictions = () => {
                   <button
                     key={level.label}
                     onClick={() => setSelectedConfidence(level.label)}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
                       selectedConfidence === level.label
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-                    }`}
+                        ? 'filter-chip-active'
+                        : 'filter-chip'
+                    )}
                   >
                     {level.label === 'All' ? t.all : level.label}
                   </button>
@@ -268,7 +315,7 @@ const Predictions = () => {
 
             {/* Type Filter */}
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t.type}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -276,11 +323,12 @@ const Predictions = () => {
                   <button
                     key={type}
                     onClick={() => setSelectedType(type)}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                    className={cn(
+                      'rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
                       selectedType === type
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-                    }`}
+                        ? 'filter-chip-active'
+                        : 'filter-chip'
+                    )}
                   >
                     {type === 'All' ? t.all : type}
                   </button>
@@ -293,16 +341,21 @@ const Predictions = () => {
         {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {t.showing} <span className="font-medium text-foreground">{filteredAndSortedPredictions.length}</span> {t.predictions.toLowerCase()}
+            {t.showing} <span className="font-bold text-foreground">{filteredAndSortedPredictions.length}</span> {t.predictions.toLowerCase()}
             {!isPro && (
-              <span className="ml-2 text-primary">
+              <span className="ml-2 text-primary font-semibold">
                 ({user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT} {t.unlocked})
               </span>
             )}
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Zap className="h-4 w-4 text-primary" />
-            {t.autoRefresh}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-success/10 text-success">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+              </span>
+              <span className="text-xs font-semibold">{t.autoRefresh}</span>
+            </div>
           </div>
         </div>
 
@@ -344,9 +397,11 @@ const Predictions = () => {
             })}
           </div>
         ) : !isMaintenanceMode ? (
-          <div className="glass-card py-16 text-center">
-            <Zap className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-semibold">{t.noPredictions}</h3>
+          <div className="glass-card-premium py-20 text-center">
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <Zap className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold">{t.noPredictions}</h3>
             <p className="mt-2 text-muted-foreground">
               {t.noPredictionsDesc}
             </p>
@@ -358,7 +413,7 @@ const Predictions = () => {
                 setSelectedType('All');
                 setSearchQuery('');
               }}
-              className="mt-4"
+              className="mt-6 border-primary/30 hover:bg-primary/10 hover:border-primary"
             >
               {t.adjustFilters}
             </Button>
@@ -367,26 +422,31 @@ const Predictions = () => {
 
         {/* Subscription Gate Notice */}
         {!isPro && !isMaintenanceMode && filteredAndSortedPredictions.length > (user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT) && (
-          <div className="mt-8 glass-card p-6 text-center bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
-            <div className="flex items-center justify-center gap-2 text-primary mb-2">
-              <Zap className="h-5 w-5" />
-              <span className="font-bold">{t.unlockAll} {filteredAndSortedPredictions.length} {t.predictions}</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              {user ? t.upgradeToSeeAll : t.signUpToSeeMore}
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              {!user && (
-                <Link to="/signup">
-                  <Button variant="outline">{t.signUpFree}</Button>
+          <div className="mt-8 glass-card-premium p-8 text-center relative overflow-hidden">
+            {/* Glow background */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px]" />
+            
+            <div className="relative">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Zap className="h-6 w-6 text-primary" />
+                <span className="text-xl font-black text-foreground">{t.unlockAll} {filteredAndSortedPredictions.length} {t.predictions}</span>
+              </div>
+              <p className="text-muted-foreground mb-6">
+                {user ? t.upgradeToSeeAll : t.signUpToSeeMore}
+              </p>
+              <div className="flex items-center justify-center gap-4">
+                {!user && (
+                  <Link to="/signup">
+                    <Button variant="outline" className="h-12 px-6 border-primary/30 hover:bg-primary/10 hover:border-primary">{t.signUpFree}</Button>
+                  </Link>
+                )}
+                <Link to="/pricing">
+                  <Button className="btn-gradient h-12 px-8 gap-2">
+                    <Zap className="h-4 w-4" />
+                    {t.upgradeToPro}
+                  </Button>
                 </Link>
-              )}
-              <Link to="/pricing">
-                <Button className="btn-gradient gap-2">
-                  <Zap className="h-4 w-4" />
-                  {t.upgradeToPro}
-                </Button>
-              </Link>
+              </div>
             </div>
           </div>
         )}

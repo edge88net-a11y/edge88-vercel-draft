@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, TrendingUp, Lock, ExternalLink } from 'lucide-react';
+import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sportIcons } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -64,11 +64,19 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
     ? Math.round(prediction.confidence * 100) 
     : Math.round(prediction.confidence);
 
-  // Get confidence color
-  const getConfidenceColor = () => {
-    if (confidencePercent >= 70) return 'text-success';
-    if (confidencePercent >= 55) return 'text-yellow-400';
-    return 'text-orange-400';
+  // Get confidence color class
+  const getConfidenceColorClass = () => {
+    if (confidencePercent >= 70) return 'confidence-high';
+    if (confidencePercent >= 55) return 'confidence-medium';
+    return 'confidence-low';
+  };
+
+  // Get confidence label
+  const getConfidenceLabel = () => {
+    if (confidencePercent >= 75) return '🔒 LOCK';
+    if (confidencePercent >= 70) return '🔥 HOT';
+    if (confidencePercent >= 60) return '💪 STRONG';
+    return '📊 VALUE';
   };
 
   // Check if game is live
@@ -102,23 +110,29 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
   return (
     <div
       className={cn(
-        'glass-card-hover group relative overflow-hidden transition-all duration-300',
+        'betting-slip group relative overflow-hidden transition-all duration-300',
+        confidencePercent >= 70 && 'betting-slip-win',
         isLocked && 'blur-sm pointer-events-none'
       )}
     >
-      {/* Header - Game Number, Sport, Live Badge & Save Button */}
+      {/* Header - Game Number, Sport, Confidence Badge & Save Button */}
       <div className="p-5 pb-0 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {gameNumber && (
-            <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+            <span className="font-mono text-xs font-black text-primary bg-primary/20 px-2.5 py-1 rounded-lg border border-primary/30">
               #{gameNumber}
             </span>
           )}
           <span className="text-2xl">{sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}</span>
-          <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="rounded-lg bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground border border-border">
             {prediction.league || prediction.sport}
           </span>
           {isGameLive() && <LiveGameBadge gameTime={prediction.gameTime} />}
+          {confidencePercent >= 70 && (
+            <span className="badge-win text-xs">
+              {getConfidenceLabel()}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {!isGameLive() && <GameCountdown gameTime={prediction.gameTime} />}
@@ -126,98 +140,137 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         </div>
       </div>
 
-      {/* Teams with Logos - More prominent */}
+      {/* Teams vs Section - Betting slip style */}
       <div className="p-5 pt-4">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-4">
+          {/* Teams Column */}
+          <div className="flex-1 space-y-3">
+            {/* Away Team */}
             <Link 
               to={`/predictions/${prediction.id}`}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-2 py-1.5 -ml-2 transition-colors hover:bg-muted/50',
-                prediction.prediction.pick.includes(prediction.awayTeam) && 'bg-success/10 ring-1 ring-success/30'
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200',
+                prediction.prediction.pick.includes(prediction.awayTeam) 
+                  ? 'bg-success/15 border border-success/40 shadow-[0_0_15px_hsl(var(--success)/0.2)]' 
+                  : 'hover:bg-muted/50'
               )}
             >
               <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="md" />
-              <span className={cn(
-                'font-bold text-lg',
-                prediction.prediction.pick.includes(prediction.awayTeam) && 'text-success'
-              )}>
-                {prediction.awayTeam}
-                {prediction.prediction.pick.includes(prediction.awayTeam) && (
-                  <span className="ml-2 text-xs">✓</span>
-                )}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className={cn(
+                  'font-bold text-lg block truncate',
+                  prediction.prediction.pick.includes(prediction.awayTeam) && 'text-success'
+                )}>
+                  {prediction.awayTeam}
+                </span>
+                <span className="text-xs text-muted-foreground">Away</span>
+              </div>
+              {prediction.prediction.pick.includes(prediction.awayTeam) && (
+                <span className="flex items-center gap-1 text-xs font-bold text-success bg-success/20 px-2 py-1 rounded-md">
+                  ✓ PICK
+                </span>
+              )}
             </Link>
-            <span className="ml-8 text-xs text-muted-foreground">@</span>
+
+            {/* VS Divider */}
+            <div className="flex items-center gap-3 px-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-bold text-muted-foreground">VS</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Home Team */}
             <Link 
               to={`/predictions/${prediction.id}`}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-2 py-1.5 -ml-2 transition-colors hover:bg-muted/50',
-                prediction.prediction.pick.includes(prediction.homeTeam) && 'bg-success/10 ring-1 ring-success/30'
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200',
+                prediction.prediction.pick.includes(prediction.homeTeam) 
+                  ? 'bg-success/15 border border-success/40 shadow-[0_0_15px_hsl(var(--success)/0.2)]' 
+                  : 'hover:bg-muted/50'
               )}
             >
               <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="md" />
-              <span className={cn(
-                'font-bold text-lg',
-                prediction.prediction.pick.includes(prediction.homeTeam) && 'text-success'
-              )}>
-                {prediction.homeTeam}
-                {prediction.prediction.pick.includes(prediction.homeTeam) && (
-                  <span className="ml-2 text-xs">✓</span>
-                )}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className={cn(
+                  'font-bold text-lg block truncate',
+                  prediction.prediction.pick.includes(prediction.homeTeam) && 'text-success'
+                )}>
+                  {prediction.homeTeam}
+                </span>
+                <span className="text-xs text-muted-foreground">Home</span>
+              </div>
+              {prediction.prediction.pick.includes(prediction.homeTeam) && (
+                <span className="flex items-center gap-1 text-xs font-bold text-success bg-success/20 px-2 py-1 rounded-md">
+                  ✓ PICK
+                </span>
+              )}
             </Link>
           </div>
 
-          {/* Confidence Meter */}
-          <div className="flex flex-col items-center gap-1">
+          {/* Confidence Column */}
+          <div className="flex flex-col items-center gap-2 pl-4 border-l border-border">
             <ConfidenceMeter value={confidencePercent} size="md" />
-            <span className={cn('font-mono text-lg font-bold', getConfidenceColor())}>
+            <span className={cn('font-mono text-2xl font-black', getConfidenceColorClass())}>
               {confidencePercent}%
             </span>
+            <span className="text-xs text-muted-foreground">Confidence</span>
           </div>
         </div>
       </div>
 
-      {/* Prediction Pick */}
-      <div className="mx-5 mb-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/5 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {prediction.prediction.type}
-            </p>
-            <p className="text-lg font-bold text-foreground">{prediction.prediction.pick}</p>
+      {/* Pick & Odds Section - Highlighted */}
+      <div className="mx-5 mb-4 pick-highlight">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                {prediction.prediction.type}
+              </span>
+              <BarChart3 className="h-3 w-3 text-primary" />
+            </div>
+            <p className="text-xl font-black text-foreground">{prediction.prediction.pick}</p>
             {prediction.prediction.line && (
-              <p className="text-sm text-muted-foreground">{prediction.prediction.line}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{prediction.prediction.line}</p>
             )}
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">{t.bestOdds}</p>
-            <p className="font-mono text-lg font-bold text-success">
+            <p className="text-xs text-muted-foreground mb-1">{t.bestOdds}</p>
+            <p className="font-mono text-2xl font-black odds-number">
               {bookmakerOdds[bestOddsIndex]?.odds || prediction.prediction.odds}
             </p>
           </div>
         </div>
-        <div className="mt-2 flex items-center gap-2">
-          <TrendingUp className="h-3.5 w-3.5 text-success" />
-          <span className="text-xs font-medium text-success">+{expectedValue.toFixed(1)}% EV</span>
+        
+        {/* EV Badge */}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="ev-badge">
+            <TrendingUp className="h-3.5 w-3.5" />
+            <span>+{expectedValue.toFixed(1)}% Expected Value</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>Updated 2m ago</span>
+          </div>
         </div>
       </div>
 
       {/* Teaser text */}
-      <p className="px-5 pb-3 text-sm text-muted-foreground italic">
-        "{teaser}"
+      <p className="px-5 pb-4 text-sm text-muted-foreground">
+        <span className="text-primary">💡</span> "{teaser}"
       </p>
 
       {/* Expand Button */}
       <div className="px-5 pb-5">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full justify-between text-muted-foreground hover:text-foreground"
+          className="w-full justify-between border-primary/30 hover:bg-primary/10 hover:border-primary"
         >
-          {isExpanded ? t.hideAnalysis : t.viewAnalysis}
+          <span className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-primary" />
+            {isExpanded ? t.hideAnalysis : t.viewAnalysis}
+          </span>
           <ChevronDown
             className={cn(
               'h-4 w-4 transition-transform duration-300',
@@ -227,12 +280,12 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         </Button>
       </div>
 
-      {/* Expanded Content - Accordion Animation */}
+      {/* Expanded Content */}
       <div className={cn(
         'overflow-hidden transition-all duration-300 ease-out',
         isExpanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
       )}>
-        <div className="border-t border-border px-5 pt-4 pb-5 space-y-4">
+        <div className="border-t border-border px-5 pt-5 pb-5 space-y-4 bg-card/50">
           {/* Analysis Section */}
           <AnalysisSection
             predictionId={prediction.id}
@@ -246,14 +299,17 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
 
           {/* Odds Comparison */}
           <div className="pt-2">
-            <h4 className="text-sm font-semibold mb-3">{t.oddsComparison}</h4>
+            <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              {t.oddsComparison}
+            </h4>
             <OddsComparison bookmakerOdds={bookmakerOdds} />
           </div>
 
           {/* View Full Analysis Link */}
           <Link 
             to={`/predictions/${prediction.id}`}
-            className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 px-4 py-4 text-sm font-bold text-primary transition-all duration-200 hover:from-primary/30 hover:to-accent/30 border border-primary/30"
           >
             {t.fullAnalysis}
             <ExternalLink className="h-4 w-4" />
@@ -263,11 +319,16 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
 
       {/* Lock Overlay */}
       {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm">
           <div className="text-center">
-            <Lock className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-sm font-medium text-muted-foreground">
-              {language === 'cz' ? 'Upgradujte pro odemknutí' : 'Upgrade to unlock'}
+            <div className="mx-auto h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+              <Lock className="h-7 w-7 text-primary" />
+            </div>
+            <p className="font-bold text-foreground">
+              {language === 'cz' ? 'Upgradujte pro odemknutí' : 'Upgrade to Unlock'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {language === 'cz' ? 'Získejte přístup ke všem tipům' : 'Get access to all picks'}
             </p>
           </div>
         </div>
