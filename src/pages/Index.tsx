@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, TrendingUp, BarChart3, Target, Users, Loader2, Mail, Sparkles, Star, Quote, Play, ChevronRight } from 'lucide-react';
+import { ArrowRight, Zap, TrendingUp, BarChart3, Target, Users, Loader2, Mail, Star, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/Navbar';
@@ -12,40 +12,7 @@ import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-// Animated Counter Hook
-function useAnimatedCounter(target: number, duration: number = 2000) {
-  const [count, setCount] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasStarted) {
-          setHasStarted(true);
-          let startTime: number;
-          const animate = (timestamp: number) => {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-            setCount(Math.floor(progress * target));
-            if (progress < 1) {
-              requestAnimationFrame(animate);
-            }
-          };
-          requestAnimationFrame(animate);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [target, duration, hasStarted]);
-
-  return { count, ref };
-}
-
-// Scroll reveal hook
+// Scroll reveal hook - subtle fade only
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -71,33 +38,25 @@ const TESTIMONIALS = [
   {
     name: 'Michael R.',
     role: 'Pro Bettor',
-    image: '👨‍💼',
-    tier: 'Elite',
-    quote: 'Edge88 has completely transformed my approach. The AI picks are incredibly accurate, and the detailed analysis helps me understand the reasoning.',
-    stats: '+$12,400 this month',
+    quote: 'Edge88 has completely transformed my approach. The AI picks are incredibly accurate.',
+    stats: '+$12,400',
   },
   {
     name: 'Sarah K.',
     role: 'Sports Analyst',
-    image: '👩‍💻',
-    tier: 'Pro',
-    quote: 'As someone who analyzes sports professionally, I\'m impressed by the depth of data Edge88 uses. It catches patterns I would have missed.',
+    quote: 'Impressed by the depth of data Edge88 uses. It catches patterns I would have missed.',
     stats: '71% win rate',
   },
   {
     name: 'David L.',
     role: 'Casual Fan',
-    image: '🧑',
-    tier: 'Starter',
-    quote: 'Started with the free plan and quickly upgraded. The picks are easy to follow and the ROI speaks for itself. Best investment I\'ve made.',
-    stats: '+$3,200 first month',
+    quote: 'Started with the free plan and quickly upgraded. The ROI speaks for itself.',
+    stats: '+$3,200',
   },
   {
     name: 'James T.',
     role: 'Day Trader',
-    image: '👨‍💼',
-    tier: 'Elite',
-    quote: 'I apply the same analytical rigor to sports betting as I do to trading. Edge88\'s AI gives me the edge I need in both markets.',
+    quote: 'I apply the same analytical rigor to sports betting. Edge88 delivers the edge I need.',
     stats: '68% accuracy',
   },
 ];
@@ -112,31 +71,16 @@ const HOW_IT_WORKS = [
   {
     step: 2,
     title: 'Get AI Picks',
-    description: 'Receive daily predictions with confidence scores and detailed analysis.',
+    description: 'Receive daily predictions with confidence scores and analysis.',
     icon: Target,
   },
   {
     step: 3,
     title: 'Win More',
-    description: 'Follow the picks, track your results, and grow your bankroll.',
+    description: 'Follow the picks, track results, and grow your bankroll.',
     icon: TrendingUp,
   },
 ];
-
-// Floating particle component
-const FloatingParticle = ({ delay, size, left, top }: { delay: number; size: number; left: string; top: string }) => (
-  <div
-    className="absolute rounded-full bg-primary/30"
-    style={{
-      width: size,
-      height: size,
-      left,
-      top,
-      animation: `particle-float ${8 + Math.random() * 4}s ease-in-out infinite`,
-      animationDelay: `${delay}s`,
-    }}
-  />
-);
 
 const Index = () => {
   const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
@@ -162,11 +106,6 @@ const Index = () => {
 
   const predictionsMadeToday = stats?.activePredictions || predictions?.length || 127;
 
-  // Animated counters for social proof
-  const analystsCounter = useAnimatedCounter(10000);
-  const picksCounter = useAnimatedCounter(142);
-  const accuracyCounter = useAnimatedCounter(73);
-
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
@@ -178,95 +117,48 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 overflow-x-hidden">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Navbar />
 
-      {/* Hero Section - Premium Redesign */}
-      <section className="relative overflow-hidden pt-28 pb-20 md:pt-40 md:pb-32">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 hero-bg-animated" />
-        
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 grid-pattern opacity-40" />
-        
-        {/* Animated glow orbs */}
-        <div 
-          className="absolute left-1/4 top-1/4 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px]"
-          style={{ animation: 'glow-pulse 8s ease-in-out infinite' }}
-        />
-        <div 
-          className="absolute right-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full bg-accent/15 blur-[100px]"
-          style={{ animation: 'glow-pulse 8s ease-in-out infinite 2s' }}
-        />
-        <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-primary/10 blur-[150px]"
-          style={{ animation: 'glow-pulse 10s ease-in-out infinite 1s' }}
-        />
-        
-        {/* Floating particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(30)].map((_, i) => (
-            <FloatingParticle
-              key={i}
-              delay={i * 0.3}
-              size={2 + Math.random() * 4}
-              left={`${Math.random() * 100}%`}
-              top={`${Math.random() * 100}%`}
-            />
-          ))}
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl text-center">
-            {/* Trust badge */}
-            <div className="mb-10 inline-flex animate-fade-in items-center gap-3 rounded-full border border-primary/20 bg-primary/5 px-5 py-2.5 backdrop-blur-xl">
+      {/* Hero Section - Clean & Minimal */}
+      <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            {/* Minimal trust badge */}
+            <div className="mb-8 inline-flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2">
               <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                <span className="text-xs font-medium uppercase tracking-wider text-success">Live</span>
+                <div className="h-1.5 w-1.5 rounded-full bg-success" />
+                <span className="text-xs font-medium text-muted-foreground">LIVE</span>
               </div>
-              <div className="h-4 w-px bg-border" />
-              <Users className="h-4 w-4 text-primary" />
-              <span className="text-sm text-muted-foreground">
-                {t.trustedBy} <span className="font-bold text-foreground">10,000+</span> {t.analysts}
+              <div className="h-3 w-px bg-border" />
+              <span className="text-xs text-muted-foreground">
+                Trusted by <span className="text-foreground">10,000+</span> analysts
               </span>
             </div>
 
-            {/* Main headline - Much bigger */}
-            <h1 className="animate-slide-up text-5xl font-black tracking-tight sm:text-6xl md:text-7xl lg:text-8xl leading-[0.9]">
-              <span className="block text-foreground">The Future of</span>
-              <span className="block mt-2 gradient-text-animated">Sports Prediction</span>
+            {/* Clean headline - white text, no gradients */}
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+              AI-Powered Edge.
+              <br />
+              <span className="text-foreground">Real Results.</span>
             </h1>
 
-            {/* Subheadline */}
-            <p className="mx-auto mt-8 max-w-2xl animate-slide-up text-lg text-muted-foreground sm:text-xl md:text-2xl leading-relaxed" style={{ animationDelay: '0.1s' }}>
-              AI-powered edge meets real results. Get winning picks backed by{' '}
-              <span className="text-foreground font-medium">deep analytics</span> and{' '}
-              <span className="text-foreground font-medium">machine learning</span>.
+            {/* Subtle gray subtitle */}
+            <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
+              Get winning sports predictions backed by machine learning and deep analytics.
             </p>
 
-            {/* Live stats badge */}
-            <div className="mt-8 animate-slide-up inline-flex items-center gap-3 rounded-2xl bg-success/10 border border-success/20 px-6 py-3 backdrop-blur-sm" style={{ animationDelay: '0.15s' }}>
-              <Sparkles className="h-5 w-5 text-success animate-pulse" />
-              <span className="font-mono text-2xl font-bold text-success">{predictionsMadeToday}</span>
-              <span className="text-muted-foreground">{t.predictionsMadeToday}</span>
-            </div>
+            {/* Minimal live stats */}
+            <p className="mt-6 text-sm text-muted-foreground">
+              <span className="font-mono text-foreground">{predictionsMadeToday}</span> predictions made today
+            </p>
 
-            {/* CTA buttons */}
-            <div className="mt-12 flex animate-slide-up flex-col items-center gap-5 sm:flex-row sm:justify-center" style={{ animationDelay: '0.2s' }}>
+            {/* Single clean CTA */}
+            <div className="mt-10">
               <Link to="/signup">
-                <Button className="btn-cta-premium h-16 px-10 text-lg group w-full sm:w-auto">
-                  <span className="flex items-center gap-3 relative z-10">
-                    {t.startPredicting}
-                    <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-2" />
-                  </span>
-                </Button>
-              </Link>
-              <Link to="/predictions">
-                <Button size="lg" variant="outline" className="h-14 px-8 text-base border-border/50 bg-background/50 backdrop-blur-sm hover:bg-muted/50 hover:border-primary/30 transition-all duration-300 w-full sm:w-auto">
-                  <span className="flex items-center gap-2">
-                    {t.viewPredictions}
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
+                <Button size="lg" className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  Start Predicting
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -277,178 +169,129 @@ const Index = () => {
       {/* Live Ticker */}
       <LiveTicker />
 
-      {/* How It Works Section - Premium */}
+      {/* How It Works Section - Clean */}
       <section 
         ref={howItWorksReveal.ref}
-        className={`py-24 md:py-36 transition-all duration-1000 ${howItWorksReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-24 md:py-32 transition-all duration-500 ${howItWorksReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
-          <div className="mx-auto max-w-3xl text-center mb-20">
-            <span className="inline-block text-sm font-semibold uppercase tracking-widest text-primary mb-4">How It Works</span>
-            <h2 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Start Winning in{' '}
-              <span className="gradient-text">3 Simple Steps</span>
+          <div className="mx-auto max-w-2xl text-center mb-16">
+            <p className="text-sm font-medium text-primary mb-3">How It Works</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Start Winning in 3 Steps
             </h2>
-            <p className="mt-6 text-lg text-muted-foreground md:text-xl">
+            <p className="mt-4 text-muted-foreground">
               From signup to your first winning pick in under 5 minutes
             </p>
           </div>
 
-          {/* Steps grid */}
-          <div className="grid gap-8 md:grid-cols-3 md:gap-6 lg:gap-10">
+          {/* Steps grid - clean cards */}
+          <div className="grid gap-6 md:grid-cols-3">
             {HOW_IT_WORKS.map((item, index) => (
               <div
                 key={item.step}
-                className="relative glass-card-premium p-10 text-center group"
+                className="relative rounded-xl border border-border bg-card p-8 transition-colors hover:border-muted-foreground/30"
                 style={{ 
-                  transitionDelay: `${index * 150}ms`,
+                  transitionDelay: `${index * 100}ms`,
                   opacity: howItWorksReveal.isRevealed ? 1 : 0,
-                  transform: howItWorksReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
-                  transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                  transform: howItWorksReveal.isRevealed ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.4s ease'
                 }}
               >
                 {/* Step Number */}
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white font-bold shadow-lg shadow-primary/30">
+                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-medium text-primary">
                   {item.step}
                 </div>
                 
-                {/* Connector Line */}
-                {index < HOW_IT_WORKS.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-3 lg:-right-5 w-6 lg:w-10 h-0.5 bg-gradient-to-r from-primary/50 to-transparent" />
-                )}
-
-                {/* Icon container */}
-                <div className="mx-auto mb-8 mt-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/10 border border-primary/10 group-hover:border-primary/30 transition-all duration-500 group-hover:scale-110">
-                  <item.icon className="h-12 w-12 text-primary" />
+                {/* Icon */}
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+                  <item.icon className="h-6 w-6 text-foreground" />
                 </div>
                 
-                <h3 className="mb-4 text-2xl font-bold">{item.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
-
-          {/* CTA */}
-          <div className="mt-16 text-center">
-            <Link to="/signup">
-              <Button size="lg" className="btn-gradient gap-3 h-14 px-10 text-base">
-                <Play className="h-5 w-5" />
-                Get Started Free
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* Live Accuracy Banner - Premium */}
-      <section className="py-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-success/5 via-primary/5 to-success/5" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
-          <div ref={analystsCounter.ref} className="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10 border border-success/20">
-                <Target className="h-6 w-6 text-success" />
-              </div>
-              <div className="text-left">
-                <div className="font-mono text-2xl font-bold text-success">{accuracyCounter.count}%</div>
-                <div className="text-sm text-muted-foreground">Weekly Accuracy</div>
-              </div>
+      {/* Stats Banner - Minimal */}
+      <section className="py-12 border-y border-border">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-12 md:gap-20 text-center">
+            <div>
+              <div className="font-mono text-2xl font-semibold text-foreground">73%</div>
+              <div className="mt-1 text-sm text-muted-foreground">Weekly Accuracy</div>
             </div>
             
-            <div className="hidden md:block h-12 w-px bg-border/50" />
+            <div className="hidden md:block h-8 w-px bg-border" />
             
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                <BarChart3 className="h-6 w-6 text-primary" />
-              </div>
-              <div className="text-left">
-                <div className="font-mono text-2xl font-bold text-primary">{picksCounter.count}</div>
-                <div className="text-sm text-muted-foreground">Picks This Week</div>
-              </div>
+            <div>
+              <div className="font-mono text-2xl font-semibold text-foreground">142</div>
+              <div className="mt-1 text-sm text-muted-foreground">Picks This Week</div>
             </div>
             
-            <div className="hidden md:block h-12 w-px bg-border/50" />
+            <div className="hidden md:block h-8 w-px bg-border" />
             
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
-                <Users className="h-6 w-6 text-accent" />
-              </div>
-              <div className="text-left">
-                <div className="font-mono text-2xl font-bold text-foreground">{analystsCounter.count.toLocaleString()}+</div>
-                <div className="text-sm text-muted-foreground">Active Analysts</div>
-              </div>
+            <div>
+              <div className="font-mono text-2xl font-semibold text-foreground">10,000+</div>
+              <div className="mt-1 text-sm text-muted-foreground">Active Analysts</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section - Premium */}
+      {/* Testimonials Section - Clean */}
       <section 
         ref={testimonialsReveal.ref}
-        className={`py-24 md:py-36 transition-all duration-1000 ${testimonialsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-24 md:py-32 transition-all duration-500 ${testimonialsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
-          <div className="mx-auto max-w-3xl text-center mb-20">
-            <span className="inline-block text-sm font-semibold uppercase tracking-widest text-primary mb-4">Testimonials</span>
-            <h2 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Trusted by{' '}
-              <span className="gradient-text">Thousands</span>
+          <div className="mx-auto max-w-2xl text-center mb-16">
+            <p className="text-sm font-medium text-primary mb-3">Testimonials</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Trusted by Thousands
             </h2>
-            <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-              Join the winning community already profiting with Edge88
+            <p className="mt-4 text-muted-foreground">
+              Join the community already profiting with Edge88
             </p>
           </div>
 
-          {/* Testimonials grid */}
+          {/* Testimonials grid - simple cards */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {TESTIMONIALS.map((testimonial, index) => (
               <div
                 key={testimonial.name}
-                className="glass-card-premium p-7 relative overflow-hidden group"
+                className="rounded-xl border border-border bg-card p-6 transition-colors hover:border-muted-foreground/30"
                 style={{ 
-                  transitionDelay: `${index * 100}ms`,
+                  transitionDelay: `${index * 75}ms`,
                   opacity: testimonialsReveal.isRevealed ? 1 : 0,
-                  transform: testimonialsReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
-                  transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                  transform: testimonialsReveal.isRevealed ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.4s ease'
                 }}
               >
-                {/* Quote decoration */}
-                <div className="absolute top-4 right-4 text-6xl font-serif text-primary/10 leading-none">"</div>
-                
-                {/* User info */}
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 text-3xl border border-primary/10 group-hover:border-primary/30 transition-colors">
-                    {testimonial.image}
-                  </div>
-                  <div>
-                    <p className="font-bold text-lg">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </div>
-
                 {/* Stars */}
-                <div className="flex items-center gap-1 mb-4">
+                <div className="flex items-center gap-0.5 mb-4">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star key={i} className="h-3.5 w-3.5 fill-primary text-primary" />
                   ))}
                 </div>
 
                 {/* Quote */}
-                <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-4">
-                  {testimonial.quote}
+                <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                  "{testimonial.quote}"
                 </p>
 
-                {/* Stats footer */}
-                <div className="flex items-center justify-between pt-5 border-t border-border/50">
-                  <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary font-semibold border border-primary/20">
-                    {testimonial.tier} Member
-                  </span>
-                  <span className="font-mono text-base font-bold text-success">
+                {/* User info */}
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{testimonial.name}</p>
+                    <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                  <span className="font-mono text-sm font-medium text-success">
                     {testimonial.stats}
                   </span>
                 </div>
@@ -458,38 +301,35 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Predictions + Newsletter Signup - Premium */}
+      {/* Featured Predictions - Clean */}
       <section 
         ref={predictionsReveal.ref}
-        className={`py-24 md:py-36 transition-all duration-1000 ${predictionsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-24 md:py-32 transition-all duration-500 ${predictionsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
-          <div className="mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <span className="inline-block text-sm font-semibold uppercase tracking-widest text-primary mb-4">Featured</span>
-              <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              <p className="text-sm font-medium text-primary mb-3">Featured</p>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                 {t.todaysTopPicks}
               </h2>
-              <p className="mt-3 text-lg text-muted-foreground">
+              <p className="mt-2 text-muted-foreground">
                 {t.highestConfidence}
               </p>
             </div>
             <Link to="/predictions">
-              <Button variant="ghost" className="gap-2 text-base hover:bg-primary/10 hover:text-primary transition-all group">
+              <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
                 {t.viewAll}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
 
           {/* Predictions grid */}
           {predictionsLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-muted-foreground">Loading predictions...</p>
-              </div>
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : featuredPredictions.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -497,10 +337,10 @@ const Index = () => {
                 <div
                   key={prediction.id}
                   style={{ 
-                    transitionDelay: `${index * 100}ms`,
+                    transitionDelay: `${index * 75}ms`,
                     opacity: predictionsReveal.isRevealed ? 1 : 0,
-                    transform: predictionsReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
-                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transform: predictionsReveal.isRevealed ? 'translateY(0)' : 'translateY(10px)',
+                    transition: 'all 0.4s ease'
                   }}
                 >
                   <PredictionCard prediction={prediction} gameNumber={index + 1} />
@@ -508,26 +348,23 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="glass-card-premium py-20 text-center">
-              <Zap className="mx-auto h-14 w-14 text-muted-foreground/50" />
-              <h3 className="mt-5 text-xl font-bold">{t.noActivePredictions}</h3>
-              <p className="mt-2 text-muted-foreground">{t.checkBackSoon}</p>
+            <div className="rounded-xl border border-border bg-card py-16 text-center">
+              <Zap className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium text-foreground">{t.noActivePredictions}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{t.checkBackSoon}</p>
             </div>
           )}
 
-          {/* Newsletter Signup - Premium */}
-          <div className="mt-16 glass-card-premium p-8 md:p-10 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 overflow-hidden relative">
-            {/* Glow effect */}
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-            
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative">
-              <div className="flex items-center gap-5">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/20">
-                  <Mail className="h-8 w-8 text-primary" />
+          {/* Newsletter Signup - Clean */}
+          <div className="mt-16 rounded-xl border border-border bg-card p-8">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <Mail className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">{t.getDailyPicks}</h3>
-                  <p className="text-muted-foreground mt-1">Free daily predictions delivered at 9 AM</p>
+                  <h3 className="text-lg font-semibold text-foreground">{t.getDailyPicks}</h3>
+                  <p className="text-sm text-muted-foreground">Free daily predictions at 9 AM</p>
                 </div>
               </div>
               <form onSubmit={handleNewsletterSubmit} className="flex w-full lg:w-auto gap-3">
@@ -536,11 +373,11 @@ const Index = () => {
                   placeholder={t.enterEmail}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full lg:w-80 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
+                  className="w-full lg:w-72 h-10 bg-background border-border"
                   required
                 />
-                <Button type="submit" className="btn-gradient whitespace-nowrap h-12 px-8" disabled={isSubscribing}>
-                  {isSubscribing ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Subscribe'}
+                <Button type="submit" className="h-10 px-6 bg-primary hover:bg-primary/90" disabled={isSubscribing}>
+                  {isSubscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Subscribe'}
                 </Button>
               </form>
             </div>
@@ -548,54 +385,43 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section - Premium */}
+      {/* CTA Section - Clean */}
       <section 
         ref={ctaReveal.ref}
-        className={`py-24 md:py-36 transition-all duration-1000 ${ctaReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-24 md:py-32 transition-all duration-500 ${ctaReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="glass-card-premium relative overflow-hidden p-12 md:p-20 text-center">
-            {/* Background effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[200px] pointer-events-none" />
+          <div className="rounded-xl border border-border bg-card p-12 md:p-16 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              Ready to Win More?
+            </h2>
             
-            <div className="relative">
-              <span className="inline-block text-sm font-semibold uppercase tracking-widest text-primary mb-6">Get Started Today</span>
-              
-              <h2 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-                Ready to{' '}
-                <span className="gradient-text-animated">Win More?</span>
-              </h2>
-              
-              <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-                {t.joinThousands}
-              </p>
-              
-              <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
-                <Link to="/signup">
-                  <Button className="btn-cta-premium h-16 px-12 text-lg group">
-                    <span className="flex items-center gap-3 relative z-10">
-                      {t.createFreeAccount}
-                      <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-2" />
-                    </span>
-                  </Button>
-                </Link>
+            <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
+              {t.joinThousands}
+            </p>
+            
+            <div className="mt-8">
+              <Link to="/signup">
+                <Button size="lg" className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  {t.createFreeAccount}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Trust indicators */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5" />
+                <span>No credit card required</span>
               </div>
-              
-              {/* Trust indicators */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span>No credit card required</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-success" />
-                  <span>73% average accuracy</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-accent" />
-                  <span>10,000+ analysts</span>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <Target className="h-3.5 w-3.5" />
+                <span>73% average accuracy</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                <span>10,000+ analysts</span>
               </div>
             </div>
           </div>
