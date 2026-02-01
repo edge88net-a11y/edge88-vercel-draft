@@ -113,31 +113,31 @@ export default function PredictionDetail() {
   // Get bookmaker odds from full prediction or transform from list
   const bookmakerOdds = fullPrediction?.bookmakerOdds?.map(o => ({
     bookmaker: o.bookmaker.charAt(0).toUpperCase() + o.bookmaker.slice(1).replace(/([A-Z])/g, ' $1'),
-    odds: o.homeOdds > 0 ? `+${o.homeOdds}` : String(o.homeOdds),
-    awayOdds: o.awayOdds > 0 ? `+${o.awayOdds}` : String(o.awayOdds),
-    line: o.spreadHome ? String(o.spreadHome) : undefined,
+    odds: typeof o.homeOdds === 'number' ? (o.homeOdds > 0 ? `+${o.homeOdds}` : String(o.homeOdds)) : (o.odds || ''),
+    awayOdds: typeof o.awayOdds === 'number' ? (o.awayOdds > 0 ? `+${o.awayOdds}` : String(o.awayOdds)) : '',
+    line: o.spreadHome ? String(o.spreadHome) : (o.line || undefined),
   })) || listPrediction?.bookmakerOdds || [];
 
   // Get confidence breakdown from full prediction
   const breakdown = fullPrediction?.confidenceBreakdown 
     ? {
-        research: Math.round(fullPrediction.confidenceBreakdown.fromResearch * 100),
-        odds: Math.round(fullPrediction.confidenceBreakdown.fromOdds * 100),
-        historical: Math.round(fullPrediction.confidenceBreakdown.fromHistorical * 100),
+        research: Math.round((fullPrediction.confidenceBreakdown.fromResearch ?? fullPrediction.confidenceBreakdown.research ?? 0.5) * 100),
+        odds: Math.round((fullPrediction.confidenceBreakdown.fromOdds ?? fullPrediction.confidenceBreakdown.odds ?? 0.3) * 100),
+        historical: Math.round((fullPrediction.confidenceBreakdown.fromHistorical ?? fullPrediction.confidenceBreakdown.historical ?? 0.2) * 100),
       }
     : { research: 50, odds: 30, historical: 20 };
 
   // Research stats from full prediction
   const researchStats = {
-    sources: fullPrediction?.sourcesAnalyzed || 0,
+    sources: fullPrediction?.sourcesAnalyzed || fullPrediction?.dataSources || 0,
     modelVersion: fullPrediction?.modelVersion || 'Edge88',
     ev: typeof prediction.expectedValue === 'number' 
       ? (prediction.expectedValue * 100).toFixed(1) 
       : prediction.expectedValue,
   };
 
-  // Get key factors from full prediction
-  const keyFactors = fullPrediction?.keyFactors || [];
+  // Get key factors from full prediction as array of strings
+  const keyFactorsArray: string[] = fullPrediction?.keyFactorsList || [];
 
   // Get injuries from full prediction
   const injuries = fullPrediction?.injuries;
@@ -287,14 +287,14 @@ export default function PredictionDetail() {
         </div>
 
         {/* Key Factors Pills - Only show if we have real data */}
-        {keyFactors.length > 0 && (
+        {keyFactorsArray.length > 0 && (
           <div className="mb-8">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               {language === 'cz' ? 'Klíčové faktory' : 'Key Factors'}
             </h3>
             <div className="space-y-3">
-              {keyFactors.map((factor, idx) => (
+              {keyFactorsArray.map((factor, idx) => (
                 <div key={idx} className="glass-card p-4 border-l-4 border-primary">
                   <p className="text-sm">{factor}</p>
                 </div>
