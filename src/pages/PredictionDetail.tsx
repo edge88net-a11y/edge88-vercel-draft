@@ -18,6 +18,8 @@ import { NumerologyTab } from '@/components/NumerologyTab';
 import { DiscussionTab } from '@/components/DiscussionTab';
 import { useSinglePrediction, useActivePredictions } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -48,9 +50,7 @@ export default function PredictionDetail() {
   useEffect(() => {
     if (isGameLive() && prediction) {
       const isPredictingHome = prediction.prediction.pick.includes(prediction.homeTeam);
-      const confidence = prediction.confidence <= 1 
-        ? Math.round(prediction.confidence * 100) 
-        : Math.round(prediction.confidence);
+      const confidence = normalizeConfidence(prediction.confidence);
       setWinProbability(isPredictingHome ? confidence : 100 - confidence);
 
       const interval = setInterval(() => {
@@ -105,10 +105,13 @@ export default function PredictionDetail() {
     return 'text-orange-400';
   };
 
-  // Format confidence as percentage
-  const confidencePercent = prediction.confidence <= 1 
-    ? Math.round(prediction.confidence * 100) 
-    : Math.round(prediction.confidence);
+  // Format confidence as percentage using centralized utility
+  const confidencePercent = normalizeConfidence(prediction.confidence);
+  
+  // Infer sport from team names if UUID
+  const sportName = prediction.sport?.includes('-') 
+    ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
+    : prediction.sport;
 
   // Get bookmaker odds from prediction - use list prediction first since it has the data from API
   const predictionWithOdds = listPrediction || fullPrediction;

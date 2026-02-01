@@ -10,7 +10,8 @@ import { MaintenanceState } from '@/components/MaintenanceState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useActivePredictions } from '@/hooks/usePredictions';
-import { getSportEmoji } from '@/lib/sportEmoji';
+import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
@@ -55,12 +56,22 @@ const Predictions = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
-  const activePredictions = predictions?.filter((p) => p.result === 'pending') || [];
-
-  // Helper to normalize confidence to 0-100 range
-  const normalizeConfidence = (confidence: number) => {
-    return confidence <= 1 ? confidence * 100 : confidence;
-  };
+  // Deduplicate predictions by game (homeTeam-awayTeam-date)
+  const activePredictions = useMemo(() => {
+    const pending = predictions?.filter((p) => p.result === 'pending') || [];
+    const seenGames = new Map<string, typeof pending[0]>();
+    
+    pending.forEach(p => {
+      const key = `${p.homeTeam}-${p.awayTeam}-${p.gameTime.split('T')[0]}`;
+      const existing = seenGames.get(key);
+      // Keep the most recent prediction
+      if (!existing || new Date(p.gameTime) > new Date(existing.gameTime)) {
+        seenGames.set(key, p);
+      }
+    });
+    
+    return Array.from(seenGames.values());
+  }, [predictions]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -72,11 +83,14 @@ const Predictions = () => {
 
   const filteredAndSortedPredictions = useMemo(() => {
     let filtered = activePredictions.filter((prediction) => {
-      const sportKey = prediction.sport?.toUpperCase() || prediction.sport;
+      // Infer sport from team names if UUID
+      const sportName = prediction.sport?.includes('-') 
+        ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
+        : prediction.sport;
       const normalizedConfidence = normalizeConfidence(prediction.confidence);
       
       // Sport filter
-      if (selectedSport !== 'All' && sportKey !== selectedSport && prediction.sport !== selectedSport) {
+      if (selectedSport !== 'All' && sportName?.toUpperCase() !== selectedSport && sportName !== selectedSport) {
         return false;
       }
       

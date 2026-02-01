@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 
 const API_BASE_URL = 'https://api.edge88.net/api/v1';
 
@@ -23,7 +25,7 @@ interface Prediction {
   homeTeam: string;
   awayTeam: string;
   predictedWinner: string;
-  confidence: number;
+  confidence: number; // Already normalized to 0-100
   isCorrect: boolean | null;
   gameTime: string;
   status: string;
@@ -162,7 +164,7 @@ export function useAdminPredictions() {
   }) => {
     setLoading(true);
     try {
-      let url = `${API_BASE_URL}/predictions/active?include_details=true`;
+      const url = `${API_BASE_URL}/predictions/active?include_details=true`;
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch predictions');
@@ -170,17 +172,44 @@ export function useAdminPredictions() {
       const data = await response.json();
       const predictionsArray = data.predictions || data || [];
       
-      let filtered = predictionsArray.map((p: any) => ({
-        id: p.id,
-        sport: p.game?.sport?.name || p.sport || 'Unknown',
-        homeTeam: p.game?.home_team || p.home_team || 'TBD',
-        awayTeam: p.game?.away_team || p.away_team || 'TBD',
-        predictedWinner: p.predicted_winner || 'N/A',
-        confidence: p.confidence || 0,
-        isCorrect: p.is_correct,
-        gameTime: p.game?.commence_time || p.created_at || '',
-        status: p.game?.status || 'scheduled',
-      }));
+      // Transform and deduplicate predictions
+      const seenGames = new Map<string, Prediction>();
+      
+      predictionsArray.forEach((p: Record<string, unknown>) => {
+        const homeTeam = String(p.home_team || (p.games as Record<string, unknown>)?.home_team || 'TBD');
+        const awayTeam = String(p.away_team || (p.games as Record<string, unknown>)?.away_team || 'TBD');
+        const gameTime = String(p.game_time || (p.games as Record<string, unknown>)?.commence_time || p.created_at || '');
+        
+        // Infer sport from team names (since API returns UUID)
+        const sport = getSportFromTeams(homeTeam, awayTeam);
+        
+        // Normalize confidence to 0-100
+        const rawConfidence = Number(p.confidence) || 0.65;
+        const confidence = normalizeConfidence(rawConfidence);
+        
+        // Create unique key for deduplication
+        const gameKey = `${homeTeam}-${awayTeam}-${gameTime.split('T')[0]}`;
+        
+        const prediction: Prediction = {
+          id: String(p.id),
+          sport,
+          homeTeam,
+          awayTeam,
+          predictedWinner: String(p.predicted_winner || 'N/A'),
+          confidence,
+          isCorrect: p.is_correct as boolean | null,
+          gameTime,
+          status: String((p.games as Record<string, unknown>)?.status || 'scheduled'),
+        };
+        
+        // Keep the most recent prediction for each game
+        const existing = seenGames.get(gameKey);
+        if (!existing || new Date(prediction.gameTime) > new Date(existing.gameTime)) {
+          seenGames.set(gameKey, prediction);
+        }
+      });
+
+      let filtered = Array.from(seenGames.values());
 
       // Apply filters
       if (filters?.sport && filters.sport !== 'all') {

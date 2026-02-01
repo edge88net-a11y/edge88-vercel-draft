@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart3, TrendingUp, Target, Award, Calendar, Loader2, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -11,7 +11,8 @@ import { ConfidenceAccuracyChart } from '@/components/charts/ConfidenceAccuracyC
 import { TeamLogo } from '@/components/TeamLogo';
 import { useActivePredictions, useStats, useAccuracyStats } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getSportEmoji } from '@/lib/sportEmoji';
+import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -30,15 +31,20 @@ const Results = () => {
   const isLoading = predictionsLoading || statsLoading || accuracyLoading;
 
   // Filter graded predictions (completed/settled games)
-  const gradedPredictions = predictions?.filter((p) => {
-    // Only show predictions with result (win/loss), not pending
-    if (p.result === 'pending') return false;
-    if (selectedSport !== 'All') {
-      const sportKey = p.sport?.toUpperCase();
-      if (sportKey !== selectedSport && p.sport !== selectedSport) return false;
-    }
-    return true;
-  }) || [];
+  const gradedPredictions = useMemo(() => {
+    return predictions?.filter((p) => {
+      // Only show predictions with result (win/loss), not pending
+      if (p.result === 'pending') return false;
+      if (selectedSport !== 'All') {
+        // Infer sport from teams if UUID
+        const sportName = p.sport?.includes('-') 
+          ? getSportFromTeams(p.homeTeam, p.awayTeam)
+          : p.sport;
+        if (sportName?.toUpperCase() !== selectedSport && sportName !== selectedSport) return false;
+      }
+      return true;
+    }) || [];
+  }, [predictions, selectedSport]);
 
   // Get stats from API response
   const wins = stats?.accuracy ? Math.round((stats.accuracy / 100) * (stats.totalPredictions || 0)) : gradedPredictions.filter((p) => p.result === 'win').length;
