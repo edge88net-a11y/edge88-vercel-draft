@@ -289,6 +289,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
           <AnalysisSection
             predictionId={prediction.id}
             reasoning={prediction.reasoning}
+            reasoning_cs={prediction.reasoning_cs}
             pick={prediction.prediction.pick}
             confidence={confidencePercent}
             keyFactors={prediction.keyFactors}

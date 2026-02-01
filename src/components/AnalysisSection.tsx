@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface AnalysisSectionProps {
   predictionId: string;
   reasoning: string;
+  reasoning_cs?: string;
   pick: string;
   confidence: number;
   keyFactors?: KeyFactors;
@@ -107,6 +108,7 @@ function isGenericReasoning(reasoning: string): boolean {
 export function AnalysisSection({ 
   predictionId,
   reasoning, 
+  reasoning_cs,
   pick, 
   confidence,
   keyFactors,
@@ -128,8 +130,19 @@ export function AnalysisSection({
     return <AnalysisLoading />;
   }
 
-  // Get analysis text - from API or passed reasoning
+  // Get analysis text - use Czech version if available when language is CZ
   const getAnalysisText = () => {
+    // Check API data first for Czech version
+    if (language === 'cz') {
+      if (analysisData?.reasoning_cs) {
+        return analysisData.reasoning_cs;
+      }
+      if (reasoning_cs) {
+        return reasoning_cs;
+      }
+    }
+    
+    // Fall back to English
     if (analysisData?.reasoning) {
       return analysisData.reasoning;
     }
@@ -261,13 +274,6 @@ export function AnalysisSection({
           </div>
         ) : analysisText ? (
           <div className="space-y-3">
-            {/* Language indicator for Czech users */}
-            {language === 'cz' && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mb-2">
-                <span className="text-base">🌐</span>
-                <span>AI Analýza (anglicky)</span>
-              </div>
-            )}
             {analysisText.split('\n\n').map((paragraph, idx) => (
               <p key={idx} className="text-sm md:text-base text-muted-foreground leading-relaxed">{paragraph}</p>
             ))}

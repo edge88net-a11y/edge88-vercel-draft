@@ -141,14 +141,18 @@ export default function PredictionDetail() {
       : prediction.expectedValue,
   };
 
-  // Get key factors from prediction as array of strings
-  const keyFactorsArray: string[] = predictionWithOdds?.keyFactorsList || [];
+  // Get key factors from prediction as array of strings - use Czech version if available when language is CZ
+  const keyFactorsArray: string[] = language === 'cz' 
+    ? (predictionWithOdds?.keyFactorsList_cs?.length ? predictionWithOdds.keyFactorsList_cs : predictionWithOdds?.keyFactorsList || [])
+    : (predictionWithOdds?.keyFactorsList || []);
 
   // Get injuries from full prediction
   const injuries = predictionWithOdds?.injuries;
 
-  // Get full analysis text - use the reasoning from the API
-  const analysisText = prediction.reasoning || 'Analysis pending...';
+  // Get full analysis text - use Czech version if available when language is CZ
+  const analysisText = language === 'cz'
+    ? (prediction.reasoning_cs || prediction.reasoning || 'Analýza se připravuje...')
+    : (prediction.reasoning || 'Analysis pending...');
 
   const live = isGameLive();
 

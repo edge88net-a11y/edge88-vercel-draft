@@ -93,9 +93,11 @@ export interface APIPrediction {
   confidence: number;
   expectedValue: number | string;
   reasoning: string;
+  reasoning_cs?: string;
   result?: 'win' | 'loss' | 'push' | 'pending';
   bookmakerOdds?: BookmakerOdds[];
   keyFactors?: KeyFactors;
+  keyFactors_cs?: KeyFactors;
   confidenceBreakdown?: ConfidenceBreakdown;
   modelVersion?: string;
   dataSources?: number;
@@ -103,8 +105,10 @@ export interface APIPrediction {
   sourcesAnalyzed?: number;
   injuries?: { home?: { player: string; status: string; impact: string }[]; away?: { player: string; status: string; impact: string }[] };
   fullReasoning?: string;
+  fullReasoning_cs?: string;
   venue?: string;
   keyFactorsList?: string[];
+  keyFactorsList_cs?: string[];
 }
 
 export interface DailyAccuracy {
@@ -204,6 +208,12 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
   // Get game status
   const status = String(gamesData?.status || raw.status || 'scheduled');
 
+  // Parse Czech key factors list from features_used
+  let keyFactorsList_cs: string[] = [];
+  if (featuresUsed && Array.isArray(featuresUsed.key_factors_cs)) {
+    keyFactorsList_cs = featuresUsed.key_factors_cs as string[];
+  }
+
   return {
     id: String(raw.id || ''),
     sport: String(raw.sport || raw.sport_id || gamesData?.sport_id || ''),
@@ -220,6 +230,7 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     confidence: Number(raw.confidence) || 0.65,
     expectedValue: Number(raw.expected_value ?? predObj?.expectedValue ?? raw.ev ?? 0),
     reasoning: String(raw.reasoning || raw.analysis || ''),
+    reasoning_cs: raw.reasoning_cs ? String(raw.reasoning_cs) : undefined,
     result: status === 'completed' || status === 'settled' 
       ? (raw.is_correct === true || raw.result === 'win' ? 'win' : raw.is_correct === false || raw.result === 'loss' ? 'loss' : 'pending')
       : 'pending',
@@ -230,7 +241,9 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     dataSources: Number(featuresUsed?.sources_scanned || raw.data_sources || raw.dataSources || 0),
     sourcesAnalyzed: Number(featuresUsed?.sources_scanned || 0),
     keyFactorsList,
+    keyFactorsList_cs,
     fullReasoning: String(raw.reasoning || ''),
+    fullReasoning_cs: raw.reasoning_cs ? String(raw.reasoning_cs) : undefined,
     venue: gamesData ? `${gamesData.home_team} Stadium` : undefined,
   };
 }
