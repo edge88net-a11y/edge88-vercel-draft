@@ -6,51 +6,70 @@
 
 @layer base {
   :root {
-    /* Clean, minimal dark palette - Linear/Vercel inspired */
-    --background: 240 10% 4%;
+    /* Premium Sportsbook Dark Theme */
+    --background: 230 25% 5%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 6%;
+    --card: 230 20% 8%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 6%;
+    --popover: 230 20% 10%;
     --popover-foreground: 0 0% 98%;
 
-    /* Single accent: Electric blue */
+    /* Electric Blue Primary */
     --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 98%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 10% 10%;
+    --secondary: 230 20% 12%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 10% 12%;
-    --muted-foreground: 240 5% 55%;
+    --muted: 230 20% 14%;
+    --muted-foreground: 230 10% 50%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 98%;
+    /* Accent: Teal/Cyan for extra pop */
+    --accent: 180 70% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;
-    --success-foreground: 0 0% 98%;
+    /* Success Green - for wins and high confidence */
+    --success: 145 80% 42%;
+    --success-foreground: 0 0% 100%;
 
-    --border: 240 10% 12%;
-    --input: 240 10% 12%;
+    /* Warning Yellow - for medium confidence */
+    --warning: 45 100% 51%;
+    --warning-foreground: 0 0% 0%;
+
+    /* Orange - for lower confidence */
+    --orange: 25 95% 53%;
+    --orange-foreground: 0 0% 100%;
+
+    --border: 230 15% 18%;
+    --input: 230 20% 12%;
     --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Minimal design tokens */
-    --card-border: 240 10% 15%;
+    /* Premium gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(230 25% 5%) 0%, hsl(230 30% 8%) 50%, hsl(240 25% 6%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(230 20% 10%) 0%, hsl(230 20% 7%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(180 70% 45%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(145 80% 42%) 0%, hsl(160 70% 38%) 100%);
+    --gradient-betting-slip: linear-gradient(180deg, hsl(230 20% 12%) 0%, hsl(230 25% 8%) 100%);
     
-    --sidebar-background: 240 10% 4%;
+    /* Glow effects */
+    --glow-primary: 0 0 30px hsl(217 91% 60% / 0.4);
+    --glow-success: 0 0 20px hsl(145 80% 42% / 0.4);
+    --glow-accent: 0 0 25px hsl(180 70% 45% / 0.3);
+    
+    --sidebar-background: 230 25% 5%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 10% 10%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 230 20% 12%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 10% 12%;
+    --sidebar-border: 230 15% 18%;
     --sidebar-ring: 217 91% 60%;
   }
 }
@@ -66,15 +85,17 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background: var(--gradient-dark);
+    background: var(--gradient-hero);
     min-height: 100vh;
   }
 }
 
 @layer components {
-  /* Clean minimal card - no glassmorphism */
+  /* Premium Glass Card with subtle glow */
   .glass-card {
-    @apply relative overflow-hidden rounded-lg border border-border bg-card;
+    @apply relative overflow-hidden rounded-xl border bg-card;
+    border-color: hsl(var(--border));
+    background: var(--gradient-card);
   }
 
   .glass-card-hover {
@@ -82,91 +103,196 @@
   }
 
   .glass-card-hover:hover {
-    @apply border-muted-foreground/20;
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: var(--glow-primary);
+    transform: translateY(-2px);
   }
 
-  /* Clean card for landing page */
+  /* Betting Slip Card */
+  .betting-slip {
+    @apply relative overflow-hidden rounded-xl border;
+    background: var(--gradient-betting-slip);
+    border-color: hsl(var(--border));
+    border-left: 3px solid hsl(var(--primary));
+  }
+
+  .betting-slip-win {
+    border-left-color: hsl(var(--success));
+  }
+
+  .betting-slip-loss {
+    border-left-color: hsl(var(--destructive));
+  }
+
+  /* Premium Card for landing page */
   .glass-card-premium {
     @apply relative overflow-hidden rounded-xl border bg-card;
-    border-color: hsl(var(--card-border));
-    transition: all 0.2s ease;
+    border-color: hsl(var(--border));
+    background: var(--gradient-card);
+    transition: all 0.3s ease;
   }
 
   .glass-card-premium:hover {
-    border-color: hsl(var(--muted-foreground) / 0.3);
+    border-color: hsl(var(--primary) / 0.6);
+    box-shadow: var(--glow-primary);
+    transform: translateY(-3px);
   }
 
-  /* Clean text - no gradients */
+  /* Gradient text */
   .gradient-text {
-    @apply text-primary;
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-accent);
   }
 
   .gradient-text-animated {
-    @apply text-foreground;
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-accent);
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
   }
 
-  /* Clean button styles */
-  .btn-gradient {
-    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-medium text-primary-foreground rounded-lg overflow-hidden transition-all duration-200 bg-primary;
-  }
-
-  .btn-gradient:hover {
-    @apply bg-primary/90;
-  }
-
-  .btn-gradient span {
-    @apply relative z-10;
-  }
-
-  /* Clean CTA button - no glow */
+  /* Premium CTA Button */
   .btn-cta-premium {
-    @apply relative inline-flex items-center justify-center font-medium text-primary-foreground rounded-lg overflow-hidden bg-primary;
-    transition: all 0.2s ease;
+    @apply relative inline-flex items-center justify-center font-bold text-primary-foreground rounded-xl overflow-hidden;
+    background: var(--gradient-accent);
+    box-shadow: var(--glow-primary);
+    transition: all 0.3s ease;
   }
 
   .btn-cta-premium:hover {
-    @apply bg-primary/90;
+    box-shadow: var(--glow-primary), 0 8px 30px hsl(217 91% 60% / 0.5);
+    transform: translateY(-2px);
   }
 
-  /* Stats number styling */
+  /* Gradient button */
+  .btn-gradient {
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-bold text-primary-foreground rounded-xl overflow-hidden;
+    background: var(--gradient-accent);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient:hover {
+    box-shadow: var(--glow-primary);
+    transform: translateY(-1px);
+  }
+
+  /* Stats/odds number styling */
   .stat-number {
-    @apply font-mono font-medium tracking-tight;
+    @apply font-mono font-bold tracking-tight;
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.3);
   }
 
-  /* Confidence meters */
+  .odds-number {
+    @apply font-mono font-bold;
+    color: hsl(var(--success));
+    text-shadow: 0 0 15px hsl(var(--success) / 0.4);
+  }
+
+  /* Confidence color classes */
   .confidence-high {
     color: hsl(var(--success));
+    text-shadow: 0 0 10px hsl(var(--success) / 0.5);
   }
 
   .confidence-medium {
-    @apply text-yellow-400;
+    color: hsl(var(--warning));
+    text-shadow: 0 0 10px hsl(var(--warning) / 0.4);
   }
 
   .confidence-low {
-    @apply text-orange-400;
+    color: hsl(var(--orange));
+    text-shadow: 0 0 10px hsl(var(--orange) / 0.4);
   }
 
-  /* Live pulse - subtle */
+  /* Live pulse animation */
   .live-pulse {
     @apply relative;
   }
 
   .live-pulse::before {
-    @apply absolute w-1.5 h-1.5 rounded-full;
+    @apply absolute rounded-full;
     content: '';
+    width: 8px;
+    height: 8px;
     background-color: hsl(var(--success));
-    animation: pulse-ring 2s ease-out infinite;
+    box-shadow: 0 0 10px hsl(var(--success));
+    animation: live-pulse-ring 1.5s ease-out infinite;
   }
 
   .live-pulse::after {
-    @apply absolute w-1.5 h-1.5 rounded-full;
+    @apply absolute rounded-full;
     content: '';
+    width: 8px;
+    height: 8px;
     background-color: hsl(var(--success));
+    box-shadow: 0 0 8px hsl(var(--success));
   }
 
-  /* Ticker animation */
-  .ticker-scroll {
-    animation: ticker 30s linear infinite;
+  /* Live badge */
+  .live-badge {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold uppercase;
+    background: hsl(var(--success) / 0.2);
+    color: hsl(var(--success));
+    border: 1px solid hsl(var(--success) / 0.4);
+    animation: live-glow 2s ease-in-out infinite;
+  }
+
+  /* Win/Loss badges */
+  .badge-win {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase;
+    background: hsl(var(--success) / 0.2);
+    color: hsl(var(--success));
+    border: 1px solid hsl(var(--success) / 0.3);
+    text-shadow: 0 0 10px hsl(var(--success) / 0.5);
+  }
+
+  .badge-loss {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase;
+    background: hsl(var(--destructive) / 0.2);
+    color: hsl(var(--destructive));
+    border: 1px solid hsl(var(--destructive) / 0.3);
+  }
+
+  .badge-pending {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase;
+    background: hsl(var(--warning) / 0.2);
+    color: hsl(var(--warning));
+    border: 1px solid hsl(var(--warning) / 0.3);
+  }
+
+  /* Data grid pattern background */
+  .grid-pattern {
+    background-image: 
+      linear-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Hero animated background */
+  .hero-bg-animated {
+    background: var(--gradient-hero);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-animated::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, hsl(217 91% 60% / 0.15) 0%, transparent 60%);
+    animation: hero-pulse 4s ease-in-out infinite;
+  }
+
+  /* Scroll reveal */
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* Shimmer loading */
@@ -177,55 +303,64 @@
   .shimmer::after {
     @apply absolute inset-0;
     content: '';
-    background: linear-gradient(90deg, transparent, hsl(240 10% 15% / 0.4), transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.1), transparent);
     animation: shimmer 2s infinite;
   }
 
-  /* Win/Loss badges */
-  .badge-win {
-    background-color: hsl(var(--success) / 0.15);
+  /* Ticker scroll */
+  .ticker-scroll {
+    animation: ticker 30s linear infinite;
+  }
+
+  /* Prediction pick highlight */
+  .pick-highlight {
+    @apply relative px-4 py-3 rounded-lg;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.15) 0%, hsl(var(--accent) / 0.1) 100%);
+    border: 1px solid hsl(var(--primary) / 0.3);
+  }
+
+  /* EV badge */
+  .ev-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold;
+    background: hsl(var(--success) / 0.15);
     color: hsl(var(--success));
-    border: 1px solid hsl(var(--success) / 0.2);
   }
 
-  .badge-loss {
-    background-color: hsl(var(--destructive) / 0.15);
-    color: hsl(var(--destructive));
-    border: 1px solid hsl(var(--destructive) / 0.2);
+  /* Filter chip active */
+  .filter-chip-active {
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium;
+    background: var(--gradient-accent);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.3);
   }
 
-  /* Remove glow effects */
-  .glow-purple {
-    box-shadow: none;
+  .filter-chip {
+    @apply px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
   }
 
-  .glow-success {
-    box-shadow: none;
+  .filter-chip:hover {
+    background: hsl(var(--muted-foreground) / 0.2);
+    color: hsl(var(--foreground));
   }
 
-  /* Clean hero background - no animation */
-  .hero-bg-animated {
-    background: hsl(var(--background));
+  /* Data stat card */
+  .stat-card {
+    @apply relative p-4 rounded-xl border;
+    background: var(--gradient-card);
+    border-color: hsl(var(--border));
   }
 
-  /* Subtle grid pattern */
-  .grid-pattern {
-    background-image: 
-      linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
-    background-size: 80px 80px;
-  }
-
-  /* Scroll reveal - subtle fade only */
-  .reveal-on-scroll {
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.5s ease;
-  }
-
-  .reveal-on-scroll.revealed {
-    opacity: 1;
-    transform: translateY(0);
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gradient-accent);
+    border-radius: 2px 2px 0 0;
   }
 }
 
@@ -236,7 +371,7 @@
   }
 }
 
-/* Keyframes - minimal */
+/* Keyframes */
 @keyframes gradient-shift {
   0%, 100% {
     background-position: 0% 50%;
@@ -264,25 +399,61 @@
   }
 }
 
-@keyframes pulse-ring {
+@keyframes live-pulse-ring {
   0% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 1;
   }
   100% {
-    transform: scale(2);
+    transform: scale(2.5);
     opacity: 0;
   }
 }
 
-/* Safe area for mobile bottom nav */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+@keyframes live-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--success) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px hsl(var(--success) / 0.8);
+  }
+}
+
+@keyframes hero-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes float-up {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.5);
+  }
 }
 
 /* Ticker animation */
 .animate-ticker {
   animation: ticker 30s linear infinite;
+}
+
+/* Safe area for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* Pull to refresh animation */
@@ -354,4 +525,14 @@
 /* Hero glow background */
 .bg-hero-glow {
   background: var(--gradient-hero);
+}
+
+/* Floating animation for elements */
+.animate-float {
+  animation: float-up 3s ease-in-out infinite;
+}
+
+/* Pulsing glow */
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }

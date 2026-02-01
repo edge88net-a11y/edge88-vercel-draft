@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, TrendingUp, BarChart3, Target, Users, Loader2, Mail, Star, ChevronRight } from 'lucide-react';
+import { ArrowRight, Zap, TrendingUp, BarChart3, Target, Users, Loader2, Mail, Star, ChevronRight, Activity, Trophy, Flame, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/Navbar';
@@ -12,7 +12,47 @@ import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-// Scroll reveal hook - subtle fade only
+// Animated counter hook
+function useAnimatedCounter(target: number, duration: number = 2000) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasStarted) {
+          setHasStarted(true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [hasStarted]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(target * eased));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
+  }, [hasStarted, target, duration]);
+
+  return { count, ref };
+}
+
+// Scroll reveal hook
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -40,24 +80,28 @@ const TESTIMONIALS = [
     role: 'Pro Bettor',
     quote: 'Edge88 has completely transformed my approach. The AI picks are incredibly accurate.',
     stats: '+$12,400',
+    winRate: '71%',
   },
   {
     name: 'Sarah K.',
     role: 'Sports Analyst',
     quote: 'Impressed by the depth of data Edge88 uses. It catches patterns I would have missed.',
-    stats: '71% win rate',
+    stats: '+$8,200',
+    winRate: '68%',
   },
   {
     name: 'David L.',
     role: 'Casual Fan',
     quote: 'Started with the free plan and quickly upgraded. The ROI speaks for itself.',
     stats: '+$3,200',
+    winRate: '65%',
   },
   {
     name: 'James T.',
     role: 'Day Trader',
     quote: 'I apply the same analytical rigor to sports betting. Edge88 delivers the edge I need.',
-    stats: '68% accuracy',
+    stats: '+$15,800',
+    winRate: '73%',
   },
 ];
 
@@ -67,18 +111,21 @@ const HOW_IT_WORKS = [
     title: 'Sign Up Free',
     description: 'Create your account in 30 seconds. No credit card required.',
     icon: Users,
+    color: 'primary',
   },
   {
     step: 2,
     title: 'Get AI Picks',
-    description: 'Receive daily predictions with confidence scores and analysis.',
+    description: 'Receive daily predictions with confidence scores and deep analysis.',
     icon: Target,
+    color: 'accent',
   },
   {
     step: 3,
     title: 'Win More',
     description: 'Follow the picks, track results, and grow your bankroll.',
-    icon: TrendingUp,
+    icon: Trophy,
+    color: 'success',
   },
 ];
 
@@ -88,6 +135,11 @@ const Index = () => {
   const { t } = useLanguage();
   const { subscribe, isLoading: isSubscribing } = useNewsletter();
   const [email, setEmail] = useState('');
+
+  // Animated counters
+  const accuracyCounter = useAnimatedCounter(73, 2000);
+  const predictionsCounter = useAnimatedCounter(142, 2500);
+  const usersCounter = useAnimatedCounter(10000, 3000);
 
   // Scroll reveal refs
   const howItWorksReveal = useScrollReveal();
@@ -120,47 +172,96 @@ const Index = () => {
     <div className="min-h-screen pb-20 md:pb-0">
       <Navbar />
 
-      {/* Hero Section - Clean & Minimal */}
-      <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Hero Section - Premium Sportsbook Style */}
+      <section className="hero-bg-animated relative pt-28 pb-20 md:pt-40 md:pb-28 overflow-hidden">
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 grid-pattern opacity-50" />
+        
+        {/* Glow orbs */}
+        <div className="absolute top-20 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[100px]" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-[80px]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            {/* Minimal trust badge */}
-            <div className="mb-8 inline-flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2">
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-success" />
-                <span className="text-xs font-medium text-muted-foreground">LIVE</span>
+            {/* Live badge + Trust indicators */}
+            <div className="mb-8 inline-flex flex-wrap items-center justify-center gap-3">
+              <div className="live-badge">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                </span>
+                <span>LIVE</span>
               </div>
-              <div className="h-3 w-px bg-border" />
-              <span className="text-xs text-muted-foreground">
-                Trusted by <span className="text-foreground">10,000+</span> analysts
+              <div className="h-4 w-px bg-border" />
+              <span className="text-sm text-muted-foreground">
+                Trusted by <span className="font-bold text-foreground">10,000+</span> winning bettors
               </span>
             </div>
 
-            {/* Clean headline - white text, no gradients */}
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-              AI-Powered Edge.
+            {/* Bold headline */}
+            <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+              The AI Edge That
               <br />
-              <span className="text-foreground">Real Results.</span>
+              <span className="gradient-text-animated">Wins Games</span>
             </h1>
 
-            {/* Subtle gray subtitle */}
-            <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
-              Get winning sports predictions backed by machine learning and deep analytics.
+            {/* Subheadline */}
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
+              Machine learning + deep analytics = <span className="text-foreground font-medium">73% accuracy</span>.
+              <br className="hidden sm:block" />
+              Get winning picks for NFL, NBA, NHL, MLB & more.
             </p>
 
-            {/* Minimal live stats */}
-            <p className="mt-6 text-sm text-muted-foreground">
-              <span className="font-mono text-foreground">{predictionsMadeToday}</span> predictions made today
-            </p>
+            {/* Live stats row */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
+                <Activity className="h-4 w-4 text-success" />
+                <span className="font-mono font-bold text-foreground">{predictionsMadeToday}</span>
+                <span className="text-muted-foreground">picks today</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10 border border-success/30">
+                <TrendingUp className="h-4 w-4 text-success" />
+                <span className="font-mono font-bold text-success">73%</span>
+                <span className="text-muted-foreground">accuracy</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
+                <Flame className="h-4 w-4 text-orange-400" />
+                <span className="font-mono font-bold text-foreground">12</span>
+                <span className="text-muted-foreground">win streak</span>
+              </div>
+            </div>
 
-            {/* Single clean CTA */}
-            <div className="mt-10">
+            {/* CTA buttons */}
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/signup">
-                <Button size="lg" className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Start Predicting
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" className="btn-cta-premium h-14 px-10 text-lg animate-pulse-glow">
+                  Start Winning Now
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
+              <Link to="/predictions">
+                <Button variant="outline" size="lg" className="h-14 px-8 text-lg border-primary/50 hover:bg-primary/10 hover:border-primary">
+                  View Today's Picks
+                </Button>
+              </Link>
+            </div>
+
+            {/* Trust badges */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Shield className="h-4 w-4 text-primary" />
+                <span>Bank-level security</span>
+              </div>
+              <div className="hidden sm:block h-3 w-px bg-border" />
+              <div className="flex items-center gap-1.5">
+                <Zap className="h-4 w-4 text-primary" />
+                <span>No credit card needed</span>
+              </div>
+              <div className="hidden sm:block h-3 w-px bg-border" />
+              <div className="flex items-center gap-1.5">
+                <Target className="h-4 w-4 text-primary" />
+                <span>Cancel anytime</span>
+              </div>
             </div>
           </div>
         </div>
@@ -169,115 +270,141 @@ const Index = () => {
       {/* Live Ticker */}
       <LiveTicker />
 
-      {/* How It Works Section - Clean */}
+      {/* Stats Section - Data Rich */}
+      <section className="py-12 border-y border-border bg-card/50" ref={accuracyCounter.ref}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div className="stat-card">
+              <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{accuracyCounter.count}%</div>
+              <div className="mt-1 text-sm text-muted-foreground">Weekly Accuracy</div>
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
+                <TrendingUp className="h-3 w-3" />
+                <span>+5% vs last week</span>
+              </div>
+            </div>
+            
+            <div className="stat-card" ref={predictionsCounter.ref}>
+              <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{predictionsCounter.count}</div>
+              <div className="mt-1 text-sm text-muted-foreground">Picks This Week</div>
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-primary">
+                <Zap className="h-3 w-3" />
+                <span>Updated live</span>
+              </div>
+            </div>
+            
+            <div className="stat-card" ref={usersCounter.ref}>
+              <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{usersCounter.count.toLocaleString()}+</div>
+              <div className="mt-1 text-sm text-muted-foreground">Active Analysts</div>
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
+                <Users className="h-3 w-3" />
+                <span>Growing daily</span>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="text-3xl md:text-4xl font-mono font-black text-success">+$2.4M</div>
+              <div className="mt-1 text-sm text-muted-foreground">User Winnings</div>
+              <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
+                <Trophy className="h-3 w-3" />
+                <span>This month</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
       <section 
         ref={howItWorksReveal.ref}
-        className={`py-24 md:py-32 transition-all duration-500 ${howItWorksReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        className={`py-20 md:py-28 transition-all duration-700 ${howItWorksReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
           <div className="mx-auto max-w-2xl text-center mb-16">
-            <p className="text-sm font-medium text-primary mb-3">How It Works</p>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Start Winning in 3 Steps
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
+              <Zap className="h-4 w-4" />
+              <span>How It Works</span>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              Start Winning in <span className="gradient-text">3 Steps</span>
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-lg text-muted-foreground">
               From signup to your first winning pick in under 5 minutes
             </p>
           </div>
 
-          {/* Steps grid - clean cards */}
+          {/* Steps grid */}
           <div className="grid gap-6 md:grid-cols-3">
             {HOW_IT_WORKS.map((item, index) => (
               <div
                 key={item.step}
-                className="relative rounded-xl border border-border bg-card p-8 transition-colors hover:border-muted-foreground/30"
+                className="glass-card-premium p-8 group"
                 style={{ 
-                  transitionDelay: `${index * 100}ms`,
+                  transitionDelay: `${index * 150}ms`,
                   opacity: howItWorksReveal.isRevealed ? 1 : 0,
-                  transform: howItWorksReveal.isRevealed ? 'translateY(0)' : 'translateY(10px)',
-                  transition: 'all 0.4s ease'
+                  transform: howItWorksReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'all 0.5s ease'
                 }}
               >
                 {/* Step Number */}
-                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-medium text-primary">
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-lg font-black text-primary-foreground">
                   {item.step}
                 </div>
                 
                 {/* Icon */}
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                  <item.icon className="h-6 w-6 text-foreground" />
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
+                  <item.icon className="h-7 w-7 text-primary" />
                 </div>
                 
-                <h3 className="mb-2 text-lg font-semibold text-foreground">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                <h3 className="mb-3 text-xl font-bold text-foreground">{item.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats Banner - Minimal */}
-      <section className="py-12 border-y border-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-12 md:gap-20 text-center">
-            <div>
-              <div className="font-mono text-2xl font-semibold text-foreground">73%</div>
-              <div className="mt-1 text-sm text-muted-foreground">Weekly Accuracy</div>
-            </div>
-            
-            <div className="hidden md:block h-8 w-px bg-border" />
-            
-            <div>
-              <div className="font-mono text-2xl font-semibold text-foreground">142</div>
-              <div className="mt-1 text-sm text-muted-foreground">Picks This Week</div>
-            </div>
-            
-            <div className="hidden md:block h-8 w-px bg-border" />
-            
-            <div>
-              <div className="font-mono text-2xl font-semibold text-foreground">10,000+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Active Analysts</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section - Clean */}
+      {/* Testimonials Section */}
       <section 
         ref={testimonialsReveal.ref}
-        className={`py-24 md:py-32 transition-all duration-500 ${testimonialsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        className={`py-20 md:py-28 bg-card/30 border-y border-border transition-all duration-700 ${testimonialsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
           <div className="mx-auto max-w-2xl text-center mb-16">
-            <p className="text-sm font-medium text-primary mb-3">Testimonials</p>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Trusted by Thousands
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 border border-success/30 text-sm font-medium text-success mb-4">
+              <Trophy className="h-4 w-4" />
+              <span>Success Stories</span>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              Winners <span className="gradient-text">Trust Us</span>
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-lg text-muted-foreground">
               Join the community already profiting with Edge88
             </p>
           </div>
 
-          {/* Testimonials grid - simple cards */}
+          {/* Testimonials grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {TESTIMONIALS.map((testimonial, index) => (
               <div
                 key={testimonial.name}
-                className="rounded-xl border border-border bg-card p-6 transition-colors hover:border-muted-foreground/30"
+                className="betting-slip p-6"
                 style={{ 
-                  transitionDelay: `${index * 75}ms`,
+                  transitionDelay: `${index * 100}ms`,
                   opacity: testimonialsReveal.isRevealed ? 1 : 0,
-                  transform: testimonialsReveal.isRevealed ? 'translateY(0)' : 'translateY(10px)',
-                  transition: 'all 0.4s ease'
+                  transform: testimonialsReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'all 0.5s ease'
                 }}
               >
-                {/* Stars */}
-                <div className="flex items-center gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-primary text-primary" />
-                  ))}
+                {/* Win rate badge */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-warning text-warning" />
+                    ))}
+                  </div>
+                  <span className="badge-win">{testimonial.winRate} WIN</span>
                 </div>
 
                 {/* Quote */}
@@ -288,10 +415,10 @@ const Index = () => {
                 {/* User info */}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{testimonial.name}</p>
+                    <p className="font-bold text-foreground">{testimonial.name}</p>
                     <p className="text-xs text-muted-foreground">{testimonial.role}</p>
                   </div>
-                  <span className="font-mono text-sm font-medium text-success">
+                  <span className="font-mono text-lg font-black text-success">
                     {testimonial.stats}
                   </span>
                 </div>
@@ -301,25 +428,28 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Predictions - Clean */}
+      {/* Featured Predictions */}
       <section 
         ref={predictionsReveal.ref}
-        className={`py-24 md:py-32 transition-all duration-500 ${predictionsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        className={`py-20 md:py-28 transition-all duration-700 ${predictionsReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
           <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-primary mb-3">Featured</p>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
+                <Flame className="h-4 w-4" />
+                <span>Hot Picks</span>
+              </div>
+              <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
                 {t.todaysTopPicks}
               </h2>
-              <p className="mt-2 text-muted-foreground">
+              <p className="mt-2 text-lg text-muted-foreground">
                 {t.highestConfidence}
               </p>
             </div>
             <Link to="/predictions">
-              <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+              <Button variant="outline" className="gap-2 border-primary/50 hover:bg-primary/10 hover:border-primary">
                 {t.viewAll}
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -328,8 +458,8 @@ const Index = () => {
 
           {/* Predictions grid */}
           {predictionsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
             </div>
           ) : featuredPredictions.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -337,10 +467,10 @@ const Index = () => {
                 <div
                   key={prediction.id}
                   style={{ 
-                    transitionDelay: `${index * 75}ms`,
+                    transitionDelay: `${index * 100}ms`,
                     opacity: predictionsReveal.isRevealed ? 1 : 0,
-                    transform: predictionsReveal.isRevealed ? 'translateY(0)' : 'translateY(10px)',
-                    transition: 'all 0.4s ease'
+                    transform: predictionsReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
+                    transition: 'all 0.5s ease'
                   }}
                 >
                   <PredictionCard prediction={prediction} gameNumber={index + 1} />
@@ -348,23 +478,26 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card py-16 text-center">
-              <Zap className="mx-auto h-10 w-10 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-medium text-foreground">{t.noActivePredictions}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{t.checkBackSoon}</p>
+            <div className="glass-card-premium py-20 text-center">
+              <Zap className="mx-auto h-12 w-12 text-primary" />
+              <h3 className="mt-4 text-xl font-bold text-foreground">{t.noActivePredictions}</h3>
+              <p className="mt-2 text-muted-foreground">{t.checkBackSoon}</p>
             </div>
           )}
 
-          {/* Newsletter Signup - Clean */}
-          <div className="mt-16 rounded-xl border border-border bg-card p-8">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          {/* Newsletter Signup */}
+          <div className="mt-16 glass-card-premium p-8 md:p-10 relative overflow-hidden">
+            {/* Background glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px]" />
+            
+            <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Mail className="h-5 w-5 text-primary" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+                  <Mail className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">{t.getDailyPicks}</h3>
-                  <p className="text-sm text-muted-foreground">Free daily predictions at 9 AM</p>
+                  <h3 className="text-xl font-bold text-foreground">{t.getDailyPicks}</h3>
+                  <p className="text-muted-foreground">Free daily predictions delivered at 9 AM</p>
                 </div>
               </div>
               <form onSubmit={handleNewsletterSubmit} className="flex w-full lg:w-auto gap-3">
@@ -373,11 +506,11 @@ const Index = () => {
                   placeholder={t.enterEmail}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full lg:w-72 h-10 bg-background border-border"
+                  className="w-full lg:w-80 h-12 bg-background border-border focus:border-primary"
                   required
                 />
-                <Button type="submit" className="h-10 px-6 bg-primary hover:bg-primary/90" disabled={isSubscribing}>
-                  {isSubscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Subscribe'}
+                <Button type="submit" className="btn-gradient h-12 px-8" disabled={isSubscribing}>
+                  {isSubscribing ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Subscribe'}
                 </Button>
               </form>
             </div>
@@ -385,43 +518,55 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section - Clean */}
+      {/* Final CTA Section */}
       <section 
         ref={ctaReveal.ref}
-        className={`py-24 md:py-32 transition-all duration-500 ${ctaReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        className={`py-20 md:py-28 transition-all duration-700 ${ctaReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-xl border border-border bg-card p-12 md:p-16 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              Ready to Win More?
-            </h2>
+          <div className="glass-card-premium p-12 md:p-20 text-center relative overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute top-0 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-[80px]" />
             
-            <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-              {t.joinThousands}
-            </p>
-            
-            <div className="mt-8">
-              <Link to="/signup">
-                <Button size="lg" className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  {t.createFreeAccount}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            
-            {/* Trust indicators */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5" />
-                <span>No credit card required</span>
+            <div className="relative">
+              <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
+                Ready to <span className="gradient-text">Start Winning</span>?
+              </h2>
+              
+              <p className="mx-auto mt-6 max-w-lg text-lg text-muted-foreground">
+                {t.joinThousands}
+              </p>
+              
+              <div className="mt-10">
+                <Link to="/signup">
+                  <Button size="lg" className="btn-cta-premium h-14 px-12 text-lg animate-pulse-glow">
+                    {t.createFreeAccount}
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Target className="h-3.5 w-3.5" />
-                <span>73% average accuracy</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                <span>10,000+ analysts</span>
+              
+              {/* Trust indicators */}
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <Zap className="h-4 w-4 text-primary" />
+                  </div>
+                  <span>No credit card required</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
+                    <Target className="h-4 w-4 text-success" />
+                  </div>
+                  <span>73% average accuracy</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <span>10,000+ analysts</span>
+                </div>
               </div>
             </div>
           </div>
