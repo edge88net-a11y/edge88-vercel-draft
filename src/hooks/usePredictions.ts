@@ -283,8 +283,16 @@ export function useActivePredictions() {
       try {
         const data = await fetchWithRetry(url);
         
+        // DEBUG: Log raw API response
+        console.log('[API] Raw predictions response:', data);
+        
         const predictions = extractPredictionsArray(data);
         console.log(`[API] Extracted ${predictions.length} predictions`);
+        
+        // DEBUG: Log each prediction's sport and result
+        predictions.forEach((p, i) => {
+          console.log(`[API] Prediction ${i + 1}: ${p.homeTeam} vs ${p.awayTeam}, sport=${p.sport}, result=${p.result}`);
+        });
         
         if (predictions.length > 0) {
           toastShownRef.current = false;
