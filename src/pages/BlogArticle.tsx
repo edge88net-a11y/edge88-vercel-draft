@@ -1,14 +1,21 @@
 import { Link, useParams } from 'react-router-dom';
-import { Calendar, User, Trophy, ChevronLeft, Share2, CheckCircle, XCircle, Clock, Target, TrendingUp, ArrowRight } from 'lucide-react';
+import { 
+  Calendar, User, ChevronLeft, ChevronRight, Share2, CheckCircle, XCircle, 
+  Clock, Target, TrendingUp, Copy, ExternalLink
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBlogArticle, useBlogArticles } from '@/hooks/useBlogArticles';
+import { useActivePredictions } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getSportEmoji } from '@/lib/sportEmoji';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
+import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { marked } from 'marked';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 // Configure marked for clean output
 marked.setOptions({
@@ -35,8 +42,11 @@ function cleanMarkdownContent(content: string | null): string {
 export default function BlogArticle() {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
+  const { user } = useAuth();
   const { data: article, isLoading } = useBlogArticle(id || '');
   const { data: recentArticles } = useBlogArticles({ limit: 4, sortBy: 'date' });
+  const { data: predictions } = useActivePredictions();
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Parse markdown to HTML
   const renderedContent = useMemo(() => {
@@ -48,12 +58,24 @@ export default function BlogArticle() {
   // Filter out current article from related
   const relatedArticles = recentArticles?.filter(a => a.id !== article?.id).slice(0, 3) || [];
 
+  // Get predictions mentioned in article (by prediction_ids)
+  const articlePredictions = useMemo(() => {
+    if (!article?.prediction_ids || !predictions) return [];
+    return predictions.filter(p => article.prediction_ids?.includes(p.id)).slice(0, 10);
+  }, [article?.prediction_ids, predictions]);
+
   const handleShare = (platform: 'twitter' | 'telegram' | 'whatsapp' | 'copy') => {
     const url = window.location.href;
     const text = article?.title || 'Check out this prediction recap!';
     
     if (platform === 'copy') {
       navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      toast({
+        title: language === 'cz' ? 'Odkaz zkopírován!' : 'Link copied!',
+        description: url,
+      });
+      setTimeout(() => setCopiedLink(false), 2000);
       return;
     }
     
@@ -126,9 +148,9 @@ export default function BlogArticle() {
         {language === 'cz' ? '← Zpět na blog' : '← Back to Blog'}
       </Link>
 
-      {/* Article Header */}
+      {/* Article Header Card */}
       <header className="glass-card p-6 md:p-8">
-        {/* Sport & Featured Badges */}
+        {/* Sport Badge */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-3xl">
@@ -143,14 +165,6 @@ export default function BlogArticle() {
               ⭐ Featured
             </span>
           )}
-          <span className={cn(
-            'text-sm font-bold px-3 py-1.5 rounded-lg border',
-            getAccuracyBgColor(article.accuracy_pct)
-          )}>
-            <span className={getAccuracyColor(article.accuracy_pct)}>
-              {article.accuracy_pct?.toFixed(0) || 0}% {language === 'cz' ? 'přesnost' : 'accuracy'}
-            </span>
-          </span>
         </div>
 
         {/* Title */}
@@ -159,21 +173,31 @@ export default function BlogArticle() {
         </h1>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
           <div className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
             <span>{format(new Date(article.article_date), 'MMMM d, yyyy')}</span>
           </div>
-          {article.author && (
-            <div className="flex items-center gap-1.5">
-              <User className="h-4 w-4" />
-              <span>{article.author}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <User className="h-4 w-4" />
+            <span>{article.author || 'Edge88 AI'}</span>
+          </div>
+        </div>
+
+        {/* Accuracy Badge - Large */}
+        <div className={cn(
+          'inline-flex items-center gap-2 text-lg font-bold px-4 py-2 rounded-xl border',
+          getAccuracyBgColor(article.accuracy_pct)
+        )}>
+          {article.accuracy_pct && article.accuracy_pct >= 65 && <CheckCircle className="h-5 w-5 text-success" />}
+          {article.accuracy_pct && article.accuracy_pct < 50 && <XCircle className="h-5 w-5 text-destructive" />}
+          <span className={getAccuracyColor(article.accuracy_pct)}>
+            {article.accuracy_pct?.toFixed(0) || 0}% {language === 'cz' ? 'přesnost' : 'accuracy'}
+          </span>
         </div>
       </header>
 
-      {/* Stats Card */}
+      {/* Stats Row */}
       <div className={cn(
         'rounded-2xl border p-6 grid grid-cols-2 md:grid-cols-4 gap-4',
         getAccuracyBgColor(article.accuracy_pct)
@@ -259,50 +283,141 @@ export default function BlogArticle() {
         />
       </article>
 
+      {/* Prediction Cards within Article */}
+      {articlePredictions.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Target className="h-5 w-5 text-primary" />
+            {language === 'cz' ? 'Predikce v tomto článku' : 'Predictions in this article'}
+          </h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            {articlePredictions.map((prediction) => {
+              const isWin = prediction.result === 'win';
+              const isLoss = prediction.result === 'loss';
+              const isPending = !prediction.result || prediction.result === 'pending';
+              const sportName = prediction.sport?.includes('-') 
+                ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
+                : prediction.sport;
+              const confidencePercent = normalizeConfidence(prediction.confidence);
+              
+              return (
+                <Link
+                  key={prediction.id}
+                  to={`/predictions/${prediction.id}`}
+                  className={cn(
+                    'glass-card p-4 border-l-4 hover:bg-muted/30 transition-colors',
+                    isWin && 'border-l-success bg-success/5',
+                    isLoss && 'border-l-destructive bg-destructive/5',
+                    isPending && 'border-l-muted-foreground'
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Sport + Teams */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{getSportEmoji(sportName || 'Sports')}</span>
+                        <span className="text-sm font-medium truncate">
+                          {prediction.awayTeam} @ {prediction.homeTeam}
+                        </span>
+                      </div>
+                      
+                      {/* Our Pick */}
+                      <p className="text-primary font-semibold text-sm mb-1">
+                        {language === 'cz' ? 'Náš tip:' : 'Our pick:'} {prediction.prediction.pick}
+                      </p>
+                      
+                      {/* Confidence */}
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'cz' ? 'Jistota' : 'Confidence'}: {confidencePercent}%
+                      </p>
+                    </div>
+                    
+                    {/* Result */}
+                    <div className="shrink-0">
+                      {isWin && (
+                        <div className="flex items-center gap-1 text-success">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="text-sm font-bold">✅</span>
+                        </div>
+                      )}
+                      {isLoss && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <XCircle className="h-5 w-5" />
+                          <span className="text-sm font-bold">❌</span>
+                        </div>
+                      )}
+                      {isPending && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="h-5 w-5" />
+                          <span className="text-sm font-bold">⏳</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Share Section */}
-      <div className="glass-card p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Share2 className="h-4 w-4" />
-          <span>{language === 'cz' ? 'Sdílet článek:' : 'Share article:'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleShare('twitter')} className="gap-1.5">
-            𝕏
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleShare('telegram')} className="gap-1.5">
-            ✈️
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleShare('whatsapp')} className="gap-1.5">
-            💬
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleShare('copy')} className="gap-1.5">
-            📋 {language === 'cz' ? 'Kopírovat' : 'Copy'}
-          </Button>
+      <div className="glass-card p-5">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Share2 className="h-4 w-4" />
+            <span>{language === 'cz' ? 'Sdílet článek:' : 'Share article:'}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <Button size="sm" variant="outline" onClick={() => handleShare('whatsapp')} className="gap-1.5">
+              💬 WhatsApp
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleShare('telegram')} className="gap-1.5">
+              ✈️ Telegram
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleShare('twitter')} className="gap-1.5">
+              𝕏 Twitter
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleShare('copy')} 
+              className={cn('gap-1.5', copiedLink && 'text-success border-success')}
+            >
+              {copiedLink ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copiedLink 
+                ? (language === 'cz' ? 'Zkopírováno!' : 'Copied!') 
+                : (language === 'cz' ? 'Kopírovat' : 'Copy link')
+              }
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="glass-card p-8 md:p-10 text-center bg-gradient-to-br from-primary/10 via-background to-accent/10 border-primary/30">
-        <div className="text-4xl mb-4">🎯</div>
-        <h3 className="text-2xl md:text-3xl font-black mb-3">
-          {language === 'cz' 
-            ? 'Chcete tipy PŘED zápasy?'
-            : 'Want picks BEFORE games?'
-          }
-        </h3>
-        <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-          {language === 'cz'
-            ? 'Registrujte se zdarma a získejte přístup k našim AI predikcím v reálném čase.'
-            : 'Sign up free and get access to our AI predictions in real-time.'
-          }
-        </p>
-        <Link to="/signup">
-          <Button size="lg" className="btn-gradient text-base px-8 gap-2">
-            {language === 'cz' ? 'Registrujte se zdarma' : 'Sign up free'}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
+      {/* CTA Section - only for non-logged users */}
+      {!user && (
+        <div className="glass-card p-8 md:p-10 text-center bg-gradient-to-br from-primary/10 via-background to-accent/10 border-2 border-primary/20">
+          <div className="text-4xl mb-4">🎯</div>
+          <h3 className="text-2xl md:text-3xl font-black mb-3">
+            {language === 'cz' 
+              ? 'Tyto predikce byly zveřejněny PŘEDEM. Chcete další?'
+              : 'These predictions were published IN ADVANCE. Want more?'
+            }
+          </h3>
+          <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+            {language === 'cz'
+              ? 'Registrujte se zdarma a získejte přístup k našim AI predikcím v reálném čase.'
+              : 'Sign up free and get access to our AI predictions in real-time.'
+            }
+          </p>
+          <Link to="/signup">
+            <Button size="lg" className="text-base px-8 gap-2">
+              {language === 'cz' ? 'Registrujte se zdarma' : 'Sign up free'}
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Related Articles */}
       {relatedArticles.length > 0 && (
@@ -315,7 +430,7 @@ export default function BlogArticle() {
               <Link
                 key={related.id}
                 to={`/blog/${related.slug}`}
-                className="glass-card p-4 hover:border-primary/50 transition-all group"
+                className="glass-card p-4 hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 group"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">
@@ -325,10 +440,10 @@ export default function BlogArticle() {
                     {format(new Date(related.article_date), 'MMM d')}
                   </span>
                 </div>
-                <h3 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-2">
+                <h3 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">
                   {related.title}
                 </h3>
-                <div className="flex items-center gap-2 mt-2 text-xs">
+                <div className="flex items-center gap-2 text-xs">
                   <span className={cn(
                     'font-mono font-bold',
                     getAccuracyColor(related.accuracy_pct)
