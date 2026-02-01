@@ -5,6 +5,7 @@ import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton'
 import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { MaintenanceState } from '@/components/MaintenanceState';
 import { SocialProofToast } from '@/components/SocialProofToast';
+import { SEOHead } from '@/components/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useActivePredictions } from '@/hooks/usePredictions';
@@ -42,7 +43,7 @@ const Predictions = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   const { user, profile } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { data: predictions, isLoading, isError, refetch, isFetching, isMaintenanceMode } = useActivePredictions();
 
   // Admin and Elite users have full access - never see locked content
@@ -183,6 +184,15 @@ const Predictions = () => {
 
   return (
     <div className="space-y-6">
+      {/* SEO Meta Tags */}
+      <SEOHead 
+        title={language === 'cz' ? 'Dnešní predikce' : "Today's Predictions"}
+        description={language === 'cz' 
+          ? 'Aktuální sportovní predikce poháněné AI. NHL, NBA, fotbal, UFC tipy s detailní analýzou.'
+          : 'Current AI-powered sports predictions. NHL, NBA, soccer, UFC picks with detailed analysis.'}
+        url="/predictions"
+      />
+      
       {/* Social Proof Toast */}
       <SocialProofToast />
 

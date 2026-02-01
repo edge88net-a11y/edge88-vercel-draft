@@ -1,3 +1,4 @@
+# https://www.robotstxt.org/robotstxt.html
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +13,16 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://edge88.net/sitemap.xml
+
+# Disallow admin and auth pages
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /signup
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /payment/success
+Disallow: /payment/cancel

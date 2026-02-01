@@ -12,6 +12,8 @@ import { WinStreakBadge } from '@/components/WinStreakBadge';
 import { ProveItSection } from '@/components/ProveItSection';
 import { TrackRecordSection } from '@/components/TrackRecordSection';
 import { SocialProofToast } from '@/components/SocialProofToast';
+import { FAQSection } from '@/components/FAQSection';
+import { SEOHead } from '@/components/SEOHead';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useWinStreak } from '@/hooks/useWinStreak';
@@ -235,6 +237,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      {/* SEO Meta Tags */}
+      <SEOHead 
+        title={language === 'cz' ? 'AI Sportovní Predikce' : 'AI Sports Predictions'}
+        description={language === 'cz' 
+          ? `AI predikce s ${realAccuracy}% přesností. Denní tipy pro NHL, NBA, fotbal a UFC.`
+          : `AI-powered predictions with ${realAccuracy}% accuracy. Daily picks for NHL, NBA, soccer, and UFC.`}
+        url="/"
+      />
+      
       {/* Social Proof Toast */}
       <SocialProofToast />
 
@@ -590,6 +601,9 @@ const Index = () => {
 
       {/* Prove It Section - Verified Results */}
       <ProveItSection />
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* Final CTA Section */}
       <section 
