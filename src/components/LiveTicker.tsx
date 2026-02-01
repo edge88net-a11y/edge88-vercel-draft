@@ -49,7 +49,7 @@ export function LiveTicker() {
               className="flex flex-shrink-0 items-center gap-6 px-8"
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{getSportEmoji(prediction.sport)}</span>
+                <span className="text-xl">{getSportEmoji(prediction.sport, prediction.homeTeam, prediction.awayTeam)}</span>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-foreground">
                     {prediction.awayTeam} @ {prediction.homeTeam}
