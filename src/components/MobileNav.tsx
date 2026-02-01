@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Zap, LayoutDashboard, Trophy, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,7 +12,7 @@ const navItems = [
   { path: '/results', icon: Trophy, labelKey: 'results' as const },
 ];
 
-export function MobileNav() {
+export const MobileNav = forwardRef<HTMLElement, object>(function MobileNav(_props, ref) {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -29,7 +30,7 @@ export function MobileNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-xl md:hidden safe-area-bottom">
+    <nav ref={ref} className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-xl md:hidden safe-area-bottom">
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -79,4 +80,6 @@ export function MobileNav() {
       </div>
     </nav>
   );
-}
+});
+
+MobileNav.displayName = 'MobileNav';
