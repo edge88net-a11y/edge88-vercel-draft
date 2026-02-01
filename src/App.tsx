@@ -23,6 +23,10 @@ import Privacy from "./pages/Privacy";
 import ResponsibleGambling from "./pages/ResponsibleGambling";
 import NotFound from "./pages/NotFound";
 
+// Payment Pages
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentCancel from "./pages/payment/PaymentCancel";
+
 // App Pages (use AppLayout with Sidebar) - these are the refactored versions
 import DashboardPage from "./pages/app/DashboardPage";
 import PredictionsPage from "./pages/app/PredictionsPage";
@@ -57,13 +61,15 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
-              </Route>
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
+            </Route>
 
-              {/* Conditional routes - PublicLayout if not logged in, AppLayout if logged in */}
-              <Route element={<ConditionalLayout />}>
+            {/* Conditional routes - PublicLayout if not logged in, AppLayout if logged in */}
+            <Route element={<ConditionalLayout />}>
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:id" element={<BlogArticle />} />
                 <Route path="/pricing" element={<Pricing />} />

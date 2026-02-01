@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { OddsFormat } from '@/components/OddsComparison';
 import { AdminDebugPanel } from '@/components/AdminDebugPanel';
+import { BillingSection } from '@/components/BillingSection';
 import { isAdminUser } from '@/lib/adminAccess';
 
 const Settings = () => {
@@ -67,6 +68,9 @@ const Settings = () => {
           {language === 'cz' ? 'Spravujte své preference a nastavení účtu' : 'Manage your preferences and account settings'}
         </p>
       </div>
+
+      {/* Billing Section - First! */}
+      <BillingSection />
 
       {/* Language Section */}
       <div className="glass-card overflow-hidden">
