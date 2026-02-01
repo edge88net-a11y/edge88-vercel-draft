@@ -11,6 +11,7 @@ import { AdminRoute } from "@/components/AdminRoute";
 // Layouts
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import { ConditionalLayout } from "@/components/layout/ConditionalLayout";
 
 // Public Pages (use PublicLayout with Navbar/Footer)
 import Index from "./pages/Index";
@@ -53,12 +54,18 @@ const App = () => (
               {/* Public routes - uses PublicLayout with Navbar/Footer */}
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Index />} />
-                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
+              </Route>
+
+              {/* Conditional routes - PublicLayout if not logged in, AppLayout if logged in */}
+              <Route element={<ConditionalLayout />}>
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogArticle />} />
+                <Route path="/pricing" element={<Pricing />} />
               </Route>
 
               {/* App routes - uses AppLayout with Sidebar (protected) */}
@@ -70,8 +77,6 @@ const App = () => (
                 <Route path="/saved-picks" element={<SavedPicks />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/referral" element={<Referral />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:id" element={<BlogArticle />} />
               </Route>
 
               {/* Admin routes - protected by AdminRoute */}

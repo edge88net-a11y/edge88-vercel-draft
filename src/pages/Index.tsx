@@ -4,14 +4,13 @@ import { ArrowRight, Zap, TrendingUp, Target, Users, Mail, Star, Activity, Troph
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
 import { LiveTicker } from '@/components/LiveTicker';
 import { PredictionCard } from '@/components/PredictionCard';
 import { MoneyCalculator } from '@/components/MoneyCalculator';
 import { AffiliateCasinos } from '@/components/AffiliateCasinos';
 import { WinStreakBadge } from '@/components/WinStreakBadge';
 import { ProveItSection } from '@/components/ProveItSection';
+import { TrackRecordSection } from '@/components/TrackRecordSection';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useWinStreak } from '@/hooks/useWinStreak';
@@ -211,11 +210,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
-      <Navbar />
-
+    <div className="min-h-screen">
       {/* Hero Section - Premium Sportsbook Style */}
-      <section className="hero-bg-animated relative pt-28 pb-20 md:pt-40 md:pb-28 overflow-hidden">
+      <section className="hero-bg-animated relative pt-8 pb-20 md:pt-20 md:pb-28 overflow-hidden">
         {/* Animated mesh grid background */}
         <HeroMeshBackground />
         
@@ -357,6 +354,7 @@ const Index = () => {
 
       {/* How It Works Section */}
       <section 
+        id="how-it-works"
         ref={howItWorksReveal.ref}
         className={`py-20 md:py-28 transition-all duration-700 ${howItWorksReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
@@ -553,6 +551,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Track Record Section - Our verified results */}
+      <TrackRecordSection />
+
       {/* Prove It Section - Verified Results */}
       <ProveItSection />
 
@@ -588,8 +589,6 @@ const Index = () => {
 
       {/* Affiliate Casinos */}
       <AffiliateCasinos />
-
-      <Footer />
     </div>
   );
 };
