@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark } from 'lucide-react';
+import { Menu, X, Zap, TrendingUp, BarChart3, DollarSign, LogIn, Bookmark, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { UserDropdownMenu } from '@/components/UserDropdownMenu';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const { t } = useLanguage();
+  const { isAdmin } = useAdminCheck();
 
   // Define nav links based on auth state
   const getNavLinks = () => {
@@ -91,6 +93,15 @@ export function Navbar() {
               <div className="h-9 w-24 animate-pulse rounded-lg bg-muted" />
             ) : user ? (
               <>
+                {isAdmin && (
+                  <Link 
+                    to="/admin"
+                    className="flex items-center gap-1.5 text-sm text-destructive hover:text-destructive/80 transition-colors"
+                    title="Admin"
+                  >
+                    <Shield className="h-4 w-4" />
+                  </Link>
+                )}
                 <Link 
                   to="/saved-picks"
                   className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -150,6 +161,18 @@ export function Navbar() {
                 </Link>
               );
             })}
+            
+            {/* Admin link for mobile */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
+              >
+                <Shield className="h-5 w-5" />
+                Admin
+              </Link>
+            )}
             
             {/* Saved Picks link for mobile */}
             {user && (

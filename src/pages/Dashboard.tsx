@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, RefreshCw, PieChart, Flame } from 'lucide-react';
-import { Navigate, Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileNav } from '@/components/MobileNav';
@@ -53,10 +53,7 @@ const Dashboard = () => {
     }
   }, [profile]);
 
-  // Redirect to login if not authenticated
-  if (!authLoading && !user) {
-    return <Navigate to="/login" replace />;
-  }
+  // Note: Auth protection is handled by ProtectedRoute wrapper in App.tsx
 
   const activePredictions = predictions?.filter((p) => p.result === 'pending').slice(0, 6) || [];
   const recentResults = predictions?.filter((p) => p.result !== 'pending').slice(0, 5) || [];
