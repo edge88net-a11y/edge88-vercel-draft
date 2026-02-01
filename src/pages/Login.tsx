@@ -39,8 +39,8 @@ const Login = () => {
     e.preventDefault();
     if (!email) {
       toast({
-        title: 'Email required',
-        description: 'Please enter your email address.',
+        title: t.error,
+        description: t.enterEmail,
         variant: 'destructive',
       });
       return;
@@ -54,15 +54,15 @@ const Login = () => {
 
     if (error) {
       toast({
-        title: 'Error',
+        title: t.error,
         description: error.message,
         variant: 'destructive',
       });
     } else {
       setResetEmailSent(true);
       toast({
-        title: 'Check your email',
-        description: 'We sent you a password reset link.',
+        title: t.resetLinkSent,
+        description: t.checkEmailForReset,
       });
     }
   };
@@ -95,18 +95,18 @@ const Login = () => {
           {forgotPasswordMode ? (
             <>
               <div className="mb-6 text-center">
-                <h1 className="text-2xl font-bold">Reset Password</h1>
+                <h1 className="text-2xl font-bold">{t.forgotPassword}</h1>
                 <p className="mt-2 text-muted-foreground">
                   {resetEmailSent 
-                    ? 'Check your email for the reset link' 
-                    : 'Enter your email to receive a reset link'}
+                    ? t.checkEmailForReset
+                    : t.enterEmail}
                 </p>
               </div>
 
               {!resetEmailSent ? (
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div>
-                    <label className="mb-2 block text-sm font-medium">Email</label>
+                    <label className="mb-2 block text-sm font-medium">{t.email}</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                       <Input
@@ -124,7 +124,7 @@ const Login = () => {
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
-                      <span>Send Reset Link</span>
+                      <span>{t.sendResetLink}</span>
                     )}
                   </Button>
                 </form>
@@ -132,7 +132,7 @@ const Login = () => {
                 <div className="text-center py-4">
                   <div className="mb-4 text-4xl">📧</div>
                   <p className="text-muted-foreground">
-                    We've sent a password reset link to <strong>{email}</strong>
+                    {t.checkEmailForReset}
                   </p>
                 </div>
               )}
@@ -145,7 +145,7 @@ const Login = () => {
                   }}
                   className="font-medium text-primary hover:underline"
                 >
-                  Back to login
+                  {t.backToLogin}
                 </button>
               </p>
             </>
@@ -154,13 +154,13 @@ const Login = () => {
               <div className="mb-6 text-center">
                 <h1 className="text-2xl font-bold">{t.welcomeBack}</h1>
                 <p className="mt-2 text-muted-foreground">
-                  Sign in to access your predictions
+                  {t.signInToAccount}
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium">Email</label>
+                  <label className="mb-2 block text-sm font-medium">{t.email}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -176,13 +176,13 @@ const Login = () => {
 
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="text-sm font-medium">Password</label>
+                    <label className="text-sm font-medium">{t.password}</label>
                     <button 
                       type="button"
                       onClick={() => setForgotPasswordMode(true)}
                       className="text-sm text-primary hover:underline"
                     >
-                      Forgot password?
+                      {t.forgotPassword}
                     </button>
                   </div>
                   <div className="relative">
@@ -215,7 +215,7 @@ const Login = () => {
               </form>
 
               <p className="mt-6 text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
+                {t.dontHaveAccount}{' '}
                 <Link to="/signup" className="font-medium text-primary hover:underline">
                   {t.signUpFree}
                 </Link>

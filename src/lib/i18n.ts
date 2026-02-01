@@ -33,6 +33,9 @@ export interface Translations {
   // Home Page
   heroTitle: string;
   heroSubtitle: string;
+  heroTitleLine1: string;
+  heroTitleLine2: string;
+  heroDescription: string;
   startPredicting: string;
   viewPredictions: string;
   trustedBy: string;
@@ -53,6 +56,36 @@ export interface Translations {
   enterEmail: string;
   subscribeToNewsletter: string;
   checkInbox: string;
+  startWinningNow: string;
+  viewTodaysPicks: string;
+  winningBettors: string;
+  picksToday: string;
+  accuracy: string;
+  winStreak: string;
+  weeklyAccuracy: string;
+  vsLastWeek: string;
+  picksThisWeek: string;
+  updatedLive: string;
+  growingDaily: string;
+  userWinnings: string;
+  thisMonth: string;
+  howItWorks: string;
+  startWinningIn3Steps: string;
+  step1Title: string;
+  step1Desc: string;
+  step2Title: string;
+  step2Desc: string;
+  step3Title: string;
+  step3Desc: string;
+  fromSignupToWinning: string;
+  successStories: string;
+  winnersTrustUs: string;
+  joinCommunity: string;
+  bankLevelSecurity: string;
+  noCreditCard: string;
+  cancelAnytime: string;
+  readyToWin: string;
+  joinWinningTeam: string;
   
   // Features
   aiPowered: string;
@@ -80,6 +113,9 @@ export interface Translations {
   
   // Predictions
   active: string;
+  activePicks: string;
+  highConfidence: string;
+  locks: string;
   aiPoweredPicks: string;
   sport: string;
   confidence: string;
@@ -105,6 +141,7 @@ export interface Translations {
   signUpToSeeMore: string;
   upgradeToSeeAll: string;
   gameNumber: string;
+  gameTime: string;
   
   // Analysis
   viewAnalysis: string;
@@ -171,6 +208,11 @@ export interface Translations {
   accuracyByConfidence: string;
   sportLeaderboard: string;
   winLossFeed: string;
+  noResultsYet: string;
+  noResultsDesc: string;
+  pending: string;
+  win: string;
+  loss: string;
   
   // Saved Picks
   savedPicks: string;
@@ -217,6 +259,22 @@ export interface Translations {
   annual: string;
   savePercent: string;
   moneyBackGuarantee: string;
+  choosePlan: string;
+  currentPlan: string;
+  getStartedFree: string;
+  upgradeNow: string;
+  contactSales: string;
+  freePredictions: string;
+  basicAnalysis: string;
+  communityAccess: string;
+  allPredictions: string;
+  fullAnalysisAccess: string;
+  prioritySupport: string;
+  telegramAlerts: string;
+  apiAccess: string;
+  customModels: string;
+  dedicatedSupport: string;
+  whiteLabel: string;
   
   // Footer
   footerTagline: string;
@@ -226,6 +284,13 @@ export interface Translations {
   termsOfService: string;
   contact: string;
   allRightsReserved: string;
+  product: string;
+  company: string;
+  about: string;
+  responsibleGambling: string;
+  forEntertainmentOnly: string;
+  learnMore: string;
+  gamblingWarning: string;
   
   // Errors
   error: string;
@@ -243,6 +308,12 @@ export interface Translations {
   alreadyHaveAccount: string;
   continueWithGoogle: string;
   orContinueWith: string;
+  createAccount: string;
+  signInToAccount: string;
+  sendResetLink: string;
+  backToLogin: string;
+  resetLinkSent: string;
+  checkEmailForReset: string;
   
   // Settings Page Extra
   applicationLanguage: string;
@@ -266,6 +337,16 @@ export interface Translations {
   saveChanges: string;
   saving: string;
   savedSuccess: string;
+  
+  // Discussion
+  discussion: string;
+  loginToComment: string;
+  writeComment: string;
+  postComment: string;
+  reply: string;
+  replies: string;
+  communitySentiment: string;
+  selectYourPick: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -300,6 +381,9 @@ export const translations: Record<Language, Translations> = {
     // Home Page
     heroTitle: 'The Future of Predictions',
     heroSubtitle: 'AI-powered predictions across sports, crypto, and world events. Built for analysts who demand transparency and accuracy.',
+    heroTitleLine1: 'The AI Edge That',
+    heroTitleLine2: 'Wins Games',
+    heroDescription: 'Machine learning + deep analytics = 73% accuracy. Get winning picks for NFL, NBA, NHL, MLB & more.',
     startPredicting: 'Start Predicting',
     viewPredictions: 'View Predictions',
     trustedBy: 'Trusted by',
@@ -320,6 +404,36 @@ export const translations: Record<Language, Translations> = {
     enterEmail: 'Enter your email',
     subscribeToNewsletter: 'Subscribe',
     checkInbox: "Check your inbox for today's picks!",
+    startWinningNow: 'Start Winning Now',
+    viewTodaysPicks: "View Today's Picks",
+    winningBettors: 'winning bettors',
+    picksToday: 'picks today',
+    accuracy: 'accuracy',
+    winStreak: 'win streak',
+    weeklyAccuracy: 'Weekly Accuracy',
+    vsLastWeek: 'vs last week',
+    picksThisWeek: 'Picks This Week',
+    updatedLive: 'Updated live',
+    growingDaily: 'Growing daily',
+    userWinnings: 'User Winnings',
+    thisMonth: 'This month',
+    howItWorks: 'How It Works',
+    startWinningIn3Steps: 'Start Winning in 3 Steps',
+    step1Title: 'Sign Up Free',
+    step1Desc: 'Create your account in 30 seconds. No credit card required.',
+    step2Title: 'Get AI Picks',
+    step2Desc: 'Receive daily predictions with confidence scores and deep analysis.',
+    step3Title: 'Win More',
+    step3Desc: 'Follow the picks, track results, and grow your bankroll.',
+    fromSignupToWinning: 'From signup to your first winning pick in under 5 minutes',
+    successStories: 'Success Stories',
+    winnersTrustUs: 'Winners Trust Us',
+    joinCommunity: 'Join the community already profiting with Edge88',
+    bankLevelSecurity: 'Bank-level security',
+    noCreditCard: 'No credit card needed',
+    cancelAnytime: 'Cancel anytime',
+    readyToWin: 'Ready to Start Winning?',
+    joinWinningTeam: 'Join the winning team today. Start free, upgrade anytime.',
     
     // Features
     aiPowered: 'AI-Powered',
@@ -347,6 +461,9 @@ export const translations: Record<Language, Translations> = {
     
     // Predictions
     active: 'Active',
+    activePicks: 'Active Picks',
+    highConfidence: 'High Confidence',
+    locks: 'Locks',
     aiPoweredPicks: 'AI-powered picks across all major sports',
     sport: 'Sport',
     confidence: 'Confidence',
@@ -372,6 +489,7 @@ export const translations: Record<Language, Translations> = {
     signUpToSeeMore: 'Sign up free to see more',
     upgradeToSeeAll: 'Upgrade to Pro to see all predictions',
     gameNumber: 'Game',
+    gameTime: 'Game Time',
     
     // Analysis
     viewAnalysis: 'View Analysis',
@@ -438,6 +556,11 @@ export const translations: Record<Language, Translations> = {
     accuracyByConfidence: 'Accuracy by Confidence',
     sportLeaderboard: 'Sport Leaderboard',
     winLossFeed: 'Win/Loss Feed',
+    noResultsYet: 'No Results Yet',
+    noResultsDesc: 'Predictions are being tracked and will appear here once graded',
+    pending: 'Pending',
+    win: 'Win',
+    loss: 'Loss',
     
     // Saved Picks
     savedPicks: 'Saved Picks',
@@ -484,6 +607,22 @@ export const translations: Record<Language, Translations> = {
     annual: 'Annual',
     savePercent: 'Save 20%',
     moneyBackGuarantee: '30-day money-back guarantee',
+    choosePlan: 'Choose your plan',
+    currentPlan: 'Current Plan',
+    getStartedFree: 'Get Started Free',
+    upgradeNow: 'Upgrade Now',
+    contactSales: 'Contact Sales',
+    freePredictions: '3 free predictions daily',
+    basicAnalysis: 'Basic analysis',
+    communityAccess: 'Community access',
+    allPredictions: 'All predictions',
+    fullAnalysisAccess: 'Full analysis access',
+    prioritySupport: 'Priority support',
+    telegramAlerts: 'Telegram alerts',
+    apiAccess: 'API access',
+    customModels: 'Custom models',
+    dedicatedSupport: 'Dedicated support',
+    whiteLabel: 'White-label options',
     
     // Footer
     footerTagline: 'The most advanced sports predictions platform, powered by AI.',
@@ -493,6 +632,13 @@ export const translations: Record<Language, Translations> = {
     termsOfService: 'Terms of Service',
     contact: 'Contact',
     allRightsReserved: 'All rights reserved.',
+    product: 'Product',
+    company: 'Company',
+    about: 'About',
+    responsibleGambling: 'Responsible Gambling',
+    forEntertainmentOnly: 'For entertainment only',
+    learnMore: 'Learn more',
+    gamblingWarning: 'Gambling can be addictive. Bet responsibly. For entertainment purposes only.',
     
     // Errors
     error: 'Error',
@@ -510,6 +656,12 @@ export const translations: Record<Language, Translations> = {
     alreadyHaveAccount: 'Already have an account?',
     continueWithGoogle: 'Continue with Google',
     orContinueWith: 'Or continue with',
+    createAccount: 'Create Account',
+    signInToAccount: 'Sign in to your account',
+    sendResetLink: 'Send Reset Link',
+    backToLogin: 'Back to login',
+    resetLinkSent: 'Reset link sent!',
+    checkEmailForReset: 'Check your email for password reset instructions.',
     
     // Settings Page Extra
     applicationLanguage: 'Application Language',
@@ -533,6 +685,16 @@ export const translations: Record<Language, Translations> = {
     saveChanges: 'Save Changes',
     saving: 'Saving...',
     savedSuccess: 'Saved!',
+    
+    // Discussion
+    discussion: 'Discussion',
+    loginToComment: 'Login to join discussion',
+    writeComment: 'Write a comment...',
+    postComment: 'Post Comment',
+    reply: 'Reply',
+    replies: 'replies',
+    communitySentiment: 'Community Sentiment',
+    selectYourPick: 'Select your pick',
   },
   
   cz: {
@@ -566,6 +728,9 @@ export const translations: Record<Language, Translations> = {
     // Home Page
     heroTitle: 'Budoucnost predikcí',
     heroSubtitle: 'AI predikce pro sport, krypto a světové události. Vytvořeno pro analytiky, kteří vyžadují transparentnost a přesnost.',
+    heroTitleLine1: 'AI výhoda, která',
+    heroTitleLine2: 'vyhrává zápasy',
+    heroDescription: 'Strojové učení + hloubková analytika = 73% přesnost. Získejte vítězné tipy pro NHL, NBA, MLB a další.',
     startPredicting: 'Začít predikovat',
     viewPredictions: 'Zobrazit predikce',
     trustedBy: 'Důvěřuje',
@@ -586,6 +751,36 @@ export const translations: Record<Language, Translations> = {
     enterEmail: 'Zadejte svůj email',
     subscribeToNewsletter: 'Přihlásit',
     checkInbox: 'Zkontrolujte si email pro dnešní tipy!',
+    startWinningNow: 'Začněte vyhrávat',
+    viewTodaysPicks: 'Dnešní tipy',
+    winningBettors: 'vítězných sázkaři',
+    picksToday: 'tipů dnes',
+    accuracy: 'přesnost',
+    winStreak: 'vítězná série',
+    weeklyAccuracy: 'Týdenní přesnost',
+    vsLastWeek: 'oproti minulému týdnu',
+    picksThisWeek: 'Tipů tento týden',
+    updatedLive: 'Aktualizováno živě',
+    growingDaily: 'Roste denně',
+    userWinnings: 'Výhry uživatelů',
+    thisMonth: 'Tento měsíc',
+    howItWorks: 'Jak to funguje',
+    startWinningIn3Steps: 'Začněte vyhrávat ve 3 krocích',
+    step1Title: 'Registrace zdarma',
+    step1Desc: 'Vytvořte si účet za 30 sekund. Bez platební karty.',
+    step2Title: 'Získejte AI tipy',
+    step2Desc: 'Dostávejte denní predikce s hodnocením jistoty a hloubkovou analýzou.',
+    step3Title: 'Vyhrávejte více',
+    step3Desc: 'Následujte tipy, sledujte výsledky a rozšiřujte svůj bankroll.',
+    fromSignupToWinning: 'Od registrace k prvnímu vítěznému tipu za méně než 5 minut',
+    successStories: 'Příběhy úspěchu',
+    winnersTrustUs: 'Vítězové nám věří',
+    joinCommunity: 'Připojte se ke komunitě, která již profituje s Edge88',
+    bankLevelSecurity: 'Bankovní zabezpečení',
+    noCreditCard: 'Bez platební karty',
+    cancelAnytime: 'Zrušení kdykoliv',
+    readyToWin: 'Připraveni vyhrávat?',
+    joinWinningTeam: 'Připojte se k vítěznému týmu ještě dnes. Začněte zdarma.',
     
     // Features
     aiPowered: 'Poháněno AI',
@@ -613,6 +808,9 @@ export const translations: Record<Language, Translations> = {
     
     // Predictions
     active: 'Aktivní',
+    activePicks: 'Aktivní tipy',
+    highConfidence: 'Vysoká jistota',
+    locks: 'Jistoty',
     aiPoweredPicks: 'AI tipy pro všechny hlavní sporty',
     sport: 'Sport',
     confidence: 'Jistota',
@@ -638,6 +836,7 @@ export const translations: Record<Language, Translations> = {
     signUpToSeeMore: 'Registrujte se zdarma pro více',
     upgradeToSeeAll: 'Upgradujte na Pro pro všechny predikce',
     gameNumber: 'Zápas',
+    gameTime: 'Čas zápasu',
     
     // Analysis
     viewAnalysis: 'Zobrazit analýzu',
@@ -704,6 +903,11 @@ export const translations: Record<Language, Translations> = {
     accuracyByConfidence: 'Přesnost podle jistoty',
     sportLeaderboard: 'Žebříček sportů',
     winLossFeed: 'Přehled výher/proher',
+    noResultsYet: 'Zatím žádné výsledky',
+    noResultsDesc: 'Predikce jsou sledovány a objeví se zde po vyhodnocení',
+    pending: 'Čeká',
+    win: 'Výhra',
+    loss: 'Prohra',
     
     // Saved Picks
     savedPicks: 'Uložené tipy',
@@ -750,6 +954,22 @@ export const translations: Record<Language, Translations> = {
     annual: 'Ročně',
     savePercent: 'Ušetřete 20%',
     moneyBackGuarantee: '30denní záruka vrácení peněz',
+    choosePlan: 'Vyberte si plán',
+    currentPlan: 'Aktuální plán',
+    getStartedFree: 'Začít zdarma',
+    upgradeNow: 'Upgradovat',
+    contactSales: 'Kontaktovat prodej',
+    freePredictions: '3 predikce denně zdarma',
+    basicAnalysis: 'Základní analýza',
+    communityAccess: 'Přístup ke komunitě',
+    allPredictions: 'Všechny predikce',
+    fullAnalysisAccess: 'Plný přístup k analýzám',
+    prioritySupport: 'Prioritní podpora',
+    telegramAlerts: 'Telegram upozornění',
+    apiAccess: 'API přístup',
+    customModels: 'Vlastní modely',
+    dedicatedSupport: 'Dedikovaná podpora',
+    whiteLabel: 'White-label možnosti',
     
     // Footer
     footerTagline: 'Nejpokročilejší platforma pro sportovní predikce, poháněná AI.',
@@ -759,6 +979,13 @@ export const translations: Record<Language, Translations> = {
     termsOfService: 'Podmínky služby',
     contact: 'Kontakt',
     allRightsReserved: 'Všechna práva vyhrazena.',
+    product: 'Produkt',
+    company: 'Společnost',
+    about: 'O nás',
+    responsibleGambling: 'Zodpovědné hraní',
+    forEntertainmentOnly: 'Pouze pro zábavu',
+    learnMore: 'Více info',
+    gamblingWarning: 'Sázení může být návykové. Sázejte zodpovědně. Pouze pro zábavu.',
     
     // Errors
     error: 'Chyba',
@@ -776,6 +1003,12 @@ export const translations: Record<Language, Translations> = {
     alreadyHaveAccount: 'Již máte účet?',
     continueWithGoogle: 'Pokračovat přes Google',
     orContinueWith: 'Nebo pokračovat pomocí',
+    createAccount: 'Vytvořit účet',
+    signInToAccount: 'Přihlaste se ke svému účtu',
+    sendResetLink: 'Odeslat odkaz pro reset',
+    backToLogin: 'Zpět na přihlášení',
+    resetLinkSent: 'Odkaz odeslán!',
+    checkEmailForReset: 'Zkontrolujte email pro instrukce k resetování hesla.',
     
     // Settings Page Extra
     applicationLanguage: 'Jazyk aplikace',
@@ -799,6 +1032,16 @@ export const translations: Record<Language, Translations> = {
     saveChanges: 'Uložit změny',
     saving: 'Ukládání...',
     savedSuccess: 'Uloženo!',
+    
+    // Discussion
+    discussion: 'Diskuse',
+    loginToComment: 'Přihlaste se pro diskusi',
+    writeComment: 'Napište komentář...',
+    postComment: 'Odeslat komentář',
+    reply: 'Odpovědět',
+    replies: 'odpovědí',
+    communitySentiment: 'Názor komunity',
+    selectYourPick: 'Vyberte svůj tip',
   },
 };
 
