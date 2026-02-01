@@ -6,6 +6,8 @@ import { AppSidebar } from './AppSidebar';
 import { AppTopBar } from './AppTopBar';
 import { MobileNav } from '@/components/MobileNav';
 import { SocialProofToast } from '@/components/SocialProofToast';
+import { AddToHomeScreen } from '@/components/AddToHomeScreen';
+import { NotificationPermission } from '@/components/NotificationPermission';
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
@@ -98,6 +100,12 @@ export function AppLayout() {
 
       {/* Social Proof Toast */}
       <SocialProofToast />
+
+      {/* PWA Install Banner */}
+      <AddToHomeScreen />
+
+      {/* Notification Permission Modal */}
+      <NotificationPermission />
     </div>
   );
 }

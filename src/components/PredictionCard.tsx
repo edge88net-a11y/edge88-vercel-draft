@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3, Users, Zap } from 'lucide-react';
+import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3, Users, Zap, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence, getConfidenceLabel as getConfLabel, getConfidenceColorClass } from '@/lib/confidenceUtils';
@@ -15,6 +15,7 @@ import { AnalysisSection } from '@/components/AnalysisSection';
 import { OddsComparison } from '@/components/OddsComparison';
 import { TierBadge } from '@/components/TierBadge';
 import { HotPickBadge } from '@/components/HotPickBadge';
+import { ShareModal } from '@/components/ShareModal';
 import { APIPrediction } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,6 +57,7 @@ function generateTeaser(prediction: APIPrediction, language: 'en' | 'cz'): strin
 
 export function PredictionCard({ prediction, isLocked = false, gameNumber, showFollowers = true }: PredictionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const { t, language } = useLanguage();
   const { profile } = useAuth();
 
@@ -160,6 +162,13 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {!isGameLive() && <GameCountdown gameTime={prediction.gameTime} />}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Share prediction"
+          >
+            <Share2 className="h-4 w-4 text-muted-foreground hover:text-primary" />
+          </button>
           <SavePickButton prediction={prediction} />
         </div>
       </div>
@@ -409,6 +418,13 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
           </div>
         </div>
       )}
+
+      {/* Share Modal */}
+      <ShareModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+        prediction={prediction}
+      />
     </div>
   );
 }
