@@ -11,6 +11,7 @@ const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -142,6 +143,19 @@ const Signup = () => {
               <p className="mt-1.5 text-xs text-muted-foreground">
                 Must be at least 8 characters
               </p>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-muted-foreground">
+                {language === 'cz' ? 'Máš referral kód?' : 'Have a referral code?'} (optional)
+              </label>
+              <Input
+                type="text"
+                placeholder="ABC123"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                className="font-mono"
+              />
             </div>
 
             <Button type="submit" className="btn-gradient w-full" disabled={loading}>

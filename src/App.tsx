@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { MobileNav } from "@/components/MobileNav";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import { SocialProofToast } from "@/components/SocialProofToast";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Predictions from "./pages/Predictions";
@@ -21,6 +22,7 @@ import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ResponsibleGambling from "./pages/ResponsibleGambling";
+import Referral from "./pages/Referral";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -86,10 +88,16 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
+              <Route path="/referral" element={
+                <ProtectedRoute>
+                  <Referral />
+                </ProtectedRoute>
+              } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <MobileNav />
+            <SocialProofToast />
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
