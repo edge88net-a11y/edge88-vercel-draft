@@ -44,8 +44,8 @@ export function useCheckout() {
         body: {
           tier,
           priceId: PRICE_IDS[tier],
-          successUrl: `${window.location.origin}/dashboard?checkout=success`,
-          cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
+          successUrl: `${window.location.origin}/payment/success`,
+          cancelUrl: `${window.location.origin}/payment/cancel`,
         },
       });
 

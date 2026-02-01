@@ -13,9 +13,10 @@ export interface UserTier {
   borderColor: string;
   icon: string;
   isAdmin: boolean;
+  subscriptionEnd: string | null;
 }
 
-const TIER_MAP: Record<string, Omit<UserTier, 'tier'>> = {
+const TIER_MAP: Record<string, Omit<UserTier, 'tier' | 'subscriptionEnd'>> = {
   admin: {
     label: 'ADMIN',
     labelCz: 'ADMIN',
@@ -68,20 +69,21 @@ export function useUserTier(): UserTier & { isLoading: boolean } {
   const [tierData, setTierData] = useState<UserTier>({
     tier: 'none',
     ...TIER_MAP.none,
+    subscriptionEnd: null,
   });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchTier = async () => {
       if (!user) {
-        setTierData({ tier: 'none', ...TIER_MAP.none });
+        setTierData({ tier: 'none', ...TIER_MAP.none, subscriptionEnd: null });
         setIsLoading(false);
         return;
       }
 
       // Admin check - hardcoded email
       if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        setTierData({ tier: 'admin', ...TIER_MAP.admin });
+        setTierData({ tier: 'admin', ...TIER_MAP.admin, subscriptionEnd: null });
         setIsLoading(false);
         return;
       }
@@ -90,7 +92,7 @@ export function useUserTier(): UserTier & { isLoading: boolean } {
         // Check subscription from Supabase
         const { data: sub, error } = await supabase
           .from('subscriptions')
-          .select('tier, status')
+          .select('tier, status, current_period_end')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
@@ -101,23 +103,25 @@ export function useUserTier(): UserTier & { isLoading: boolean } {
           console.error('Error fetching subscription:', error);
         }
 
+        const subscriptionEnd = sub?.current_period_end || null;
+
         if (sub?.tier) {
           const normalizedTier = sub.tier.toLowerCase();
           if (normalizedTier === 'elite') {
-            setTierData({ tier: 'elite', ...TIER_MAP.elite });
+            setTierData({ tier: 'elite', ...TIER_MAP.elite, subscriptionEnd });
           } else if (normalizedTier === 'pro') {
-            setTierData({ tier: 'pro', ...TIER_MAP.pro });
+            setTierData({ tier: 'pro', ...TIER_MAP.pro, subscriptionEnd });
           } else if (normalizedTier === 'starter' || normalizedTier === 'basic') {
-            setTierData({ tier: 'starter', ...TIER_MAP.starter });
+            setTierData({ tier: 'starter', ...TIER_MAP.starter, subscriptionEnd });
           } else {
-            setTierData({ tier: 'none', ...TIER_MAP.none });
+            setTierData({ tier: 'none', ...TIER_MAP.none, subscriptionEnd: null });
           }
         } else {
-          setTierData({ tier: 'none', ...TIER_MAP.none });
+          setTierData({ tier: 'none', ...TIER_MAP.none, subscriptionEnd: null });
         }
       } catch (err) {
         console.error('Error in useUserTier:', err);
-        setTierData({ tier: 'none', ...TIER_MAP.none });
+        setTierData({ tier: 'none', ...TIER_MAP.none, subscriptionEnd: null });
       }
 
       setIsLoading(false);
