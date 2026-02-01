@@ -116,40 +116,40 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
       )}
     >
       {/* Header - Game Number, Sport, Confidence Badge & Save Button */}
-      <div className="p-5 pb-0 flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="p-3 sm:p-5 pb-0 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
           {gameNumber && (
-            <span className="font-mono text-xs font-black text-primary bg-primary/20 px-2.5 py-1 rounded-lg border border-primary/30">
+            <span className="font-mono text-[10px] sm:text-xs font-black text-primary bg-primary/20 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border border-primary/30 shrink-0">
               #{gameNumber}
             </span>
           )}
-          <span className="text-2xl">{sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}</span>
-          <span className="rounded-lg bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground border border-border">
+          <span className="text-xl sm:text-2xl shrink-0">{sportIcons[sportKey] || sportIcons[prediction.sport] || '🏆'}</span>
+          <span className="rounded-lg bg-muted px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-muted-foreground border border-border truncate max-w-[100px] sm:max-w-none">
             {prediction.league || prediction.sport}
           </span>
           {isGameLive() && <LiveGameBadge gameTime={prediction.gameTime} />}
           {confidencePercent >= 70 && (
-            <span className="badge-win text-xs">
+            <span className="badge-win text-[10px] sm:text-xs shrink-0 hidden sm:inline-flex">
               {getConfidenceLabel()}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {!isGameLive() && <GameCountdown gameTime={prediction.gameTime} />}
           <SavePickButton prediction={prediction} />
         </div>
       </div>
 
       {/* Teams vs Section - Betting slip style */}
-      <div className="p-5 pt-4">
-        <div className="flex items-center justify-between gap-4">
+      <div className="p-3 sm:p-5 pt-3 sm:pt-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Teams Column */}
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
             {/* Away Team */}
             <Link 
               to={`/predictions/${prediction.id}`}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200',
+                'flex items-center gap-2 sm:gap-3 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 min-h-[44px]',
                 prediction.prediction.pick.includes(prediction.awayTeam) 
                   ? 'bg-success/15 border border-success/40 shadow-[0_0_15px_hsl(var(--success)/0.2)]' 
                   : 'hover:bg-muted/50'
@@ -158,24 +158,24 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="md" />
               <div className="flex-1 min-w-0">
                 <span className={cn(
-                  'font-bold text-lg block truncate',
+                  'font-bold text-sm sm:text-lg block truncate',
                   prediction.prediction.pick.includes(prediction.awayTeam) && 'text-success'
                 )}>
                   {prediction.awayTeam}
                 </span>
-                <span className="text-xs text-muted-foreground">Away</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Away</span>
               </div>
               {prediction.prediction.pick.includes(prediction.awayTeam) && (
-                <span className="flex items-center gap-1 text-xs font-bold text-success bg-success/20 px-2 py-1 rounded-md">
-                  ✓ PICK
+                <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-success bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0">
+                  ✓ <span className="hidden sm:inline">PICK</span>
                 </span>
               )}
             </Link>
 
             {/* VS Divider */}
-            <div className="flex items-center gap-3 px-3">
+            <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs font-bold text-muted-foreground">VS</span>
+              <span className="text-[10px] sm:text-xs font-bold text-muted-foreground">VS</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -183,7 +183,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
             <Link 
               to={`/predictions/${prediction.id}`}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200',
+                'flex items-center gap-2 sm:gap-3 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 min-h-[44px]',
                 prediction.prediction.pick.includes(prediction.homeTeam) 
                   ? 'bg-success/15 border border-success/40 shadow-[0_0_15px_hsl(var(--success)/0.2)]' 
                   : 'hover:bg-muted/50'
@@ -192,88 +192,88 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="md" />
               <div className="flex-1 min-w-0">
                 <span className={cn(
-                  'font-bold text-lg block truncate',
+                  'font-bold text-sm sm:text-lg block truncate',
                   prediction.prediction.pick.includes(prediction.homeTeam) && 'text-success'
                 )}>
                   {prediction.homeTeam}
                 </span>
-                <span className="text-xs text-muted-foreground">Home</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Home</span>
               </div>
               {prediction.prediction.pick.includes(prediction.homeTeam) && (
-                <span className="flex items-center gap-1 text-xs font-bold text-success bg-success/20 px-2 py-1 rounded-md">
-                  ✓ PICK
+                <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-success bg-success/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0">
+                  ✓ <span className="hidden sm:inline">PICK</span>
                 </span>
               )}
             </Link>
           </div>
 
           {/* Confidence Column */}
-          <div className="flex flex-col items-center gap-2 pl-4 border-l border-border">
+          <div className="flex flex-col items-center gap-1 sm:gap-2 pl-2 sm:pl-4 border-l border-border shrink-0">
             <ConfidenceMeter value={confidencePercent} size="md" />
-            <span className={cn('font-mono text-2xl font-black', getConfidenceColorClass())}>
+            <span className={cn('font-mono text-lg sm:text-2xl font-black', getConfidenceColorClass())}>
               {confidencePercent}%
             </span>
-            <span className="text-xs text-muted-foreground">Confidence</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Confidence</span>
           </div>
         </div>
       </div>
 
       {/* Pick & Odds Section - Highlighted */}
-      <div className="mx-5 mb-4 pick-highlight">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+      <div className="mx-3 sm:mx-5 mb-3 sm:mb-4 pick-highlight">
+        <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4 flex-col sm:flex-row">
+          <div className="flex-1 min-w-0 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-primary">
                 {prediction.prediction.type}
               </span>
               <BarChart3 className="h-3 w-3 text-primary" />
             </div>
-            <p className="text-xl font-black text-foreground">{prediction.prediction.pick}</p>
+            <p className="text-base sm:text-xl font-black text-foreground truncate">{prediction.prediction.pick}</p>
             {prediction.prediction.line && (
-              <p className="text-sm text-muted-foreground mt-0.5">{prediction.prediction.line}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">{prediction.prediction.line}</p>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground mb-1">{t.bestOdds}</p>
-            <p className="font-mono text-2xl font-black odds-number">
+          <div className="text-left sm:text-right shrink-0">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{t.bestOdds}</p>
+            <p className="font-mono text-xl sm:text-2xl font-black odds-number">
               {bookmakerOdds[bestOddsIndex]?.odds || prediction.prediction.odds}
             </p>
           </div>
         </div>
         
         {/* EV Badge */}
-        <div className="mt-3 flex items-center justify-between">
-          <div className="ev-badge">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>+{expectedValue.toFixed(1)}% Expected Value</span>
+        <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2 flex-wrap">
+          <div className="ev-badge text-[10px] sm:text-xs">
+            <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span>+{expectedValue.toFixed(1)}% EV</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
+          <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
+            <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             <span>Updated 2m ago</span>
           </div>
         </div>
       </div>
 
       {/* Teaser text */}
-      <p className="px-5 pb-4 text-sm text-muted-foreground">
+      <p className="px-3 sm:px-5 pb-3 sm:pb-4 text-xs sm:text-sm text-muted-foreground">
         <span className="text-primary">💡</span> "{teaser}"
       </p>
 
       {/* Expand Button */}
-      <div className="px-5 pb-5">
+      <div className="px-3 sm:px-5 pb-3 sm:pb-5">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full justify-between border-primary/30 hover:bg-primary/10 hover:border-primary"
+          className="w-full justify-between border-primary/30 hover:bg-primary/10 hover:border-primary min-h-[44px] text-xs sm:text-sm"
         >
-          <span className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-primary" />
+          <span className="flex items-center gap-1.5 sm:gap-2">
+            <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
             {isExpanded ? t.hideAnalysis : t.viewAnalysis}
           </span>
           <ChevronDown
             className={cn(
-              'h-4 w-4 transition-transform duration-300',
+              'h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-300',
               isExpanded && 'rotate-180'
             )}
           />
@@ -285,7 +285,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         'overflow-hidden transition-all duration-300 ease-out',
         isExpanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
       )}>
-        <div className="border-t border-border px-5 pt-5 pb-5 space-y-4 bg-card/50">
+        <div className="border-t border-border px-3 sm:px-5 pt-4 sm:pt-5 pb-4 sm:pb-5 space-y-3 sm:space-y-4 bg-card/50">
           {/* Analysis Section */}
           <AnalysisSection
             predictionId={prediction.id}
@@ -299,8 +299,8 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
 
           {/* Odds Comparison */}
           <div className="pt-2">
-            <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
+            <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 flex items-center gap-2">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
               {t.oddsComparison}
             </h4>
             <OddsComparison bookmakerOdds={bookmakerOdds} />
@@ -309,10 +309,10 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
           {/* View Full Analysis Link */}
           <Link 
             to={`/predictions/${prediction.id}`}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 px-4 py-4 text-sm font-bold text-primary transition-all duration-200 hover:from-primary/30 hover:to-accent/30 border border-primary/30"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-bold text-primary transition-all duration-200 hover:from-primary/30 hover:to-accent/30 border border-primary/30 min-h-[44px]"
           >
             {t.fullAnalysis}
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Link>
         </div>
       </div>

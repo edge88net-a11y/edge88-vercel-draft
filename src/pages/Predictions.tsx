@@ -197,54 +197,54 @@ const Predictions = () => {
           </div>
 
           {/* Quick Stats Row */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="stat-card flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-                <Target className="h-5 w-5 text-primary" />
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+            <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/20 shrink-0">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <div>
-                <div className="font-mono text-2xl font-black text-foreground">{stats.total}</div>
-                <div className="text-xs text-muted-foreground">Active Picks</div>
-              </div>
-            </div>
-            <div className="stat-card flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/20">
-                <Flame className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <div className="font-mono text-2xl font-black text-success">{stats.highConfidence}</div>
-                <div className="text-xs text-muted-foreground">High Confidence</div>
+              <div className="min-w-0">
+                <div className="font-mono text-lg sm:text-2xl font-black text-foreground">{stats.total}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground truncate">Active Picks</div>
               </div>
             </div>
-            <div className="stat-card flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/20">
-                <Trophy className="h-5 w-5 text-warning" />
+            <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-success/20 shrink-0">
+                <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               </div>
-              <div>
-                <div className="font-mono text-2xl font-black text-warning">{stats.locks}</div>
-                <div className="text-xs text-muted-foreground">🔒 Locks</div>
+              <div className="min-w-0">
+                <div className="font-mono text-lg sm:text-2xl font-black text-success">{stats.highConfidence}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground truncate">High Conf.</div>
+              </div>
+            </div>
+            <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-warning/20 shrink-0">
+                <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-mono text-lg sm:text-2xl font-black text-warning">{stats.locks}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground truncate">🔒 Locks</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Search & Sort Bar */}
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-4 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={`${t.search} teams...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-12 bg-card border-border focus:border-primary"
+              className="pl-10 sm:pl-11 h-11 sm:h-12 bg-card border-border focus:border-primary text-sm"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{t.sortBy}:</span>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-xs sm:text-sm text-muted-foreground shrink-0">{t.sortBy}:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+              className="flex-1 sm:flex-none rounded-xl border border-border bg-card px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:border-primary focus:outline-none min-h-[44px]"
             >
               {translatedSortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -252,32 +252,32 @@ const Predictions = () => {
                 </option>
               ))}
             </select>
-            <Button variant="outline" size="icon" onClick={toggleSortOrder} className="border-border hover:border-primary hover:bg-primary/10">
+            <Button variant="outline" size="icon" onClick={toggleSortOrder} className="border-border hover:border-primary hover:bg-primary/10 h-11 w-11 shrink-0">
               <ArrowUpDown className={cn('h-4 w-4', sortOrder === 'asc' && 'rotate-180')} />
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="glass-card mb-8 p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+        <div className="glass-card mb-6 sm:mb-8 p-3 sm:p-5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 sm:mb-4">
             <Filter className="h-4 w-4 text-primary" />
             <span className="font-semibold">{t.filter}</span>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-3">
+          <div className="space-y-4 sm:space-y-0 sm:grid sm:gap-5 sm:grid-cols-3">
             {/* Sport Filter */}
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t.sport}
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap scrollbar-hide -mx-1 px-1">
                 {sports.map((sport) => (
                   <button
                     key={sport}
                     onClick={() => setSelectedSport(sport)}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
+                      'flex items-center gap-1 sm:gap-1.5 rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
                       selectedSport === sport
                         ? 'filter-chip-active'
                         : 'filter-chip'
@@ -295,13 +295,13 @@ const Predictions = () => {
               <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t.confidence}
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap scrollbar-hide -mx-1 px-1">
                 {confidenceLevels.map((level) => (
                   <button
                     key={level.label}
                     onClick={() => setSelectedConfidence(level.label)}
                     className={cn(
-                      'rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
+                      'rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
                       selectedConfidence === level.label
                         ? 'filter-chip-active'
                         : 'filter-chip'
@@ -318,13 +318,13 @@ const Predictions = () => {
               <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t.type}
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap scrollbar-hide -mx-1 px-1">
                 {predictionTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => setSelectedType(type)}
                     className={cn(
-                      'rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-200',
+                      'rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
                       selectedType === type
                         ? 'filter-chip-active'
                         : 'filter-chip'
@@ -339,22 +339,22 @@ const Predictions = () => {
         </div>
 
         {/* Results Count */}
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+        <div className="mb-4 sm:mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {t.showing} <span className="font-bold text-foreground">{filteredAndSortedPredictions.length}</span> {t.predictions.toLowerCase()}
             {!isPro && (
-              <span className="ml-2 text-primary font-semibold">
+              <span className="ml-1 sm:ml-2 text-primary font-semibold">
                 ({user ? FREE_PICKS_LIMIT * 2 : FREE_PICKS_LIMIT} {t.unlocked})
               </span>
             )}
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-success/10 text-success">
+            <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg bg-success/10 text-success">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
               </span>
-              <span className="text-xs font-semibold">{t.autoRefresh}</span>
+              <span className="text-[10px] sm:text-xs font-semibold">{t.autoRefresh}</span>
             </div>
           </div>
         </div>
