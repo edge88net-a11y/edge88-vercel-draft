@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Check, X, Zap, Shield, Star, Award, Loader2, ChevronDown, TrendingUp, Users, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -149,7 +149,7 @@ const Pricing = () => {
   const isAdmin = isAdminUser(user?.email);
 
   return (
-    <div className="space-y-12">
+    <div className="pt-12 space-y-12">
       {/* Admin Full Access Notice */}
       {isAdmin && (
         <div className="mx-auto max-w-2xl">
@@ -363,8 +363,8 @@ const Pricing = () => {
             </thead>
             <tbody>
               {featureCategories.map((category) => (
-                <>
-                  <tr key={category.name} className="bg-muted/30">
+                <React.Fragment key={category.name}>
+                  <tr className="bg-muted/30">
                     <td colSpan={5} className="p-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                       {category.name}
                     </td>
@@ -378,7 +378,7 @@ const Pricing = () => {
                       <td className="p-4 text-center">{renderFeatureValue(feature.elite)}</td>
                     </tr>
                   ))}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

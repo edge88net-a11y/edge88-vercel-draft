@@ -23,12 +23,76 @@ marked.setOptions({
   breaks: true,
 });
 
+// Clean unicode escape sequences and JSON artifacts
+function cleanUnicodeAndJson(text: string): string {
+  if (!text) return '';
+  
+  // Replace unicode escape sequences with actual characters
+  let cleaned = text.replace(/\\u([\dA-Fa-f]{4})/g, (_, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+  
+  // Clean escaped characters
+  cleaned = cleaned.replace(/\\n/g, '\n');
+  cleaned = cleaned.replace(/\\"/g, '"');
+  cleaned = cleaned.replace(/\\'/g, "'");
+  cleaned = cleaned.replace(/\\\\/g, '\\');
+  
+  return cleaned;
+}
+
+// Extract content based on language - handles JSON in summary field for CZ
+function extractArticleContent(article: any, language: string): string {
+  let text = '';
+  
+  // For Czech: try to parse summary field (may contain JSON with Czech content)
+  if (language === 'cz' || language === 'cs') {
+    if (article.summary) {
+      try {
+        // Check if summary is a JSON string
+        const parsed = typeof article.summary === 'string' && article.summary.trim().startsWith('{')
+          ? JSON.parse(article.summary)
+          : null;
+        
+        if (parsed && (parsed.content || parsed.text)) {
+          text = parsed.content || parsed.text || '';
+        } else {
+          // Summary is not JSON, use content field
+          text = article.content || '';
+        }
+      } catch {
+        // JSON parse failed, use content field
+        text = article.content || '';
+      }
+    } else {
+      text = article.content || '';
+    }
+  } else {
+    // For English: use content field directly
+    text = article.content || '';
+  }
+  
+  // Clean unicode and JSON artifacts
+  text = cleanUnicodeAndJson(text);
+  
+  // Remove reference numbers like [1], [2], etc.
+  text = text.replace(/\[\d+\]/g, '');
+  
+  // Remove multiple consecutive newlines
+  text = text.replace(/\n{3,}/g, '\n\n');
+  
+  return text.trim();
+}
+
 // Clean markdown content - remove reference numbers [1], [2], etc.
 function cleanMarkdownContent(content: string | null): string {
   if (!content) return '';
   
+  // Clean unicode escape sequences first
+  let cleaned = cleanUnicodeAndJson(content);
+  
   // Remove reference numbers like [1], [2], etc.
-  let cleaned = content.replace(/\[\d+\]/g, '');
+  cleaned = cleaned.replace(/\[\d+\]/g, '');
   
   // Remove multiple consecutive newlines
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
@@ -48,12 +112,13 @@ export default function BlogArticle() {
   const { data: predictions } = useActivePredictions();
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Parse markdown to HTML
+  // Parse markdown to HTML - use language-aware content extraction
   const renderedContent = useMemo(() => {
-    if (!article?.content) return '';
-    const cleaned = cleanMarkdownContent(article.content);
-    return marked(cleaned);
-  }, [article?.content]);
+    if (!article) return '';
+    const content = extractArticleContent(article, language);
+    if (!content) return '';
+    return marked(content);
+  }, [article, language]);
 
   // Filter out current article from related
   const relatedArticles = recentArticles?.filter(a => a.id !== article?.id).slice(0, 3) || [];
@@ -253,14 +318,6 @@ export default function BlogArticle() {
 
       {/* Article Content */}
       <article className="glass-card p-6 md:p-8">
-        {/* Summary */}
-        {article.summary && (
-          <div className="mb-8 p-5 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-            <p className="text-foreground font-medium leading-relaxed">
-              {article.summary}
-            </p>
-          </div>
-        )}
 
         {/* Rendered Markdown Content */}
         <div 
