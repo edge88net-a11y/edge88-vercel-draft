@@ -11,6 +11,7 @@ import { PredictionCard } from '@/components/PredictionCard';
 import { MoneyCalculator } from '@/components/MoneyCalculator';
 import { AffiliateCasinos } from '@/components/AffiliateCasinos';
 import { WinStreakBadge } from '@/components/WinStreakBadge';
+import { ProveItSection } from '@/components/ProveItSection';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
 import { useWinStreak } from '@/hooks/useWinStreak';
@@ -551,6 +552,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Prove It Section - Verified Results */}
+      <ProveItSection />
 
       {/* Final CTA Section */}
       <section 

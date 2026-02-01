@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3 } from 'lucide-react';
+import { ChevronDown, TrendingUp, Lock, ExternalLink, Flame, Clock, BarChart3, Users, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence, getConfidenceLabel as getConfLabel, getConfidenceColorClass } from '@/lib/confidenceUtils';
@@ -13,13 +13,17 @@ import { SavePickButton } from '@/components/SavePickButton';
 import { LiveGameBadge } from '@/components/LiveGameBadge';
 import { AnalysisSection } from '@/components/AnalysisSection';
 import { OddsComparison } from '@/components/OddsComparison';
+import { TierBadge } from '@/components/TierBadge';
+import { HotPickBadge } from '@/components/HotPickBadge';
 import { APIPrediction } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PredictionCardProps {
   prediction: APIPrediction;
   isLocked?: boolean;
   gameNumber?: number;
+  showFollowers?: boolean;
 }
 
 // Generate unique teaser text based on prediction data
@@ -50,9 +54,31 @@ function generateTeaser(prediction: APIPrediction, language: 'en' | 'cz'): strin
   return teasers[language][index];
 }
 
-export function PredictionCard({ prediction, isLocked = false, gameNumber }: PredictionCardProps) {
+export function PredictionCard({ prediction, isLocked = false, gameNumber, showFollowers = true }: PredictionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { t, language } = useLanguage();
+  const { profile } = useAuth();
+
+  // Determine tier based on confidence
+  const confidencePercent = normalizeConfidence(prediction.confidence);
+  const getTier = () => {
+    if (confidencePercent >= 80) return 'elite';
+    if (confidencePercent >= 70) return 'pro';
+    if (confidencePercent >= 60) return 'basic';
+    return 'free';
+  };
+  const predictionTier = getTier();
+
+  // Check if user has access
+  const userTier = (profile?.subscription_tier || 'free') as string;
+  const tierOrder = ['free', 'basic', 'pro', 'elite'];
+  const userTierIndex = tierOrder.indexOf(userTier);
+  const requiredTierIndex = tierOrder.indexOf(predictionTier);
+  const hasFullAccess = userTierIndex >= requiredTierIndex;
+  const canSeePreview = userTierIndex >= requiredTierIndex - 1; // Can see one tier above
+
+  // Generate random follower count based on prediction ID
+  const followerCount = 100 + parseInt(prediction.id.replace(/[^0-9]/g, '').slice(0, 3) || '0', 10) % 300;
 
   // Infer sport from team names if sport field is UUID
   const sportName = prediction.sport?.includes('-') 
@@ -62,9 +88,6 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
   const expectedValue = typeof prediction.expectedValue === 'string' 
     ? parseFloat(prediction.expectedValue) 
     : prediction.expectedValue;
-
-  // Format confidence as percentage (normalized to 0-100)
-  const confidencePercent = normalizeConfidence(prediction.confidence);
 
   // Get confidence color class
   const getConfidenceColorClass = () => {
@@ -114,7 +137,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         isLocked && 'blur-sm pointer-events-none'
       )}
     >
-      {/* Header - Game Number, Sport, Confidence Badge & Save Button */}
+      {/* Header - Game Number, Sport, Tier Badge, Confidence & Save Button */}
       <div className="p-3 sm:p-5 pb-0 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
           {gameNumber && (
@@ -122,11 +145,13 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
               #{gameNumber}
             </span>
           )}
+          <TierBadge tier={predictionTier} />
           <span className="text-xl sm:text-2xl shrink-0">{getSportEmoji(sportName, prediction.homeTeam, prediction.awayTeam)}</span>
           <span className="rounded-lg bg-muted px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-muted-foreground border border-border truncate max-w-[100px] sm:max-w-none">
             {sportName}
           </span>
           {isGameLive() && <LiveGameBadge gameTime={prediction.gameTime} />}
+          {confidencePercent >= 80 && <HotPickBadge type="hot" />}
           {confidencePercent >= 70 && (
             <span className="badge-win text-[10px] sm:text-xs shrink-0 hidden sm:inline-flex">
               {getConfidenceLabel()}
@@ -253,10 +278,18 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         </div>
       </div>
 
-      {/* Teaser text */}
-      <p className="px-3 sm:px-5 pb-3 sm:pb-4 text-xs sm:text-sm text-muted-foreground">
-        <span className="text-primary">💡</span> "{teaser}"
-      </p>
+      {/* Teaser text + Followers */}
+      <div className="px-3 sm:px-5 pb-3 sm:pb-4 flex items-center justify-between gap-2">
+        <p className="text-xs sm:text-sm text-muted-foreground flex-1">
+          <span className="text-primary">💡</span> "{teaser}"
+        </p>
+        {showFollowers && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+            <Users className="h-3 w-3" />
+            <span>{followerCount}</span>
+          </div>
+        )}
+      </div>
 
       {/* Expand Button */}
       <div className="px-3 sm:px-5 pb-3 sm:pb-5">
@@ -285,26 +318,69 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber }: Pre
         isExpanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
       )}>
         <div className="border-t border-border px-3 sm:px-5 pt-4 sm:pt-5 pb-4 sm:pb-5 space-y-3 sm:space-y-4 bg-card/50">
-          {/* Analysis Section */}
-          <AnalysisSection
-            predictionId={prediction.id}
-            reasoning={prediction.reasoning}
-            reasoning_cs={prediction.reasoning_cs}
-            pick={prediction.prediction.pick}
-            confidence={confidencePercent}
-            keyFactors={prediction.keyFactors}
-            homeTeam={prediction.homeTeam}
-            awayTeam={prediction.awayTeam}
-          />
+          {/* Tiered Content Access */}
+          {hasFullAccess ? (
+            <>
+              {/* Full Analysis Section */}
+              <AnalysisSection
+                predictionId={prediction.id}
+                reasoning={prediction.reasoning}
+                reasoning_cs={prediction.reasoning_cs}
+                pick={prediction.prediction.pick}
+                confidence={confidencePercent}
+                keyFactors={prediction.keyFactors}
+                homeTeam={prediction.homeTeam}
+                awayTeam={prediction.awayTeam}
+              />
 
-          {/* Odds Comparison */}
-          <div className="pt-2">
-            <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 flex items-center gap-2">
-              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-              {t.oddsComparison}
-            </h4>
-            <OddsComparison bookmakerOdds={bookmakerOdds} />
-          </div>
+              {/* Odds Comparison - Basic+ */}
+              <div className="pt-2">
+                <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 flex items-center gap-2">
+                  <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                  {t.oddsComparison}
+                </h4>
+                <OddsComparison bookmakerOdds={bookmakerOdds} />
+              </div>
+            </>
+          ) : (
+            /* Limited Preview for lower tiers */
+            <div className="relative">
+              {/* Show first few lines then blur */}
+              <div className="space-y-3">
+                <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/5 border border-primary/20 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🏆</span>
+                    <h4 className="font-bold">{language === 'cz' ? 'Náš Tip' : 'Our Pick'}</h4>
+                  </div>
+                  <p className="font-bold text-lg mb-2">{prediction.prediction.pick}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {prediction.reasoning?.slice(0, 150)}...
+                  </p>
+                </div>
+              </div>
+
+              {/* Blur overlay */}
+              <div className="absolute inset-0 top-24 bg-gradient-to-t from-background via-background/95 to-transparent flex items-end justify-center pb-4">
+                <div className="text-center p-4">
+                  <div className="mx-auto h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
+                    <Lock className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="font-bold text-sm mb-1">
+                    {language === 'cz' 
+                      ? `Upgradujte na ${predictionTier.charAt(0).toUpperCase() + predictionTier.slice(1)} pro plnou analýzu`
+                      : `Upgrade to ${predictionTier.charAt(0).toUpperCase() + predictionTier.slice(1)} for full analysis`
+                    }
+                  </p>
+                  <Link to="/pricing">
+                    <Button size="sm" className="btn-gradient gap-2 mt-2">
+                      <Zap className="h-4 w-4" />
+                      {language === 'cz' ? 'Upgradovat' : 'Upgrade'}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* View Full Analysis Link */}
           <Link 
