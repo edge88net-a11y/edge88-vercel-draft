@@ -156,22 +156,25 @@ const Index = () => {
   const activePredictions = predictions?.filter(p => p.result === 'pending') || [];
   const completedPredictions = predictions?.filter(p => p.result !== 'pending') || [];
   
-  // Real accuracy from stats or calculation
+  // Real accuracy from stats (now uses accuracy_pct from API)
   const realAccuracy = stats?.accuracy || 
     (completedPredictions.length > 0 
       ? Math.round((completedPredictions.filter(p => p.result === 'win').length / completedPredictions.length) * 100)
       : 73); // Default fallback
   
-  // Real weekly pick count - count predictions from last 7 days
-  const weeklyPicks = predictions?.filter(p => {
+  // Real weekly pick count - use stats.totalPredictions or count from last 7 days
+  const weeklyPicks = stats?.totalPredictions || predictions?.filter(p => {
     const gameDate = new Date(p.gameTime);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     return gameDate >= weekAgo;
   }).length || 142;
   
-  // Real current streak from stats or winStreak hook
-  const currentStreak = winStreak?.currentStreak || stats?.winStreak || 7;
+  // Real current streak from stats API (now uses current_streak field)
+  const currentStreak = stats?.winStreak || winStreak?.currentStreak || 7;
+  
+  // Picks today from stats API or active predictions count
+  const picksToday = stats?.picksToday || activePredictions.length || stats?.activePredictions || 15;
 
   // Animated counters with real data
   const accuracyCounter = useAnimatedCounter(realAccuracy, 2000);
@@ -217,8 +220,8 @@ const Index = () => {
     })
     .slice(0, 3);
 
-  // Show actual active prediction count
-  const predictionsMadeToday = activePredictions.length || stats?.activePredictions || predictions?.length || 15;
+  // Show actual active prediction count from API
+  const predictionsMadeToday = picksToday;
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
