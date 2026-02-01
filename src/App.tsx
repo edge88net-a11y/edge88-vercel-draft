@@ -5,27 +5,33 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { MobileNav } from "@/components/MobileNav";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
-import { SocialProofToast } from "@/components/SocialProofToast";
+
+// Layouts
+import { AppLayout } from "@/components/layout/AppLayout";
+import { PublicLayout } from "@/components/layout/PublicLayout";
+
+// Public Pages (use PublicLayout with Navbar/Footer)
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Predictions from "./pages/Predictions";
-import PredictionDetail from "./pages/PredictionDetail";
-import Results from "./pages/Results";
 import Pricing from "./pages/Pricing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import SavedPicks from "./pages/SavedPicks";
-import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ResponsibleGambling from "./pages/ResponsibleGambling";
+import NotFound from "./pages/NotFound";
+
+// App Pages (use AppLayout with Sidebar) - these are the refactored versions
+import DashboardPage from "./pages/app/DashboardPage";
+import PredictionsPage from "./pages/app/PredictionsPage";
+import ResultsPage from "./pages/app/ResultsPage";
+import PredictionDetail from "./pages/PredictionDetail";
+import SavedPicks from "./pages/SavedPicks";
+import Settings from "./pages/Settings";
 import Referral from "./pages/Referral";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
-import NotFound from "./pages/NotFound";
 
 // Admin pages
 import AdminOverview from "./pages/admin/AdminOverview";
@@ -44,64 +50,41 @@ const App = () => (
         <AuthProvider>
           <LanguageProvider>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/predictions" element={<Predictions />} />
-              <Route path="/predictions/:id" element={<PredictionDetail />} />
-              <Route path="/results" element={<Results />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/saved-picks" element={
-                <ProtectedRoute>
-                  <SavedPicks />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              {/* Admin routes */}
-              <Route path="/admin" element={
-                <AdminRoute>
-                  <AdminOverview />
-                </AdminRoute>
-              } />
-              <Route path="/admin/predictions" element={
-                <AdminRoute>
-                  <AdminPredictions />
-                </AdminRoute>
-              } />
-              <Route path="/admin/accuracy" element={
-                <AdminRoute>
-                  <AdminAccuracy />
-                </AdminRoute>
-              } />
-              <Route path="/admin/system" element={
-                <AdminRoute>
-                  <AdminSystem />
-                </AdminRoute>
-              } />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:id" element={<BlogArticle />} />
-              <Route path="/referral" element={
-                <ProtectedRoute>
-                  <Referral />
-                </ProtectedRoute>
-              } />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              {/* Public routes - uses PublicLayout with Navbar/Footer */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/responsible-gambling" element={<ResponsibleGambling />} />
+              </Route>
+
+              {/* App routes - uses AppLayout with Sidebar (protected) */}
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/predictions" element={<PredictionsPage />} />
+                <Route path="/predictions/:id" element={<PredictionDetail />} />
+                <Route path="/results" element={<ResultsPage />} />
+                <Route path="/saved-picks" element={<SavedPicks />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/referral" element={<Referral />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogArticle />} />
+              </Route>
+
+              {/* Admin routes - protected by AdminRoute */}
+              <Route element={<AdminRoute><AppLayout /></AdminRoute>}>
+                <Route path="/admin" element={<AdminOverview />} />
+                <Route path="/admin/predictions" element={<AdminPredictions />} />
+                <Route path="/admin/accuracy" element={<AdminAccuracy />} />
+                <Route path="/admin/system" element={<AdminSystem />} />
+              </Route>
+
+              {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <MobileNav />
-            <SocialProofToast />
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
