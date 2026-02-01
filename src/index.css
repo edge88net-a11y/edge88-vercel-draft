@@ -565,3 +565,56 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Horizontal scroll snap for mobile cards */
+.snap-scroll-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Safe area padding for iOS */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Touch target minimum size */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile-optimized text sizes */
+@media (max-width: 640px) {
+  .text-adaptive-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .text-adaptive-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Pull to refresh spinner */
+.ptr-spinner {
+  animation: ptr-spin 1s linear infinite;
+}
+
+@keyframes ptr-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
