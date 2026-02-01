@@ -189,7 +189,7 @@ const mockWinShares: WinShare[] = [
 
 export default function Community() {
   const { user, profile } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [leaderboard] = useState<LeaderboardUser[]>(generateLeaderboard);
   const [activities, setActivities] = useState<ActivityItem[]>(generateActivities);
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
@@ -260,12 +260,10 @@ export default function Community() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
           <Users className="h-8 w-8 text-primary" />
-          {language === 'cz' ? 'Komunita' : 'Community'}
+          {t.community}
         </h1>
         <p className="mt-2 text-muted-foreground">
-          {language === 'cz' 
-            ? 'Spojte se s ostatními sázkaři, sdílejte výhry a sledujte žebříčky.'
-            : 'Connect with fellow bettors, share wins, and track leaderboards.'}
+          {t.communityDesc}
         </p>
       </div>
 
@@ -275,7 +273,7 @@ export default function Community() {
           <div className="border-b border-border p-4">
             <h2 className="font-bold text-lg flex items-center gap-2">
               <Trophy className="h-5 w-5 text-yellow-400" />
-              {language === 'cz' ? 'Top sázkaři tohoto měsíce' : 'Top bettors this month'}
+              {t.topBettorsThisMonth}
             </h2>
           </div>
           
@@ -283,8 +281,8 @@ export default function Community() {
           {user && (
             <div className="px-4 py-3 bg-primary/10 border-b border-primary/20">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {language === 'cz' ? 'Vaše pozice' : 'Your rank'}
+              <span className="text-sm text-muted-foreground">
+                  {t.yourRank}
                 </span>
                 <span className="font-mono font-bold text-primary">#{userRank}</span>
               </div>
@@ -296,10 +294,10 @@ export default function Community() {
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="p-3">#</th>
-                  <th className="p-3">{language === 'cz' ? 'Uživatel' : 'User'}</th>
-                  <th className="p-3 text-right">{language === 'cz' ? 'Přesnost' : 'Accuracy'}</th>
-                  <th className="p-3 text-right hidden sm:table-cell">{language === 'cz' ? 'Tipy' : 'Picks'}</th>
-                  <th className="p-3 text-right hidden md:table-cell">{language === 'cz' ? 'Zisk' : 'Profit'}</th>
+                  <th className="p-3">{t.user}</th>
+                  <th className="p-3 text-right">{t.accuracy}</th>
+                  <th className="p-3 text-right hidden sm:table-cell">{t.picks}</th>
+                  <th className="p-3 text-right hidden md:table-cell">{t.profit}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -356,7 +354,7 @@ export default function Community() {
           
           <div className="p-3 text-center border-t border-border">
             <Button variant="ghost" size="sm" className="text-primary">
-              {language === 'cz' ? 'Zobrazit celý žebříček' : 'View full leaderboard'}
+              {t.fullLeaderboard}
             </Button>
           </div>
         </div>
@@ -366,7 +364,7 @@ export default function Community() {
           <div className="border-b border-border p-4">
             <h2 className="font-bold text-lg flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              {language === 'cz' ? 'Živá aktivita' : 'Live Feed'}
+              {t.liveFeed}
             </h2>
           </div>
           

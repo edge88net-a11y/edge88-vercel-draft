@@ -282,7 +282,7 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
             <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-            <span>Updated 2m ago</span>
+            <span>{t.updatedAgo} 2m</span>
           </div>
         </div>
       </div>

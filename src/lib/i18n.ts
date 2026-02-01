@@ -371,6 +371,24 @@ export interface Translations {
   contactMessage: string;
   contactSend: string;
   contactSuccess: string;
+  
+  // Additional UI elements
+  startsIn: string;
+  updatedAgo: string;
+  pick: string;
+  noGamesInNext12Hours: string;
+  checkBackLater: string;
+  waitingForResults: string;
+  fullLeaderboard: string;
+  shareThoughts: string;
+  liveFeed: string;
+  topBettorsThisMonth: string;
+  yourRank: string;
+  user: string;
+  picks: string;
+  profit: string;
+  community: string;
+  communityDesc: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -743,6 +761,24 @@ export const translations: Record<Language, Translations> = {
     contactMessage: 'Message',
     contactSend: 'Send Message',
     contactSuccess: 'Message sent successfully!',
+    
+    // Additional UI elements
+    startsIn: 'Starts in',
+    updatedAgo: 'Updated',
+    pick: 'PICK',
+    noGamesInNext12Hours: 'No games in next 12 hours',
+    checkBackLater: 'Check back later',
+    waitingForResults: 'Waiting for games to finish',
+    fullLeaderboard: 'View full leaderboard',
+    shareThoughts: 'Share your thoughts...',
+    liveFeed: 'Live Feed',
+    topBettorsThisMonth: 'Top bettors this month',
+    yourRank: 'Your rank',
+    user: 'User',
+    picks: 'Picks',
+    profit: 'Profit',
+    community: 'Community',
+    communityDesc: 'Connect with fellow bettors, share wins, and track leaderboards.',
   },
   
   cz: {
@@ -1114,6 +1150,24 @@ export const translations: Record<Language, Translations> = {
     contactMessage: 'Zpráva',
     contactSend: 'Odeslat zprávu',
     contactSuccess: 'Zpráva byla úspěšně odeslána!',
+    
+    // Additional UI elements
+    startsIn: 'Začíná za',
+    updatedAgo: 'Aktualizováno před',
+    pick: 'TIP',
+    noGamesInNext12Hours: 'Žádné zápasy v příštích 12 hodinách',
+    checkBackLater: 'Zkontrolujte později',
+    waitingForResults: 'Čekáme na dokončení zápasů',
+    fullLeaderboard: 'Zobrazit celý žebříček',
+    shareThoughts: 'Sdílejte svůj názor...',
+    liveFeed: 'Živá aktivita',
+    topBettorsThisMonth: 'Top sázkaři tohoto měsíce',
+    yourRank: 'Vaše pozice',
+    user: 'Uživatel',
+    picks: 'Tipy',
+    profit: 'Zisk',
+    community: 'Komunita',
+    communityDesc: 'Spojte se s ostatními sázkaři, sdílejte výhry a sledujte žebříčky.',
   },
 };
 
