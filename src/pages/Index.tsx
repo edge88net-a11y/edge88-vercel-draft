@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, TrendingUp, BarChart3, Target, Users, Loader2, Mail, Star, ChevronRight, Activity, Trophy, Flame, Shield } from 'lucide-react';
+import { ArrowRight, Zap, TrendingUp, Target, Users, Mail, Star, Activity, Trophy, Flame, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { MobileNav } from '@/components/MobileNav';
 import { LiveTicker } from '@/components/LiveTicker';
 import { PredictionCard } from '@/components/PredictionCard';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
@@ -74,7 +73,7 @@ function useScrollReveal() {
   return { ref, isRevealed };
 }
 
-const TESTIMONIALS = [
+const TESTIMONIALS_EN = [
   {
     name: 'Michael R.',
     role: 'Pro Bettor',
@@ -105,34 +104,41 @@ const TESTIMONIALS = [
   },
 ];
 
-const HOW_IT_WORKS = [
+const TESTIMONIALS_CZ = [
   {
-    step: 1,
-    title: 'Sign Up Free',
-    description: 'Create your account in 30 seconds. No credit card required.',
-    icon: Users,
-    color: 'primary',
+    name: 'Michal R.',
+    role: 'Profesionální sázkaři',
+    quote: 'Edge88 úplně změnil můj přístup. AI tipy jsou neuvěřitelně přesné.',
+    stats: '+290 000 Kč',
+    winRate: '71%',
   },
   {
-    step: 2,
-    title: 'Get AI Picks',
-    description: 'Receive daily predictions with confidence scores and deep analysis.',
-    icon: Target,
-    color: 'accent',
+    name: 'Sára K.',
+    role: 'Sportovní analytička',
+    quote: 'Překvapuje mě hloubka dat, které Edge88 používá. Zachytí vzory, které bych přehlédla.',
+    stats: '+192 000 Kč',
+    winRate: '68%',
   },
   {
-    step: 3,
-    title: 'Win More',
-    description: 'Follow the picks, track results, and grow your bankroll.',
-    icon: Trophy,
-    color: 'success',
+    name: 'David L.',
+    role: 'Běžný fanoušek',
+    quote: 'Začal jsem na free plánu a rychle upgradoval. Návratnost mluví sama za sebe.',
+    stats: '+75 000 Kč',
+    winRate: '65%',
+  },
+  {
+    name: 'Jakub T.',
+    role: 'Day Trader',
+    quote: 'Na sportovní sázky používám stejný analytický přístup. Edge88 mi dává výhodu.',
+    stats: '+370 000 Kč',
+    winRate: '73%',
   },
 ];
 
 const Index = () => {
   const { data: predictions, isLoading: predictionsLoading } = useActivePredictions();
   const { data: stats } = useStats();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { subscribe, isLoading: isSubscribing } = useNewsletter();
   const [email, setEmail] = useState('');
 
@@ -146,6 +152,32 @@ const Index = () => {
   const testimonialsReveal = useScrollReveal();
   const predictionsReveal = useScrollReveal();
   const ctaReveal = useScrollReveal();
+
+  const TESTIMONIALS = language === 'cz' ? TESTIMONIALS_CZ : TESTIMONIALS_EN;
+
+  const HOW_IT_WORKS = [
+    {
+      step: 1,
+      title: t.step1Title,
+      description: t.step1Desc,
+      icon: Users,
+      color: 'primary',
+    },
+    {
+      step: 2,
+      title: t.step2Title,
+      description: t.step2Desc,
+      icon: Target,
+      color: 'accent',
+    },
+    {
+      step: 3,
+      title: t.step3Title,
+      description: t.step3Desc,
+      icon: Trophy,
+      color: 'success',
+    },
+  ];
 
   const featuredPredictions = predictions
     ?.filter((p) => p.result === 'pending')
@@ -194,22 +226,20 @@ const Index = () => {
               </div>
               <div className="h-4 w-px bg-border" />
               <span className="text-sm text-muted-foreground">
-                Trusted by <span className="font-bold text-foreground">10,000+</span> winning bettors
+                {t.trustedBy} <span className="font-bold text-foreground">10,000+</span> {t.winningBettors}
               </span>
             </div>
 
             {/* Bold headline */}
             <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-              The AI Edge That
+              {t.heroTitleLine1}
               <br />
-              <span className="gradient-text-animated">Wins Games</span>
+              <span className="gradient-text-animated">{t.heroTitleLine2}</span>
             </h1>
 
             {/* Subheadline */}
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Machine learning + deep analytics = <span className="text-foreground font-medium">73% accuracy</span>.
-              <br className="hidden sm:block" />
-              Get winning picks for NFL, NBA, NHL, MLB & more.
+              {t.heroDescription}
             </p>
 
             {/* Live stats row */}
@@ -217,17 +247,17 @@ const Index = () => {
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
                 <Activity className="h-4 w-4 text-success" />
                 <span className="font-mono font-bold text-foreground">{predictionsMadeToday}</span>
-                <span className="text-muted-foreground">picks today</span>
+                <span className="text-muted-foreground">{t.picksToday}</span>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10 border border-success/30">
                 <TrendingUp className="h-4 w-4 text-success" />
                 <span className="font-mono font-bold text-success">73%</span>
-                <span className="text-muted-foreground">accuracy</span>
+                <span className="text-muted-foreground">{t.accuracy}</span>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
                 <Flame className="h-4 w-4 text-orange-400" />
                 <span className="font-mono font-bold text-foreground">12</span>
-                <span className="text-muted-foreground">win streak</span>
+                <span className="text-muted-foreground">{t.winStreak}</span>
               </div>
             </div>
 
@@ -235,13 +265,13 @@ const Index = () => {
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/signup">
                 <Button size="lg" className="btn-cta-premium h-14 px-10 text-lg animate-pulse-glow">
-                  Start Winning Now
+                  {t.startWinningNow}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/predictions">
                 <Button variant="outline" size="lg" className="h-14 px-8 text-lg border-primary/50 hover:bg-primary/10 hover:border-primary">
-                  View Today's Picks
+                  {t.viewTodaysPicks}
                 </Button>
               </Link>
             </div>
@@ -250,17 +280,17 @@ const Index = () => {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Shield className="h-4 w-4 text-primary" />
-                <span>Bank-level security</span>
+                <span>{t.bankLevelSecurity}</span>
               </div>
               <div className="hidden sm:block h-3 w-px bg-border" />
               <div className="flex items-center gap-1.5">
                 <Zap className="h-4 w-4 text-primary" />
-                <span>No credit card needed</span>
+                <span>{t.noCreditCard}</span>
               </div>
               <div className="hidden sm:block h-3 w-px bg-border" />
               <div className="flex items-center gap-1.5">
                 <Target className="h-4 w-4 text-primary" />
-                <span>Cancel anytime</span>
+                <span>{t.cancelAnytime}</span>
               </div>
             </div>
           </div>
@@ -276,37 +306,37 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="stat-card">
               <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{accuracyCounter.count}%</div>
-              <div className="mt-1 text-sm text-muted-foreground">Weekly Accuracy</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.weeklyAccuracy}</div>
               <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
                 <TrendingUp className="h-3 w-3" />
-                <span>+5% vs last week</span>
+                <span>+5% {t.vsLastWeek}</span>
               </div>
             </div>
             
             <div className="stat-card" ref={predictionsCounter.ref}>
               <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{predictionsCounter.count}</div>
-              <div className="mt-1 text-sm text-muted-foreground">Picks This Week</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.picksThisWeek}</div>
               <div className="mt-2 flex items-center justify-center gap-1 text-xs text-primary">
                 <Zap className="h-3 w-3" />
-                <span>Updated live</span>
+                <span>{t.updatedLive}</span>
               </div>
             </div>
             
             <div className="stat-card" ref={usersCounter.ref}>
               <div className="text-3xl md:text-4xl font-mono font-black text-foreground">{usersCounter.count.toLocaleString()}+</div>
-              <div className="mt-1 text-sm text-muted-foreground">Active Analysts</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.activeAnalysts}</div>
               <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
                 <Users className="h-3 w-3" />
-                <span>Growing daily</span>
+                <span>{t.growingDaily}</span>
               </div>
             </div>
             
             <div className="stat-card">
               <div className="text-3xl md:text-4xl font-mono font-black text-success">+$2.4M</div>
-              <div className="mt-1 text-sm text-muted-foreground">User Winnings</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.userWinnings}</div>
               <div className="mt-2 flex items-center justify-center gap-1 text-xs text-success">
                 <Trophy className="h-3 w-3" />
-                <span>This month</span>
+                <span>{t.thisMonth}</span>
               </div>
             </div>
           </div>
@@ -323,13 +353,13 @@ const Index = () => {
           <div className="mx-auto max-w-2xl text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
               <Zap className="h-4 w-4" />
-              <span>How It Works</span>
+              <span>{t.howItWorks}</span>
             </div>
             <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              Start Winning in <span className="gradient-text">3 Steps</span>
+              {t.startWinningIn3Steps.split(' ').slice(0, -2).join(' ')} <span className="gradient-text">{t.startWinningIn3Steps.split(' ').slice(-2).join(' ')}</span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              From signup to your first winning pick in under 5 minutes
+              {t.fromSignupToWinning}
             </p>
           </div>
 
@@ -374,13 +404,13 @@ const Index = () => {
           <div className="mx-auto max-w-2xl text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 border border-success/30 text-sm font-medium text-success mb-4">
               <Trophy className="h-4 w-4" />
-              <span>Success Stories</span>
+              <span>{t.successStories}</span>
             </div>
             <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              Winners <span className="gradient-text">Trust Us</span>
+              {t.winnersTrustUs.split(' ')[0]} <span className="gradient-text">{t.winnersTrustUs.split(' ').slice(1).join(' ')}</span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Join the community already profiting with Edge88
+              {t.joinCommunity}
             </p>
           </div>
 
@@ -435,85 +465,78 @@ const Index = () => {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section header */}
-          <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
-                <Flame className="h-4 w-4" />
-                <span>Hot Picks</span>
-              </div>
-              <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                {t.todaysTopPicks}
-              </h2>
-              <p className="mt-2 text-lg text-muted-foreground">
-                {t.highestConfidence}
-              </p>
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
+              <Target className="h-4 w-4" />
+              <span>LIVE</span>
             </div>
-            <Link to="/predictions">
-              <Button variant="outline" className="gap-2 border-primary/50 hover:bg-primary/10 hover:border-primary">
-                {t.viewAll}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              {t.todaysTopPicks}
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              {t.highestConfidence}
+            </p>
           </div>
 
           {/* Predictions grid */}
           {predictionsLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="grid gap-6 md:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="glass-card h-64 animate-pulse" />
+              ))}
             </div>
           ) : featuredPredictions.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               {featuredPredictions.map((prediction, index) => (
-                <div
-                  key={prediction.id}
-                  style={{ 
-                    transitionDelay: `${index * 100}ms`,
-                    opacity: predictionsReveal.isRevealed ? 1 : 0,
-                    transform: predictionsReveal.isRevealed ? 'translateY(0)' : 'translateY(20px)',
-                    transition: 'all 0.5s ease'
-                  }}
-                >
-                  <PredictionCard prediction={prediction} gameNumber={index + 1} />
-                </div>
+                <PredictionCard 
+                  key={prediction.id} 
+                  prediction={prediction}
+                  gameNumber={index + 1}
+                />
               ))}
             </div>
           ) : (
-            <div className="glass-card-premium py-20 text-center">
-              <Zap className="mx-auto h-12 w-12 text-primary" />
-              <h3 className="mt-4 text-xl font-bold text-foreground">{t.noActivePredictions}</h3>
-              <p className="mt-2 text-muted-foreground">{t.checkBackSoon}</p>
+            <div className="text-center py-12 text-muted-foreground">
+              {t.noPredictions}
             </div>
           )}
 
-          {/* Newsletter Signup */}
-          <div className="mt-16 glass-card-premium p-8 md:p-10 relative overflow-hidden">
-            {/* Background glow */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px]" />
-            
-            <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-                  <Mail className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{t.getDailyPicks}</h3>
-                  <p className="text-muted-foreground">Free daily predictions delivered at 9 AM</p>
-                </div>
-              </div>
-              <form onSubmit={handleNewsletterSubmit} className="flex w-full lg:w-auto gap-3">
-                <Input
-                  type="email"
-                  placeholder={t.enterEmail}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full lg:w-80 h-12 bg-background border-border focus:border-primary"
-                  required
-                />
-                <Button type="submit" className="btn-gradient h-12 px-8" disabled={isSubscribing}>
-                  {isSubscribing ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Subscribe'}
-                </Button>
-              </form>
+          {/* View all button */}
+          <div className="mt-12 text-center">
+            <Link to="/predictions">
+              <Button size="lg" variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary">
+                {t.viewAll} {t.predictions}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 border-t border-border bg-card/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-xl text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-sm font-medium text-primary mb-4">
+              <Mail className="h-4 w-4" />
+              <span>{t.getDailyPicks}</span>
             </div>
+            <h2 className="text-2xl font-bold">{t.getDailyPicks}</h2>
+            <p className="mt-2 text-muted-foreground">{t.enterEmail}</p>
+            
+            <form onSubmit={handleNewsletterSubmit} className="mt-6 flex gap-3">
+              <Input
+                type="email"
+                placeholder={t.enterEmail}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1"
+                required
+              />
+              <Button type="submit" className="btn-gradient" disabled={isSubscribing}>
+                {isSubscribing ? '...' : t.subscribeToNewsletter}
+              </Button>
+            </form>
           </div>
         </div>
       </section>
@@ -524,57 +547,31 @@ const Index = () => {
         className={`py-20 md:py-28 transition-all duration-700 ${ctaReveal.isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="glass-card-premium p-12 md:p-20 text-center relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute top-0 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-accent/10 rounded-full blur-[80px]" />
-            
-            <div className="relative">
-              <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
-                Ready to <span className="gradient-text">Start Winning</span>?
-              </h2>
-              
-              <p className="mx-auto mt-6 max-w-lg text-lg text-muted-foreground">
-                {t.joinThousands}
-              </p>
-              
-              <div className="mt-10">
-                <Link to="/signup">
-                  <Button size="lg" className="btn-cta-premium h-14 px-12 text-lg animate-pulse-glow">
-                    {t.createFreeAccount}
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-              
-              {/* Trust indicators */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Zap className="h-4 w-4 text-primary" />
-                  </div>
-                  <span>No credit card required</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
-                    <Target className="h-4 w-4 text-success" />
-                  </div>
-                  <span>73% average accuracy</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Users className="h-4 w-4 text-primary" />
-                  </div>
-                  <span>10,000+ analysts</span>
-                </div>
-              </div>
+          <div className="glass-card-premium p-12 text-center bg-gradient-to-r from-primary/10 via-transparent to-accent/10">
+            <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              {t.readyToWin}
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
+              {t.joinWinningTeam}
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link to="/signup">
+                <Button size="lg" className="btn-cta-premium h-14 px-10 text-lg">
+                  {t.createFreeAccount}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/predictions">
+                <Button variant="outline" size="lg" className="h-14 px-8">
+                  {t.viewPredictions}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       <Footer />
-      <MobileNav />
     </div>
   );
 };
