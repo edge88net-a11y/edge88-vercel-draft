@@ -58,6 +58,56 @@ export type Database = {
           },
         ]
       }
+      accuracy_tracking: {
+        Row: {
+          actual_winner: string | null
+          confidence_at_prediction: number | null
+          created_at: string | null
+          factors_used: Json | null
+          id: string
+          league: string | null
+          model_version: string | null
+          predicted_winner: string | null
+          prediction_id: string | null
+          sport: string | null
+          was_correct: boolean | null
+        }
+        Insert: {
+          actual_winner?: string | null
+          confidence_at_prediction?: number | null
+          created_at?: string | null
+          factors_used?: Json | null
+          id?: string
+          league?: string | null
+          model_version?: string | null
+          predicted_winner?: string | null
+          prediction_id?: string | null
+          sport?: string | null
+          was_correct?: boolean | null
+        }
+        Update: {
+          actual_winner?: string | null
+          confidence_at_prediction?: number | null
+          created_at?: string | null
+          factors_used?: Json | null
+          id?: string
+          league?: string | null
+          model_version?: string | null
+          predicted_winner?: string | null
+          prediction_id?: string | null
+          sport?: string | null
+          was_correct?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accuracy_tracking_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: true
+            referencedRelation: "predictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comment_votes: {
         Row: {
           comment_id: string

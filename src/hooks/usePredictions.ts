@@ -3,12 +3,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef } from 'react';
 
-// Use Supabase edge function as proxy to avoid CORS
-const SUPABASE_URL = 'https://rbgfovckilwzzgitxjeh.supabase.co';
-const PROXY_URL = `${SUPABASE_URL}/functions/v1/predictions-proxy`;
-
-// Fallback to direct API for testing
+// Direct API - no proxy needed
 const API_BASE_URL = 'https://api.edge88.net/api/v1';
+const FETCH_TIMEOUT_MS = 10000; // 10 second timeout
+
+// Helper for fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 // Bookmaker odds interface
 export interface BookmakerOdds {
@@ -211,7 +224,7 @@ function extractPredictionsArray(data: unknown): APIPrediction[] {
   return rawArray.map((item) => transformPrediction(item as Record<string, unknown>));
 }
 
-// Fetch active predictions from API with detailed data
+// Fetch active predictions from API with detailed data - DIRECT API ONLY
 export function useActivePredictions() {
   const { toast } = useToast();
   const previousCount = useRef<number>(0);
@@ -220,77 +233,54 @@ export function useActivePredictions() {
   const query = useQuery({
     queryKey: ['predictions', 'active', 'detailed'],
     queryFn: async (): Promise<APIPrediction[]> => {
-      console.log('[usePredictions] Fetching predictions...');
+      console.log('[usePredictions] Fetching predictions from direct API...');
       
-      // Try the proxy first
       try {
-        const proxyResponse = await fetch(`${PROXY_URL}?endpoint=predictions/active&params=include_details=true&limit=50`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await fetchWithTimeout(
+          `${API_BASE_URL}/predictions/active?include_details=true&limit=50`
+        );
         
-        if (proxyResponse.ok) {
-          const proxyData = await proxyResponse.json();
-          console.log('[usePredictions] Proxy response:', proxyData);
-          
-          // Check if API returned maintenance mode
-          if (proxyData.maintenance || !proxyData.success) {
-            console.log('[usePredictions] API in maintenance mode');
-            throw new MaintenanceError('Prediction engine is updating');
-          }
-          
-          const predictions = extractPredictionsArray(proxyData.predictions || proxyData.data || proxyData);
-          if (predictions.length > 0) {
-            console.log(`[usePredictions] Got ${predictions.length} predictions from proxy`);
-            toastShownRef.current = false; // Reset toast flag on success
-            return predictions;
-          }
-        } else if (proxyResponse.status === 503) {
-          console.log('[usePredictions] Proxy returned 503 - maintenance mode');
+        if (response.status === 503) {
           throw new MaintenanceError('Prediction engine is updating');
         }
-      } catch (proxyError) {
-        if (proxyError instanceof MaintenanceError) {
-          throw proxyError;
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
         }
-        console.warn('[usePredictions] Proxy failed:', proxyError);
-      }
-      
-      // Try direct API as backup
-      try {
-        console.log('[usePredictions] Trying direct API...');
-        const response = await fetch(`${API_BASE_URL}/predictions/active?include_details=true&limit=50`);
-        if (response.ok) {
-          const data = await response.json();
-          const predictions = extractPredictionsArray(data);
-          if (predictions.length > 0) {
-            console.log(`[usePredictions] Got ${predictions.length} predictions from direct API`);
-            toastShownRef.current = false;
-            return predictions;
-          }
+        
+        const data = await response.json();
+        const predictions = extractPredictionsArray(data);
+        
+        if (predictions.length > 0) {
+          console.log(`[usePredictions] Got ${predictions.length} predictions`);
+          toastShownRef.current = false;
+          return predictions;
         }
-      } catch (directError) {
-        console.warn('[usePredictions] Direct API failed:', directError);
+        
+        // Empty response - maintenance mode
+        throw new MaintenanceError('No predictions available');
+      } catch (error) {
+        if (error instanceof MaintenanceError) {
+          throw error;
+        }
+        
+        // Network error or timeout
+        console.warn('[usePredictions] API error:', error);
+        
+        if (!toastShownRef.current) {
+          toast({
+            title: "⚙️ Connecting to prediction engine...",
+            description: "Our AI is crunching the latest data. Auto-retrying...",
+            variant: "default",
+          });
+          toastShownRef.current = true;
+        }
+        
+        throw new MaintenanceError('Prediction engine is currently processing data');
       }
-      
-      // No data available - throw maintenance error
-      console.log('[usePredictions] No data available - entering maintenance mode');
-      
-      // Show toast only once
-      if (!toastShownRef.current) {
-        toast({
-          title: "⚙️ Connecting to prediction engine...",
-          description: "Our AI is crunching the latest data. Auto-retrying...",
-          variant: "default",
-        });
-        toastShownRef.current = true;
-      }
-      
-      throw new MaintenanceError('Prediction engine is currently processing data');
     },
     staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000, // Auto-retry every 30 seconds
+    refetchInterval: 30 * 1000,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
@@ -310,7 +300,6 @@ export function useActivePredictions() {
     }
   }, [query.data, toast]);
 
-  // Check if error is maintenance mode
   const isMaintenanceMode = query.error instanceof MaintenanceError;
 
   return {
@@ -349,65 +338,42 @@ function extractStats(data: unknown): APIStats | null {
   return null;
 }
 
-// Fetch stats from API directly
+// Fetch stats from API directly - NO PROXY
 export function useStats() {
-  const toastShownRef = useRef<boolean>(false);
-  
   const query = useQuery({
     queryKey: ['predictions', 'stats'],
     queryFn: async (): Promise<APIStats> => {
-      console.log('[useStats] Fetching stats...');
+      console.log('[useStats] Fetching stats from direct API...');
       
-      // Try proxy first
       try {
-        const proxyResponse = await fetch(`${PROXY_URL}?endpoint=predictions/stats`, {
-          headers: { 'Content-Type': 'application/json' },
-        });
+        const response = await fetchWithTimeout(`${API_BASE_URL}/predictions/stats`);
         
-        if (proxyResponse.ok) {
-          const proxyData = await proxyResponse.json();
-          console.log('[useStats] Proxy response:', proxyData);
-          
-          if (proxyData.maintenance || !proxyData.success) {
-            throw new MaintenanceError('Stats engine is updating');
-          }
-          
-          const stats = extractStats(proxyData.data || proxyData);
-          if (stats) {
-            toastShownRef.current = false;
-            return stats;
-          }
-        } else if (proxyResponse.status === 503) {
+        if (response.status === 503) {
           throw new MaintenanceError('Stats engine is updating');
         }
-      } catch (proxyError) {
-        if (proxyError instanceof MaintenanceError) {
-          throw proxyError;
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
         }
-        console.warn('[useStats] Proxy failed:', proxyError);
-      }
-      
-      // Try direct API
-      try {
-        const response = await fetch(`${API_BASE_URL}/predictions/stats`);
-        if (response.ok) {
-          const data = await response.json();
-          const stats = extractStats(data);
-          if (stats) {
-            toastShownRef.current = false;
-            return stats;
-          }
+        
+        const data = await response.json();
+        const stats = extractStats(data);
+        
+        if (stats) {
+          return stats;
         }
-      } catch (directError) {
-        console.warn('[useStats] Direct API failed:', directError);
+        
+        throw new MaintenanceError('No stats available');
+      } catch (error) {
+        if (error instanceof MaintenanceError) {
+          throw error;
+        }
+        console.warn('[useStats] API error:', error);
+        throw new MaintenanceError('Stats engine is currently processing data');
       }
-      
-      // No stats available - throw maintenance error
-      console.log('[useStats] No data available - entering maintenance mode');
-      throw new MaintenanceError('Stats engine is currently processing data');
     },
     staleTime: 60 * 1000,
-    refetchInterval: 30 * 1000, // Auto-retry every 30 seconds
+    refetchInterval: 30 * 1000,
     retry: 3,
   });
 
