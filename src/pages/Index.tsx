@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, TrendingUp, Target, Users, Mail, Star, Activity, Trophy, Flame, Shield } from 'lucide-react';
+import { ArrowRight, Zap, TrendingUp, Target, Users, Mail, Star, Activity, Trophy, Flame, Shield, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { LiveTicker } from '@/components/LiveTicker';
 import { PredictionCard } from '@/components/PredictionCard';
+import { MoneyCalculator } from '@/components/MoneyCalculator';
+import { AffiliateCasinos } from '@/components/AffiliateCasinos';
+import { WinStreakBadge } from '@/components/WinStreakBadge';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useNewsletter } from '@/hooks/useNewsletter';
+import { useWinStreak } from '@/hooks/useWinStreak';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HeroMeshBackground } from '@/components/HeroMeshBackground';
 import { FloatingPredictionCards } from '@/components/FloatingPredictionCards';
@@ -142,7 +147,9 @@ const Index = () => {
   const { data: stats } = useStats();
   const { t, language } = useLanguage();
   const { subscribe, isLoading: isSubscribing } = useNewsletter();
+  const { winStreak } = useWinStreak();
   const [email, setEmail] = useState('');
+  const [wantNotifications, setWantNotifications] = useState(true);
 
   // Animated counters
   const accuracyCounter = useAnimatedCounter(73, 2000);
@@ -262,11 +269,7 @@ const Index = () => {
                 <span className="font-mono font-bold text-success">73%</span>
                 <span className="text-muted-foreground">{t.accuracy}</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
-                <Flame className="h-4 w-4 text-orange-400" />
-                <span className="font-mono font-bold text-foreground">12</span>
-                <span className="text-muted-foreground">{t.winStreak}</span>
-              </div>
+              <WinStreakBadge />
             </div>
 
             {/* CTA buttons */}
@@ -578,6 +581,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Affiliate Casinos */}
+      <AffiliateCasinos />
 
       <Footer />
     </div>

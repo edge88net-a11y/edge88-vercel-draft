@@ -108,6 +108,27 @@ export type Database = {
           },
         ]
       }
+      affiliate_clicks: {
+        Row: {
+          casino_name: string
+          clicked_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          casino_name: string
+          clicked_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          casino_name?: string
+          clicked_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       comment_votes: {
         Row: {
           comment_id: string
@@ -1093,6 +1114,39 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string | null
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          status: string | null
+          tips_earned: number | null
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          status?: string | null
+          tips_earned?: number | null
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          status?: string | null
+          tips_earned?: number | null
+        }
+        Relationships: []
+      }
       research: {
         Row: {
           content: string
@@ -1340,11 +1394,36 @@ export type Database = {
         }
         Relationships: []
       }
+      win_streaks: {
+        Row: {
+          best_streak_all_time: number | null
+          best_streak_month: number | null
+          current_streak: number | null
+          id: string
+          last_updated: string | null
+        }
+        Insert: {
+          best_streak_all_time?: number | null
+          best_streak_month?: number | null
+          current_streak?: number | null
+          id?: string
+          last_updated?: string | null
+        }
+        Update: {
+          best_streak_all_time?: number | null
+          best_streak_month?: number | null
+          current_streak?: number | null
+          id?: string
+          last_updated?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_referral_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
