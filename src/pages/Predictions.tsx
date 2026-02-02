@@ -344,6 +344,86 @@ const Predictions = () => {
         </div>
       </div>
 
+      {/* Quick Filters - NEW */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          onClick={() => {
+            setSortBy('confidence');
+            setSortOrder('desc');
+            setSelectedConfidence('🔥 High 65%+');
+          }}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+            sortBy === 'confidence' && selectedConfidence === '🔥 High 65%+' 
+              ? "bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20" 
+              : "bg-muted text-foreground hover:bg-cyan-500/10 hover:text-cyan-400"
+          )}
+        >
+          <Flame className="h-3.5 w-3.5" />
+          {language === 'cz' ? 'Top Picks' : 'Top Picks'}
+        </button>
+        <button
+          onClick={() => setSelectedTime('live')}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+            selectedTime === 'live' 
+              ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20 animate-pulse" 
+              : "bg-muted text-foreground hover:bg-red-500/10 hover:text-red-400"
+          )}
+        >
+          <Zap className="h-3.5 w-3.5" />
+          {language === 'cz' ? 'Živě' : 'Live'}
+        </button>
+        <button
+          onClick={() => setSelectedTime('today')}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+            selectedTime === 'today' 
+              ? "bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20" 
+              : "bg-muted text-foreground hover:bg-cyan-500/10 hover:text-cyan-400"
+          )}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          {language === 'cz' ? 'Dnes' : 'Today'}
+        </button>
+        <button
+          onClick={() => setSelectedTime('tomorrow')}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+            selectedTime === 'tomorrow' 
+              ? "bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20" 
+              : "bg-muted text-foreground hover:bg-cyan-500/10 hover:text-cyan-400"
+          )}
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          {language === 'cz' ? 'Zítra' : 'Tomorrow'}
+        </button>
+        <button
+          onClick={() => setSelectedTime('week')}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all",
+            selectedTime === 'week' 
+              ? "bg-cyan-500/20 text-cyan-400 ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20" 
+              : "bg-muted text-foreground hover:bg-cyan-500/10 hover:text-cyan-400"
+          )}
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          {language === 'cz' ? 'Tento týden' : 'This Week'}
+        </button>
+        <button
+          onClick={() => {
+            setSelectedTime('all');
+            setSelectedSport('All');
+            setSelectedConfidence('All');
+            setSelectedType('All');
+            setSearchQuery('');
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-muted text-foreground hover:bg-muted/80"
+        >
+          {language === 'cz' ? 'Resetovat' : 'Reset'}
+        </button>
+      </div>
+
       {/* Search & Sort Bar */}
       <div className="mb-4 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">

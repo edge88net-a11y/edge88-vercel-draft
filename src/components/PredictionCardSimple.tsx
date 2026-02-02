@@ -412,12 +412,26 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
         </div>
       </div>
       
-      {/* Teaser + Followers */}
-      <div className="px-4 pb-4 flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground flex-1 truncate">
-          💡 "{teaser}"
-        </p>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+      {/* AI Analysis Preview OR Teaser */}
+      <div className="px-4 pb-4 space-y-2">
+        {prediction.ai_analysis ? (
+          <div>
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              {prediction.ai_analysis}
+            </p>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(`/predictions/${prediction.id}`); }}
+              className="text-xs text-primary hover:text-primary/80 font-medium mt-1"
+            >
+              {language === 'cz' ? 'Zobrazit více →' : 'Show more →'}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground flex-1 truncate">
+            💡 "{teaser}"
+          </p>
+        )}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Eye className="h-3 w-3" />
           <span>{followerCount} {language === 'cz' ? 'sleduje' : ''}</span>
         </div>
