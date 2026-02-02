@@ -1,11 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, PieChart, Flame } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PredictionCard } from '@/components/PredictionCard';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
-import { AccuracyChart } from '@/components/charts/AccuracyChart';
-import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
-import { SportDistributionChart } from '@/components/charts/SportDistributionChart';
 import { TonightsGames } from '@/components/TonightsGames';
 import { MaintenanceState } from '@/components/MaintenanceState';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
@@ -18,6 +15,7 @@ import { HeroNextGame } from '@/components/dashboard/HeroNextGame';
 import { HotPicksCarousel } from '@/components/dashboard/HotPicksCarousel';
 import { BettingSlipWidget } from '@/components/dashboard/BettingSlipWidget';
 import { StreakSportWidget } from '@/components/dashboard/StreakSportWidget';
+import { RecentResultsWidget } from '@/components/dashboard/RecentResultsWidget';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
@@ -70,24 +68,9 @@ export default function DashboardPage() {
   }, [predictions]);
 
   const activePredictions = deduplicatedPredictions.filter((p) => p.result === 'pending').slice(0, 6);
-  const recentResults = deduplicatedPredictions.filter((p) => p.result !== 'pending').slice(0, 5);
 
   const isLoading = authLoading || (predictionsLoading && !isMaintenanceMode);
   const showMaintenanceState = isMaintenanceMode || statsMaintenanceMode;
-
-  // Calculate sport distribution for donut chart
-  const sportDistribution = deduplicatedPredictions?.reduce((acc, pred) => {
-    const sport = pred.sport?.includes('-') 
-      ? getSportFromTeams(pred.homeTeam, pred.awayTeam)
-      : pred.sport || 'Other';
-    const existing = acc.find(s => s.sport === sport);
-    if (existing) {
-      existing.count++;
-    } else {
-      acc.push({ sport, count: 1 });
-    }
-    return acc;
-  }, [] as { sport: string; count: number }[]) || [];
 
   // Show onboarding flow if needed
   if (showOnboarding && user && profile) {
@@ -244,6 +227,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Recent Results Section */}
+          <RecentResultsWidget predictions={deduplicatedPredictions} />
+
           {/* Tonight's Games Section */}
           <div className="mb-8">
             <TonightsGames predictions={predictions || []} />
@@ -301,98 +287,8 @@ export default function DashboardPage() {
               {/* Telegram Widget */}
               <TelegramWidget />
 
-              {/* Win Streak */}
-              <div className="glass-card overflow-hidden animate-fade-in">
-                <div className="border-b border-border p-3 sm:p-4">
-                  <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-orange-400" />
-                    {t.currentStreak}
-                  </h3>
-                </div>
-                <div className="p-4 sm:p-6 text-center">
-                  <div className="mb-2 text-4xl sm:text-5xl">🔥</div>
-                  <div className="font-mono text-3xl sm:text-4xl font-bold text-success">
-                    {stats?.winStreak ?? 0} {t.wins}
-                  </div>
-                  <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground">{t.keepItGoing}</p>
-                </div>
-              </div>
-
-              {/* Sport Breakdown */}
-              <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '100ms' }}>
-                <div className="border-b border-border p-3 sm:p-4">
-                  <h3 className="font-semibold text-sm sm:text-base">{t.accuracyBySport}</h3>
-                </div>
-                <div className="p-3 sm:p-4">
-                  <div className="space-y-2.5 sm:space-y-3">
-                    {(stats?.bySport || []).slice(0, 5).map((sport, index) => {
-                      return (
-                        <div 
-                          key={sport.sport} 
-                          className="flex items-center gap-2 sm:gap-3 animate-fade-in"
-                          style={{ animationDelay: `${(index + 1) * 100}ms` }}
-                        >
-                          <span className="text-lg sm:text-xl shrink-0">{getSportEmoji(sport.sport)}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
-                              <span className="font-medium truncate">{sport.sport}</span>
-                              <span className="font-mono text-muted-foreground shrink-0">
-                                {sport.accuracy.toFixed(1)}%
-                              </span>
-                            </div>
-                            <div className="mt-1 h-1.5 sm:h-2 overflow-hidden rounded-full bg-muted">
-                              <div
-                                className={cn(
-                                  'h-full rounded-full transition-all duration-1000 ease-out',
-                                  sport.accuracy >= 65 ? 'bg-success' : sport.accuracy >= 55 ? 'bg-yellow-400' : 'bg-orange-400'
-                                )}
-                                style={{ 
-                                  width: `${sport.accuracy}%`,
-                                  animation: 'grow-width 1s ease-out forwards'
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Results */}
-              <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
-                <div className="border-b border-border p-3 sm:p-4">
-                  <h3 className="font-semibold text-sm sm:text-base">{t.recentResults}</h3>
-                </div>
-                <div className="divide-y divide-border">
-                  {recentResults.length > 0 ? (
-                    recentResults.map((prediction) => (
-                      <div key={prediction.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3">
-                        <div className={cn(
-                          'flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs sm:text-sm shrink-0',
-                          prediction.result === 'win' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
-                        )}>
-                          {prediction.result === 'win' ? '✓' : '✗'}
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0 text-sm">
-                          <span>{getSportEmoji(prediction.sport)}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">
-                            {prediction.awayTeam} @ {prediction.homeTeam}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground truncate">{prediction.prediction.pick}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-xs sm:text-sm text-muted-foreground">
-                      {t.noResults}
-                    </div>
-                  )}
-                </div>
-              </div>
+              {/* Telegram Widget */}
+              <TelegramWidget />
             </div>
           </div>
         </>
