@@ -11,9 +11,11 @@ import { ConfidenceMeter } from '@/components/ConfidenceMeter';
 import { APIPrediction } from '@/hooks/usePredictions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
+import { useBettingSlip } from '@/hooks/useBettingSlip';
 import { differenceInHours, differenceInMinutes, format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import confetti from 'canvas-confetti';
+import { translateSport, translatePredictionType, partialTranslateAnalysis, getCzechSummary } from '@/lib/translate';
 
 interface PredictionCardSimpleProps {
   prediction: APIPrediction;
@@ -51,6 +53,7 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { isPicked, togglePick } = useSavedPicks();
+  const { addToSlip, isInSlip } = useBettingSlip();
   const { toast } = useToast();
   const [showActions, setShowActions] = useState(false);
   
@@ -121,10 +124,17 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
   const bestOdds = prediction.bookmakerOdds?.[0]?.odds || prediction.prediction.odds;
   const potentialProfit = calculateProfit(bestOdds, defaultBet);
 
-  // Get EV value
-  const expectedValue = typeof prediction.expectedValue === 'string' 
+  // Get EV value - calculate if not provided
+  let expectedValue = typeof prediction.expectedValue === 'string' 
     ? parseFloat(prediction.expectedValue) 
-    : prediction.expectedValue || 0;
+    : (prediction.expectedValue || 0);
+  
+  // If EV is 0 or not set, calculate it
+  if (expectedValue === 0) {
+    const decimalOdds = toDecimalOdds(bestOdds);
+    const winProb = confidencePercent / 100;
+    expectedValue = (winProb * (decimalOdds - 1) - (1 - winProb)) * 100;
+  }
   
   const teaser = generateTeaser(prediction, language);
   
@@ -153,15 +163,22 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
 
   const handleAddToSlip = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isSaved) {
-      togglePick(prediction);
-      confetti({
-        particleCount: 20,
-        spread: 40,
-        origin: { y: 0.8 },
-        colors: ['#06b6d4', '#22c55e'],
+    
+    if (isInSlip(prediction.id)) {
+      toast({
+        title: language === 'cz' ? 'Již na tiketu' : 'Already on slip',
+        description: language === 'cz' ? 'Tento tip už je na vašem tiketu' : 'This pick is already on your slip',
       });
+      return;
     }
+    
+    addToSlip(prediction);
+    confetti({
+      particleCount: 20,
+      spread: 40,
+      origin: { y: 0.8 },
+      colors: ['#06b6d4', '#22c55e'],
+    });
     toast({
       title: language === 'cz' ? '📌 Přidáno na tiket!' : '📌 Added to slip!',
       description: prediction.prediction.pick,
@@ -209,7 +226,7 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
           <TierBadge tier={predictionTier} />
           <span className="text-xl">{getSportEmoji(sportName, prediction.homeTeam, prediction.awayTeam)}</span>
           <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded truncate max-w-[80px]">
-            {sportName}
+            {translateSport(sportName, language)}
           </span>
         </div>
         
@@ -353,10 +370,10 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
         <div className="flex flex-col items-center gap-1 pl-4 border-l border-border shrink-0">
           <ConfidenceMeter value={confidencePercent} size="md" />
           <span className={cn(
-            'font-mono text-2xl font-black',
-            confidencePercent >= 70 ? 'text-success stat-glow-green' : 
-            confidencePercent >= 55 ? 'text-amber-400 stat-glow-gold' : 
-            'text-muted-foreground'
+            'font-mono text-2xl font-black drop-shadow-lg',
+            confidencePercent >= 70 ? 'text-success' : 
+            confidencePercent >= 55 ? 'text-amber-400' : 
+            'text-foreground'
           )}>
             {confidencePercent}%
           </span>
@@ -380,7 +397,7 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary stat-glow-cyan">
-              {prediction.prediction.type}
+              {translatePredictionType(prediction.prediction.type, language)}
             </span>
             <BarChart3 className="h-3 w-3 text-primary" />
           </div>
@@ -416,8 +433,13 @@ export function PredictionCardSimple({ prediction, isLocked = false, gameNumber 
       <div className="px-4 pb-4 space-y-2">
         {prediction.ai_analysis ? (
           <div>
+            {language === 'cz' && (
+              <p className="text-xs font-semibold text-primary mb-1">
+                {getCzechSummary(prediction)}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-              {prediction.ai_analysis}
+              {language === 'cz' ? partialTranslateAnalysis(prediction.ai_analysis, 'cz') : prediction.ai_analysis}
             </p>
             <button
               onClick={(e) => { e.stopPropagation(); navigate(`/predictions/${prediction.id}`); }}

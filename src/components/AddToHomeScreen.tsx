@@ -47,12 +47,13 @@ export function AddToHomeScreen() {
 
   return (
     <div className="fixed bottom-20 md:bottom-6 left-4 right-4 z-50 animate-in slide-in-from-bottom-4">
-      <div className="max-w-md mx-auto rounded-2xl bg-card border border-primary/30 shadow-2xl shadow-primary/20 p-4">
+      <div className="max-w-md mx-auto rounded-2xl bg-card border border-primary/30 shadow-2xl shadow-primary/20 p-4 relative">
         <button
           onClick={handleDismiss}
-          className="absolute top-3 right-3 p-1 rounded-lg hover:bg-muted transition-colors"
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+          aria-label="Close"
         >
-          <X className="h-4 w-4 text-muted-foreground" />
+          <X className="h-3.5 w-3.5 text-foreground" />
         </button>
 
         <div className="flex items-start gap-3">
