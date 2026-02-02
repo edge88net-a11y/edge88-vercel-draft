@@ -21,6 +21,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUser, canAccessTier } from '@/lib/adminAccess';
 import { differenceInHours, differenceInMinutes } from 'date-fns';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { ConfidenceRing } from '@/components/ui/ConfidenceRing';
+import { CountdownTimer } from '@/components/ui/CountdownTimer';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 
 interface PredictionCardProps {
   prediction: APIPrediction;
