@@ -1,97 +1,97 @@
-import { useActivePredictions, useStats } from '@/hooks/usePredictions';
-import { getSportEmoji } from '@/lib/sportEmoji';
-import { normalizeConfidence } from '@/lib/confidenceUtils';
-import { useWinStreak } from '@/hooks/useWinStreak';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useEffect, useState } from 'react';
+import { TrendingUp, TrendingDown, Activity, Target } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useStats } from '@/hooks/usePredictions';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 export function LiveStatsTicker() {
-  const { data: predictions } = useActivePredictions();
   const { data: stats } = useStats();
-  const { winStreak } = useWinStreak();
-  const { language } = useLanguage();
+  const [ticker, setTicker] = useState(0);
 
-  // Build ticker items from real data
-  const tickerItems: { emoji: string; text: string; value: string }[] = [];
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTicker((prev) => (prev + 1) % 4);
+    }, 5000);
 
-  // Add top predictions
-  if (predictions?.length) {
-    const topPredictions = predictions
-      .filter(p => p.result === 'pending')
-      .sort((a, b) => {
-        const confA = normalizeConfidence(a.confidence);
-        const confB = normalizeConfidence(b.confidence);
-        return confB - confA;
-      })
-      .slice(0, 5);
+    return () => clearInterval(interval);
+  }, []);
 
-    topPredictions.forEach(p => {
-      const conf = normalizeConfidence(p.confidence);
-      const emoji = getSportEmoji(p.sport, p.homeTeam, p.awayTeam);
-      tickerItems.push({
-        emoji,
-        text: p.prediction.pick,
-        value: `${conf}%`
-      });
-    });
-  }
+  if (!stats) return null;
 
-  // Add streak and accuracy
-  if (winStreak?.currentStreak && winStreak.currentStreak > 0) {
-    tickerItems.push({
-      emoji: '🔥',
-      text: language === 'cz' ? 'Série' : 'Streak',
-      value: `${winStreak.currentStreak} ${language === 'cz' ? 'výher' : 'wins'}`
-    });
-  }
+  const items = [
+    {
+      icon: Target,
+      label: 'Accuracy',
+      value: stats.accuracy,
+      suffix: '%',
+      color: 'text-success',
+      bgColor: 'bg-success/10',
+    },
+    {
+      icon: Activity,
+      label: 'Active Picks',
+      value: stats.activePredictions,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    {
+      icon: stats.roi >= 0 ? TrendingUp : TrendingDown,
+      label: 'ROI',
+      value: stats.roi,
+      suffix: '%',
+      prefix: stats.roi >= 0 ? '+' : '',
+      color: stats.roi >= 0 ? 'text-success' : 'text-destructive',
+      bgColor: stats.roi >= 0 ? 'bg-success/10' : 'bg-destructive/10',
+    },
+    {
+      icon: Activity,
+      label: 'Win Streak',
+      value: stats.winStreak,
+      color: stats.winStreak >= 5 ? 'text-orange-500' : 'text-muted-foreground',
+      bgColor: stats.winStreak >= 5 ? 'bg-orange-500/10' : 'bg-muted/10',
+    },
+  ];
 
-  if (stats?.accuracy) {
-    tickerItems.push({
-      emoji: '📊',
-      text: language === 'cz' ? 'Přesnost' : 'Accuracy',
-      value: `${stats.accuracy}%`
-    });
-  }
-
-  // Fallback items if no data
-  if (tickerItems.length === 0) {
-    return null;
-  }
-
-  // Duplicate for seamless scroll
-  const duplicatedItems = [...tickerItems, ...tickerItems, ...tickerItems];
+  const currentItem = items[ticker];
+  const Icon = currentItem.icon;
 
   return (
-    <div className="relative h-8 overflow-hidden bg-gradient-to-r from-[hsl(230,25%,6%)] via-[hsl(230,20%,8%)] to-[hsl(230,25%,6%)] border-b border-white/[0.03]">
-      {/* Fade edges */}
-      <div className="absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-[hsl(230,25%,5%)] to-transparent" />
-      <div className="absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-[hsl(230,25%,5%)] to-transparent" />
-
-      {/* Scrolling ticker */}
-      <div 
-        className="flex items-center h-full whitespace-nowrap"
-        style={{
-          animation: `stats-ticker ${tickerItems.length * 5}s linear infinite`,
-        }}
-      >
-        {duplicatedItems.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-2 px-6"
-          >
-            <span className="text-sm">{item.emoji}</span>
-            <span className="text-xs text-[#e6edf3]/60">{item.text}</span>
-            <span className="text-xs font-semibold text-cyan-400">{item.value}</span>
-            <span className="text-[#e6edf3]/20 ml-4">•</span>
+    <div className="hidden lg:block fixed top-20 right-6 z-30">
+      <div className="glass-card border-primary/20 px-4 py-3 min-w-[200px] animate-in slide-in-from-right">
+        <div className="flex items-center gap-3">
+          <div className={cn('p-2 rounded-lg', currentItem.bgColor)}>
+            <Icon className={cn('h-4 w-4', currentItem.color)} />
           </div>
-        ))}
-      </div>
 
-      <style>{`
-        @keyframes stats-ticker {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-33.333%); }
-        }
-      `}</style>
+          <div className="flex-1">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              {currentItem.label}
+            </div>
+            <div className={cn('font-mono text-lg font-black', currentItem.color)}>
+              <AnimatedNumber
+                value={currentItem.value}
+                decimals={currentItem.suffix === '%' ? 1 : 0}
+                prefix={currentItem.prefix}
+                suffix={currentItem.suffix}
+                duration={800}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Progress dots */}
+        <div className="flex gap-1 mt-2">
+          {items.map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                'h-1 flex-1 rounded-full transition-all duration-300',
+                i === ticker ? 'bg-primary' : 'bg-muted'
+              )}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

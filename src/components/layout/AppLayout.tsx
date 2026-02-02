@@ -7,6 +7,7 @@ import { AppTopBar } from './AppTopBar';
 import { MobileNav } from '@/components/MobileNav';
 import { SocialProofToast } from '@/components/SocialProofToast';
 import { SocialProofLive } from '@/components/SocialProofLive';
+import { LiveStatsTicker } from '@/components/LiveStatsTicker';
 import { MobileTabBar } from '@/components/MobileTabBar';
 import { BettingSlipFloating } from '@/components/BettingSlipFloating';
 import { AddToHomeScreen } from '@/components/AddToHomeScreen';
@@ -117,6 +118,9 @@ export function AppLayout() {
 
       {/* Social Proof Live - NEW */}
       <SocialProofLive />
+
+      {/* Live Stats Ticker - NEW */}
+      <LiveStatsTicker />
 
       {/* PWA Install Banner */}
       <AddToHomeScreen />
