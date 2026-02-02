@@ -14,6 +14,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { isAdminUser, hasFullAccess } from '@/lib/adminAccess';
+import { motion } from 'framer-motion';
+import { LiveBadge } from '@/components/ui/LiveBadge';
+import { HotPickIndicator } from '@/components/ui/HotPickIndicator';
 
 const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'UFC'];
 const confidenceLevels = [
