@@ -8,6 +8,7 @@ import { MobileNav } from '@/components/MobileNav';
 import { SocialProofToast } from '@/components/SocialProofToast';
 import { AddToHomeScreen } from '@/components/AddToHomeScreen';
 import { NotificationPermission } from '@/components/NotificationPermission';
+import { PageTransition } from '@/components/PageTransition';
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
@@ -92,7 +93,9 @@ export function AppLayout() {
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 pb-24 md:pb-8">
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </div>
         </main>
       </div>
