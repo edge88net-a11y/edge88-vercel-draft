@@ -39,11 +39,11 @@ export default function InvitePage() {
           return;
         }
 
-        // Get referrer's display name
+        // Get referrer's display name from user_profiles (id = user_id)
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('display_name')
-          .eq('user_id', referral.referrer_user_id)
+          .eq('id', referral.referrer_user_id)
           .maybeSingle();
 
         setReferrerName(profile?.display_name || 'A friend');

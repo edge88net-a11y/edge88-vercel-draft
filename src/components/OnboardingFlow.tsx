@@ -81,17 +81,11 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          favorite_sports: selectedSports,
-          odds_format: oddsFormat,
-          notifications_enabled: notificationsEnabled,
-          onboarding_completed: true,
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      // Store preferences in localStorage since user_profiles doesn't have these columns
+      localStorage.setItem('favorite_sports', JSON.stringify(selectedSports));
+      localStorage.setItem('odds_format', oddsFormat);
+      localStorage.setItem('notifications_enabled', String(notificationsEnabled));
+      localStorage.setItem('onboarding_completed', 'true');
 
       toast({
         title: language === 'cz' ? '🎉 Vítejte v Edge88!' : '🎉 Welcome to Edge88!',

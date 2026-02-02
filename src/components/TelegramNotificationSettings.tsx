@@ -64,26 +64,17 @@ export function TelegramNotificationSettings() {
   const canAccessTelegram = tier === 'pro' || tier === 'elite' || isAdmin;
   const canAccessDiscord = tier === 'elite' || isAdmin;
 
-  // Load preferences from Supabase
+  // Load preferences from localStorage (since user_profiles doesn't have these columns)
   useEffect(() => {
-    const loadPreferences = async () => {
-      if (!user?.id) return;
-
+    const loadPreferences = () => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('notifications_enabled, favorite_sports')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (data) {
-          // Try to get full notification preferences from a JSONB column if available
-          // Otherwise use basic fields
-          setPreferences({
-            ...DEFAULT_PREFERENCES,
-            telegram_sports: data.favorite_sports || DEFAULT_PREFERENCES.telegram_sports,
-          });
-        }
+        const savedSports = localStorage.getItem('favorite_sports');
+        const sports = savedSports ? JSON.parse(savedSports) : DEFAULT_PREFERENCES.telegram_sports;
+        
+        setPreferences({
+          ...DEFAULT_PREFERENCES,
+          telegram_sports: sports,
+        });
       } catch (error) {
         console.error('Error loading preferences:', error);
       } finally {
@@ -92,23 +83,14 @@ export function TelegramNotificationSettings() {
     };
 
     loadPreferences();
-  }, [user?.id]);
+  }, []);
 
-  // Save preferences
+  // Save preferences to localStorage
   const savePreferences = async () => {
-    if (!user?.id) return;
-
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          favorite_sports: preferences.telegram_sports,
-          notifications_enabled: preferences.telegram_new_predictions || preferences.telegram_results,
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      localStorage.setItem('favorite_sports', JSON.stringify(preferences.telegram_sports));
+      localStorage.setItem('notifications_enabled', String(preferences.telegram_new_predictions || preferences.telegram_results));
 
       toast({
         title: language === 'cz' ? 'Uloženo' : 'Saved',

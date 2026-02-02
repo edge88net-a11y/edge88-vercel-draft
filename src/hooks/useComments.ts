@@ -43,12 +43,21 @@ export function useComments(predictionId: string) {
 
       if (commentsError) throw commentsError;
 
-      // Fetch user profiles for display names
+      // Fetch user profiles for display names (user_profiles uses id as user_id)
       const userIds = [...new Set(comments?.map(c => c.user_id) || [])];
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, subscription_tier')
+        .from('user_profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds);
+
+      // Fetch subscription tiers separately
+      const { data: subscriptions } = await supabase
+        .from('subscriptions')
+        .select('user_id, tier')
+        .eq('status', 'active')
         .in('user_id', userIds);
+
+      const subMap = new Map(subscriptions?.map(s => [s.user_id, s.tier]) || []);
 
       // Fetch user's votes if logged in
       let userVotes: Record<string, 'up' | 'down'> = {};
@@ -64,14 +73,14 @@ export function useComments(predictionId: string) {
         });
       }
 
-      // Map profiles to comments
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      // Map profiles to comments (id in user_profiles = user_id)
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
       const enrichedComments: Comment[] = (comments || []).map(comment => ({
         ...comment,
         user_display_name: profileMap.get(comment.user_id)?.display_name || 'Anonymous',
         user_avatar_url: profileMap.get(comment.user_id)?.avatar_url || null,
-        user_subscription_tier: profileMap.get(comment.user_id)?.subscription_tier || 'free',
+        user_subscription_tier: subMap.get(comment.user_id) || 'free',
         user_vote: userVotes[comment.id] || null,
       }));
 
