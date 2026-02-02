@@ -6,6 +6,9 @@ import { AppSidebar } from './AppSidebar';
 import { AppTopBar } from './AppTopBar';
 import { MobileNav } from '@/components/MobileNav';
 import { SocialProofToast } from '@/components/SocialProofToast';
+import { SocialProofLive } from '@/components/SocialProofLive';
+import { MobileTabBar } from '@/components/MobileTabBar';
+import { BettingSlipFloating } from '@/components/BettingSlipFloating';
 import { AddToHomeScreen } from '@/components/AddToHomeScreen';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { PageTransition } from '@/components/PageTransition';
@@ -103,8 +106,17 @@ export function AppLayout() {
       {/* Mobile Bottom Nav */}
       <MobileNav />
 
+      {/* Mobile Tab Bar - NEW */}
+      <MobileTabBar />
+
+      {/* Betting Slip Floating Button - NEW */}
+      <BettingSlipFloating />
+
       {/* Social Proof Toast */}
       <SocialProofToast />
+
+      {/* Social Proof Live - NEW */}
+      <SocialProofLive />
 
       {/* PWA Install Banner */}
       <AddToHomeScreen />

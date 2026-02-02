@@ -1,97 +1,117 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { Trophy, Coins } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { cn } from '@/lib/utils';
 
 interface WinCelebrationProps {
-  show: boolean;
-  amount: number;
-  currency?: string;
-  onComplete?: () => void;
+  profit: number;
+  currency: 'cz' | 'en';
+  trigger?: boolean;
 }
 
-export function WinCelebration({ show, amount, currency = 'Kč', onComplete }: WinCelebrationProps) {
-  const [isVisible, setIsVisible] = useState(show);
-
+export function WinCelebration({ profit, currency, trigger = true }: WinCelebrationProps) {
   useEffect(() => {
-    if (show) {
-      setIsVisible(true);
-      
-      // Fire confetti
+    if (!trigger || profit <= 0) return;
+
+    // Determine celebration intensity based on profit
+    const intensity = profit > 10000 ? 'massive' : profit > 5000 ? 'large' : 'normal';
+
+    if (intensity === 'massive') {
+      // Money rain effect
       const duration = 3000;
-      const end = Date.now() + duration;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-      const frame = () => {
-        confetti({
-          particleCount: 2,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#10b981', '#34d399', '#6ee7b7'],
-        });
+      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-        confetti({
-          particleCount: 2,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#10b981', '#34d399', '#6ee7b7'],
-        });
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
 
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
         }
-      };
 
-      frame();
+        const particleCount = 50 * (timeLeft / duration);
 
-      // Auto-hide after 4 seconds
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        onComplete?.();
-      }, 4000);
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          colors: ['#22c55e', '#10b981', '#34d399', '#ffd700'],
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          colors: ['#22c55e', '#10b981', '#34d399', '#ffd700'],
+        });
+      }, 250);
 
-      return () => clearTimeout(timer);
+      return () => clearInterval(interval);
+    } else if (intensity === 'large') {
+      // Big confetti burst
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ['#22c55e', '#10b981', '#34d399'],
+      });
+    } else {
+      // Normal confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#22c55e', '#10b981', '#34d399'],
+      });
     }
-  }, [show, onComplete]);
+  }, [trigger, profit]);
+
+  if (profit <= 0) return null;
+
+  const formattedProfit = new Intl.NumberFormat(currency === 'cz' ? 'cs-CZ' : 'en-US', {
+    style: 'currency',
+    currency: currency === 'cz' ? 'CZK' : 'USD',
+    minimumFractionDigits: 0,
+  }).format(profit);
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div
-            className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-12 py-8 rounded-3xl shadow-2xl"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            exit={{ scale: 0, rotate: 180 }}
-            transition={{ type: 'spring', duration: 0.8 }}
+    <div className="relative inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-success/20 to-success/10 border border-success/30 win-pulse">
+      <Trophy className="h-6 w-6 text-success animate-bounce-attention" />
+      
+      <div>
+        <div className="text-xs font-medium text-success/80">WIN!</div>
+        <div className="font-mono text-xl font-black text-success stat-glow-green">
+          +{formattedProfit}
+        </div>
+      </div>
+
+      <Coins className="h-5 w-5 text-success/60 animate-pulse" />
+
+      {/* Money symbols falling */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {profit > 5000 && [...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute text-2xl text-success/30 money-rain"
             style={{
-              boxShadow: '0 0 60px rgba(16, 185, 129, 0.6)',
+              left: `${20 + i * 15}%`,
+              animationDelay: `${i * 0.2}s`,
             }}
           >
-            <motion.div
-              className="text-center"
-              animate={{
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 1,
-                repeat: 3,
-              }}
-            >
-              <div className="text-6xl mb-4">🎉</div>
-              <div className="text-4xl font-bold mb-2">WINNER!</div>
-              <div className="text-5xl font-bold">
-                +{amount.toLocaleString()} {currency}
-              </div>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            💰
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function LossFade() {
+  return (
+    <div className="loss-fade">
+      <div className="text-xs text-destructive/80 font-medium">Loss</div>
+    </div>
   );
 }
