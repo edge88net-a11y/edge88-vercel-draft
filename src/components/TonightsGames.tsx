@@ -6,12 +6,17 @@ import { GameCountdown } from '@/components/GameCountdown';
 import { ConfidenceMeter } from '@/components/ConfidenceMeter';
 import { APIPrediction } from '@/hooks/usePredictions';
 import { cn } from '@/lib/utils';
+import { formatOdds } from '@/lib/oddsUtils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TonightsGamesProps {
   predictions: APIPrediction[];
 }
 
 export function TonightsGames({ predictions }: TonightsGamesProps) {
+  const { language } = useLanguage();
+  const locale = language === 'cz' ? 'cz' : 'en';
+  
   // Filter to show games within next 12 hours
   const now = new Date();
   const tonightsGames = predictions
@@ -75,7 +80,9 @@ export function TonightsGames({ predictions }: TonightsGamesProps) {
                   )}>
                     {game.prediction.pick}
                   </span>
-                  <span className="text-xs text-muted-foreground">{game.prediction.odds}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {game.prediction.odds ? formatOdds(game.prediction.odds, locale) : '—'}
+                  </span>
                 </div>
               </div>
 
