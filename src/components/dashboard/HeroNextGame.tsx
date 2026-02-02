@@ -9,7 +9,6 @@ import { getSportEmoji } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { differenceInSeconds, differenceInMinutes, differenceInHours } from 'date-fns';
 
 interface HeroNextGameProps {
   predictions: APIPrediction[];
@@ -26,7 +25,7 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
   const nextGame = predictions
     .filter(p => p.result === 'pending' && new Date(p.gameTime) > new Date())
     .sort((a, b) => new Date(a.gameTime).getTime() - new Date(b.gameTime).getTime())
-    .find(p => normalizeConfidence(p.confidence) >= 55); // Show games with reasonable confidence
+    .find(p => normalizeConfidence(p.confidence) >= 55);
 
   // Update countdown every second
   useEffect(() => {
@@ -61,7 +60,7 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
   const gameDate = new Date(nextGame.gameTime);
   const now = new Date();
   const isLive = gameDate <= now;
-  const totalSeconds = Math.max(0, differenceInSeconds(gameDate, now));
+  const totalSeconds = Math.max(0, Math.floor((gameDate.getTime() - now.getTime()) / 1000));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
@@ -71,27 +70,29 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
   const potentialProfit = 1000 * (odds - 1);
   const saved = isPicked(nextGame.id);
   
-  // Generate realistic "watching" count based on confidence
   const watchingCount = Math.floor(150 + confidencePercent * 2.5 + Math.random() * 50);
   const communityVote = confidencePercent > 60 ? Math.floor(55 + confidencePercent * 0.3 + Math.random() * 10) : Math.floor(40 + Math.random() * 20);
 
   return (
     <div className={cn(
-      "glass-card overflow-hidden transition-all",
-      "bg-gradient-to-r from-emerald-900/20 via-card to-cyan-900/20",
+      "glass-card overflow-hidden transition-all relative",
       "border-emerald-500/20 hover:border-emerald-500/40"
     )}>
-      <div className="p-4 md:p-6">
+      {/* Animated mesh gradient background */}
+      <div className="absolute inset-0 animate-mesh-gradient opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/30 via-transparent to-cyan-900/30" />
+      
+      <div className="p-4 md:p-6 relative z-10">
         {/* Top row: Live badge + Countdown */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {isLive ? (
-              <span className="flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+              <span className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                 </span>
-                LIVE
+                ⚡ LIVE
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -103,23 +104,29 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
               </span>
             )}
             
+            {/* Flip-style countdown */}
             {!isLive && (
-              <span className="font-mono text-lg md:text-xl font-bold text-foreground tabular-nums">
-                {hours > 0 && `${hours}h `}{String(minutes).padStart(2, '0')}m {String(seconds).padStart(2, '0')}s
-              </span>
+              <div className="flex items-center gap-1 font-mono text-lg md:text-xl font-bold">
+                {hours > 0 && (
+                  <>
+                    <span className="flip-digit bg-gray-800 text-foreground">{String(hours).padStart(2, '0')}</span>
+                    <span className="text-muted-foreground">:</span>
+                  </>
+                )}
+                <span className="flip-digit bg-gray-800 text-foreground">{String(minutes).padStart(2, '0')}</span>
+                <span className="text-muted-foreground">:</span>
+                <span className="flip-digit bg-gray-800 text-cyan-400">{String(seconds).padStart(2, '0')}</span>
+              </div>
             )}
           </div>
           
-          <span className="text-2xl">{getSportEmoji(nextGame.sport || 'Sports')}</span>
+          <span className="text-4xl">{getSportEmoji(nextGame.sport || 'Sports')}</span>
         </div>
 
         {/* Teams + Confidence */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div className="flex-1">
-            <Link 
-              to={`/predictions/${nextGame.id}`}
-              className="group"
-            >
+            <Link to={`/predictions/${nextGame.id}`} className="group">
               <h3 className="text-lg md:text-xl font-bold group-hover:text-primary transition-colors">
                 {nextGame.awayTeam} <span className="text-muted-foreground font-normal mx-2">@</span> {nextGame.homeTeam}
               </h3>
@@ -130,7 +137,7 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
                 {language === 'cz' ? 'Tip' : 'Pick'}: {nextGame.prediction.pick}
               </span>
               <span className="text-muted-foreground font-mono">{odds.toFixed(2)}</span>
-              <span className="text-success font-semibold">
+              <span className="text-success font-semibold stat-glow-green">
                 {formatCurrency(potentialProfit, locale, { showSign: true })}
               </span>
             </div>
@@ -155,19 +162,16 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
                   strokeDasharray={`${confidencePercent} 100`}
                   strokeLinecap="round"
                   className={cn(
-                    "transition-all duration-1000",
+                    "animate-ring-fill",
                     confidencePercent >= 75 ? "text-success" :
                     confidencePercent >= 65 ? "text-primary" :
                     "text-warning"
                   )}
-                  style={{
-                    animation: 'growRing 1.5s ease-out forwards',
-                  }}
                 />
               </svg>
               <span className={cn(
                 "absolute inset-0 flex items-center justify-center text-sm font-bold",
-                confidencePercent >= 75 ? "text-success" :
+                confidencePercent >= 75 ? "text-success stat-glow-green" :
                 confidencePercent >= 65 ? "text-primary" :
                 "text-warning"
               )}>
@@ -176,17 +180,17 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
             </div>
 
             <Button 
-              size="sm"
+              size="default"
               variant={saved ? "default" : "outline"}
               className={cn(
-                "gap-1.5",
-                !saved && "bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
+                "gap-1.5 font-bold transition-all",
+                !saved && "bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20"
               )}
               onClick={() => togglePick(nextGame)}
             >
               {saved 
                 ? (language === 'cz' ? '✓ Přidáno' : '✓ Added')
-                : (language === 'cz' ? 'Vsadit →' : 'Bet →')
+                : (language === 'cz' ? 'Detail →' : 'Details →')
               }
             </Button>
           </div>
@@ -197,7 +201,7 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
           <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
             <div 
               className={cn(
-                "h-full rounded-full transition-all duration-1000",
+                "h-full rounded-full animate-grow-width",
                 confidencePercent >= 75 ? "bg-gradient-to-r from-success to-emerald-400" :
                 confidencePercent >= 65 ? "bg-gradient-to-r from-primary to-cyan-400" :
                 "bg-gradient-to-r from-warning to-amber-400"
@@ -205,20 +209,17 @@ export function HeroNextGame({ predictions, isLoading }: HeroNextGameProps) {
               style={{ width: `${confidencePercent}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {language === 'cz' ? 'Jistota AI:' : 'AI Confidence:'} {confidencePercent}%
-          </p>
         </div>
 
         {/* Social Proof */}
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Users className="h-3.5 w-3.5" />
-            {watchingCount} {language === 'cz' ? 'lidí sleduje' : 'watching'}
+            📊 {watchingCount} {language === 'cz' ? 'lidí sleduje' : 'watching'}
           </span>
           <span className="flex items-center gap-1">
             <TrendingUp className="h-3.5 w-3.5 text-success" />
-            {language === 'cz' ? 'Komunita' : 'Community'}: {communityVote}% {nextGame.prediction.pick.split(' ')[0]}
+            🎯 {language === 'cz' ? 'Komunita' : 'Community'}: {communityVote}% {language === 'cz' ? 'souhlasí' : 'agrees'}
           </span>
         </div>
       </div>

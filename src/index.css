@@ -789,3 +789,203 @@
   border-radius: 0.5rem;
   margin: 1.5rem 0;
 }
+
+/* ===== GAMBLING COMMAND CENTER ANIMATIONS ===== */
+
+/* Welcome bar animated gradient */
+@keyframes welcome-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-welcome-gradient {
+  background: linear-gradient(270deg, #0a0e1a, #0d2030, #0a1628, #0a0e1a);
+  background-size: 400% 400%;
+  animation: welcome-gradient 10s ease infinite;
+}
+
+/* Fire glow pulse for streaks */
+@keyframes fire-glow {
+  0%, 100% { 
+    text-shadow: 0 0 5px hsl(25 95% 53% / 0.3), 0 0 10px hsl(25 95% 53% / 0.2);
+    transform: scale(1);
+  }
+  50% { 
+    text-shadow: 0 0 15px hsl(25 95% 53% / 0.6), 0 0 25px hsl(25 95% 53% / 0.4);
+    transform: scale(1.05);
+  }
+}
+
+.animate-fire-glow {
+  animation: fire-glow 2s ease-in-out infinite;
+}
+
+/* Bouncing fire emoji */
+@keyframes fire-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-fire-bounce {
+  animation: fire-bounce 1.5s ease-in-out infinite;
+}
+
+/* Green flash for wins */
+@keyframes win-flash {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-win-flash {
+  animation: win-flash 0.5s ease-out;
+}
+
+/* Premium shimmer for waiting states */
+@keyframes premium-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-premium-shimmer {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    hsl(var(--primary) / 0.1) 25%, 
+    hsl(var(--primary) / 0.2) 50%, 
+    hsl(var(--primary) / 0.1) 75%, 
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: premium-shimmer 2s linear infinite;
+}
+
+/* Hourglass rotation */
+@keyframes hourglass-rotate {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+}
+
+.animate-hourglass {
+  animation: hourglass-rotate 2s ease-in-out infinite;
+}
+
+/* Stat number glow */
+.stat-glow-blue { text-shadow: 0 0 20px hsl(217 91% 60% / 0.4); }
+.stat-glow-green { text-shadow: 0 0 25px hsl(145 80% 42% / 0.5); }
+.stat-glow-cyan { text-shadow: 0 0 20px hsl(180 70% 45% / 0.4); }
+.stat-glow-gold { text-shadow: 0 0 20px hsl(45 100% 51% / 0.4); }
+
+/* Particle sparkle around hero numbers */
+@keyframes particle-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.sparkle-container::before,
+.sparkle-container::after {
+  content: '✨';
+  position: absolute;
+  font-size: 12px;
+  animation: particle-sparkle 2s ease-in-out infinite;
+}
+
+.sparkle-container::before {
+  top: -5px;
+  right: -10px;
+  animation-delay: 0s;
+}
+
+.sparkle-container::after {
+  bottom: -5px;
+  left: -10px;
+  animation-delay: 1s;
+}
+
+/* Flip counter digits */
+@keyframes flip-down {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+.flip-digit {
+  display: inline-block;
+  background: hsl(var(--muted));
+  border-radius: 4px;
+  padding: 0.25em 0.4em;
+  margin: 0 1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: bold;
+}
+
+/* Progress bar grow animation */
+@keyframes grow-width {
+  from { width: 0%; }
+}
+
+.animate-grow-width {
+  animation: grow-width 1s ease-out forwards;
+}
+
+/* Card tilt effect */
+.card-tilt {
+  transition: transform 0.2s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* Golden glow for top picks */
+.golden-glow {
+  box-shadow: 0 0 20px hsl(45 100% 51% / 0.3), 0 4px 15px hsl(0 0% 0% / 0.3);
+  border-color: hsl(45 100% 51% / 0.5) !important;
+}
+
+/* Ticket bounce animation */
+@keyframes ticket-bounce {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+.animate-ticket-bounce {
+  animation: ticket-bounce 2s ease-in-out infinite;
+}
+
+/* CTA pulse */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+}
+
+.animate-cta-pulse {
+  animation: cta-pulse 2s ease-in-out infinite;
+}
+
+/* Mesh gradient background */
+@keyframes mesh-gradient {
+  0%, 100% { 
+    background-position: 0% 0%;
+  }
+  25% {
+    background-position: 100% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+}
+
+.animate-mesh-gradient {
+  background: radial-gradient(circle at 20% 30%, hsl(160 60% 20% / 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, hsl(180 70% 25% / 0.2) 0%, transparent 50%);
+  animation: mesh-gradient 15s ease-in-out infinite;
+}
+
+/* Ring fill animation */
+@keyframes ring-fill {
+  from { stroke-dasharray: 0 100; }
+}
+
+.animate-ring-fill {
+  animation: ring-fill 1.5s ease-out forwards;
+}

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowUp, ArrowDown, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { formatCurrency } from '@/lib/oddsUtils';
@@ -21,15 +21,17 @@ export function ProfitTracker({ predictions, isLoading }: ProfitTrackerProps) {
     const weekStart = new Date(todayStart);
     weekStart.setDate(weekStart.getDate() - 7);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Previous periods for trend comparison
+    const lastWeekStart = new Date(weekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const stake = 1000; // 1000 Kč per bet
+    const stake = 1000;
 
-    let today = 0;
-    let week = 0;
-    let month = 0;
-    let todayCount = 0;
-    let weekCount = 0;
-    let monthCount = 0;
+    let today = 0, week = 0, month = 0;
+    let todayCount = 0, weekCount = 0, monthCount = 0;
+    let lastWeek = 0, lastMonth = 0;
 
     predictions.forEach(p => {
       if (p.result !== 'win' && p.result !== 'loss') return;
@@ -45,47 +47,74 @@ export function ProfitTracker({ predictions, isLoading }: ProfitTrackerProps) {
       if (gameDate >= weekStart) {
         week += profit;
         weekCount++;
+      } else if (gameDate >= lastWeekStart) {
+        lastWeek += profit;
       }
       if (gameDate >= monthStart) {
         month += profit;
         monthCount++;
+      } else if (gameDate >= lastMonthStart) {
+        lastMonth += profit;
       }
     });
 
-    return { today, week, month, todayCount, weekCount, monthCount };
+    const weekTrend: 'up' | 'down' | 'flat' = week > lastWeek ? 'up' : week < lastWeek ? 'down' : 'flat';
+    const monthTrend: 'up' | 'down' | 'flat' = month > lastMonth ? 'up' : month < lastMonth ? 'down' : 'flat';
+
+    return { 
+      today, week, month, 
+      todayCount, weekCount, monthCount,
+      weekTrend,
+      monthTrend,
+    };
   }, [predictions]);
 
   const animatedToday = useAnimatedCounter(Math.abs(profits.today), { duration: 1000 });
   const animatedWeek = useAnimatedCounter(Math.abs(profits.week), { duration: 1000, delay: 100 });
   const animatedMonth = useAnimatedCounter(Math.abs(profits.month), { duration: 1000, delay: 200 });
 
+  const TrendIcon = ({ trend }: { trend: 'up' | 'down' | 'flat' }) => {
+    if (trend === 'up') return <ArrowUp className="h-3 w-3 text-success" />;
+    if (trend === 'down') return <ArrowDown className="h-3 w-3 text-destructive" />;
+    return <ArrowRight className="h-3 w-3 text-muted-foreground" />;
+  };
+
   const ProfitPill = ({ 
     label, 
     value, 
     animated,
     hasResults,
+    trend,
   }: { 
     label: string; 
     value: number; 
     animated: number;
     hasResults: boolean;
+    trend?: 'up' | 'down' | 'flat';
   }) => {
     const isPositive = value > 0;
     const isNegative = value < 0;
 
     return (
       <div className={cn(
-        "flex items-center gap-2 px-4 py-2.5 rounded-full font-medium transition-all",
-        isPositive && "bg-success/20 text-success border border-success/30",
-        isNegative && "bg-destructive/20 text-destructive border border-destructive/30",
+        "relative flex items-center gap-2 px-4 py-2.5 rounded-full font-medium transition-all overflow-hidden",
+        isPositive && "bg-success/20 text-success border-2 border-success/40 shadow-lg shadow-success/10",
+        isNegative && "bg-destructive/20 text-destructive border-2 border-destructive/40 shadow-lg shadow-destructive/10",
         !hasResults && "bg-muted text-muted-foreground border border-border"
       )}>
+        {/* Shimmer effect when waiting */}
+        {!hasResults && (
+          <div className="absolute inset-0 animate-premium-shimmer" />
+        )}
+        
         {hasResults && isPositive && <TrendingUp className="h-4 w-4" />}
         {hasResults && isNegative && <TrendingDown className="h-4 w-4" />}
-        <span className="text-sm">{label}:</span>
-        <span className="font-bold font-mono">
+        {!hasResults && <span className="animate-hourglass">⏳</span>}
+        
+        <span className="text-sm relative z-10">{label}:</span>
+        <span className="font-bold font-mono relative z-10">
           {!hasResults ? (
-            language === 'cz' ? 'Čekáme...' : 'Waiting...'
+            language === 'cz' ? 'Čekáme na výsledky...' : 'Waiting for results...'
           ) : (
             <>
               {isPositive ? '+' : isNegative ? '-' : ''}
@@ -93,6 +122,10 @@ export function ProfitTracker({ predictions, isLoading }: ProfitTrackerProps) {
             </>
           )}
         </span>
+        
+        {/* Trend arrow */}
+        {hasResults && trend && <TrendIcon trend={trend} />}
+        
         {hasResults && (isPositive ? '📈' : isNegative ? '📉' : '')}
       </div>
     );
@@ -102,9 +135,9 @@ export function ProfitTracker({ predictions, isLoading }: ProfitTrackerProps) {
     return (
       <div className="glass-card p-4">
         <div className="animate-pulse flex flex-wrap gap-3 justify-center">
-          <div className="h-10 w-40 bg-muted rounded-full" />
-          <div className="h-10 w-44 bg-muted rounded-full" />
-          <div className="h-10 w-48 bg-muted rounded-full" />
+          <div className="h-10 w-40 bg-muted rounded-full animate-premium-shimmer" />
+          <div className="h-10 w-44 bg-muted rounded-full animate-premium-shimmer" />
+          <div className="h-10 w-48 bg-muted rounded-full animate-premium-shimmer" />
         </div>
       </div>
     );
@@ -115,7 +148,7 @@ export function ProfitTracker({ predictions, isLoading }: ProfitTrackerProps) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm flex items-center gap-2">
           <span className="text-lg">💰</span>
-          {language === 'cz' ? 'Profit Tracker' : 'Profit Tracker'}
+          Profit Tracker
         </h3>
         <span className="text-[10px] text-muted-foreground px-2 py-1 rounded-full bg-muted">
           {language === 'cz' ? 'při 1 000 Kč sázkách' : 'based on 1,000 Kč bets'}
@@ -134,12 +167,14 @@ export function ProfitTracker({ predictions, isLoading }: ProfitTrackerProps) {
           value={profits.week}
           animated={animatedWeek}
           hasResults={profits.weekCount > 0}
+          trend={profits.weekTrend}
         />
         <ProfitPill 
           label={language === 'cz' ? 'Tento měsíc' : 'This Month'} 
           value={profits.month}
           animated={animatedMonth}
           hasResults={profits.monthCount > 0}
+          trend={profits.monthTrend}
         />
       </div>
     </div>
