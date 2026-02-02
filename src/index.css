@@ -1445,3 +1445,149 @@ body {
 .animate-bounce-attention {
   animation: bounce-attention 0.5s ease-in-out 3;
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* PREMIUM EFFECTS - STAKE.COM STYLE */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Fire flicker */
+@keyframes fire-flicker {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  25% { transform: scale(1.1) rotate(5deg); opacity: 0.9; }
+  50% { transform: scale(0.95) rotate(-3deg); opacity: 1; }
+  75% { transform: scale(1.05) rotate(3deg); opacity: 0.95; }
+}
+
+.animate-fire-flicker {
+  animation: fire-flicker 0.8s ease-in-out infinite;
+}
+
+/* Fire text glow */
+@keyframes fire-text {
+  0%, 100% { text-shadow: 0 0 10px rgba(249,115,22,0.8), 0 0 20px rgba(249,115,22,0.4); }
+  50% { text-shadow: 0 0 20px rgba(249,115,22,1), 0 0 30px rgba(249,115,22,0.6), 0 0 40px rgba(249,115,22,0.3); }
+}
+
+.animate-fire-text {
+  animation: fire-text 1.5s ease-in-out infinite;
+}
+
+/* Floating spark */
+@keyframes float-spark {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(-30px) scale(1.2); opacity: 0; }
+}
+
+/* Card tilt on hover (3D effect) */
+.card-tilt {
+  transition: transform 0.3s ease-out;
+}
+
+.card-tilt:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale(1.02);
+}
+
+/* Neon glow borders */
+@keyframes neon-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+.neon-border {
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+/* Number counter tick */
+@keyframes tick-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-tick {
+  animation: tick-up 0.3s ease-out;
+}
+
+/* Win celebration pulse */
+@keyframes win-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.win-pulse {
+  animation: win-pulse 0.6s ease-out;
+}
+
+/* Loss fade */
+@keyframes loss-fade {
+  0% { opacity: 1; filter: grayscale(0); }
+  100% { opacity: 0.6; filter: grayscale(0.8); }
+}
+
+.loss-fade {
+  animation: loss-fade 0.5s ease-out forwards;
+}
+
+/* Scroll reveal */
+@keyframes scroll-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scroll-reveal {
+  animation: scroll-reveal 0.6s ease-out;
+}
+
+/* Live badge pulse */
+@keyframes live-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.live-pulse-ring {
+  animation: live-pulse-ring 1.5s ease-out infinite;
+}
+
+/* Money rain (for big wins) */
+@keyframes money-rain {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.money-rain {
+  animation: money-rain 3s linear;
+}
+
+/* Countdown urgency */
+@keyframes countdown-urgent {
+  0%, 100% { color: #f59e0b; }
+  50% { color: #ef4444; }
+}
+
+.countdown-urgent {
+  animation: countdown-urgent 1s ease-in-out infinite;
+}
