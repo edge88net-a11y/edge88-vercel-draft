@@ -25,6 +25,10 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StreakFire } from '@/components/ui/StreakFire';
+import { ProfitDisplay } from '@/components/ui/ProfitDisplay';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 
 export default function DashboardPage() {
   const { user, profile, loading: authLoading } = useAuth();
