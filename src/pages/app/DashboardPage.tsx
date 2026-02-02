@@ -15,6 +15,7 @@ import { ReferralWidget } from '@/components/dashboard/ReferralWidget';
 import { TelegramWidget } from '@/components/dashboard/TelegramWidget';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
+import { useUserTier } from '@/hooks/useUserTier';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,17 +23,19 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   const { user, profile, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { data: predictions, isLoading: predictionsLoading, isError, refetch, isMaintenanceMode } = useActivePredictions();
   const { data: stats, isLoading: statsLoading, isMaintenanceMode: statsMaintenanceMode } = useStats();
   const { stats: savedStats } = useSavedPicks();
-
+  const userTier = useUserTier();
+  const tierLabel = language === 'cz' ? userTier.labelCz : userTier.label;
   // Handle checkout success from URL
   useEffect(() => {
     const checkoutResult = searchParams.get('checkout');
@@ -105,9 +108,18 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">
             {t.welcomeBack}, {profile?.display_name || user?.email?.split('@')[0] || 'Analyst'}
           </h1>
-          <span className="rounded-full bg-gradient-to-r from-primary/20 to-accent/10 px-4 py-1 text-sm font-medium text-primary capitalize border border-primary/20">
-            {profile?.subscription_tier || 'Free'} Member
-          </span>
+          {userTier.isLoading ? (
+            <Skeleton className="h-7 w-24 rounded-full" />
+          ) : (
+            <span className={cn(
+              "px-3 py-1 rounded-full text-sm font-bold border",
+              userTier.bgColor,
+              userTier.color,
+              userTier.borderColor
+            )}>
+              {userTier.icon} {tierLabel}
+            </span>
+          )}
         </div>
         <p className="mt-2 text-muted-foreground">
           {t.performanceOverview}
@@ -156,30 +168,41 @@ export default function DashboardPage() {
         <>
           {/* Stats Grid */}
           <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title={t.totalPredictions}
-              value={stats?.totalPredictions ?? 0}
-              icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
-            />
-            <StatCard
-              title={t.accuracyRate}
-              value={stats?.accuracy ?? 0}
-              suffix="%"
-              icon={<Target className="h-4 w-4 sm:h-5 sm:w-5" />}
-            />
-            <StatCard
-              title={t.activePredictions}
-              value={stats?.activePredictions ?? activePredictions.length}
-              icon={<Activity className="h-4 w-4 sm:h-5 sm:w-5" />}
-              isLive
-            />
-            <StatCard
-              title={t.roi}
-              value={stats?.roi ?? 0}
-              suffix="%"
-              prefix={stats?.roi && stats.roi >= 0 ? "+" : ""}
-              icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />}
-            />
+            {statsLoading ? (
+              <>
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  title={t.totalPredictions}
+                  value={stats?.totalPredictions ?? 0}
+                  icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
+                />
+                <StatCard
+                  title={t.accuracyRate}
+                  value={stats?.accuracy !== null && stats?.accuracy !== undefined ? stats.accuracy : '—'}
+                  suffix={stats?.accuracy !== null && stats?.accuracy !== undefined ? '%' : ''}
+                  icon={<Target className="h-4 w-4 sm:h-5 sm:w-5" />}
+                />
+                <StatCard
+                  title={t.activePredictions}
+                  value={stats?.activePredictions ?? activePredictions.length}
+                  icon={<Activity className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  isLive
+                />
+                <StatCard
+                  title={t.roi}
+                  value={stats?.roi !== null && stats?.roi !== undefined ? stats.roi : '—'}
+                  suffix={stats?.roi !== null && stats?.roi !== undefined ? '%' : ''}
+                  prefix={stats?.roi !== null && stats?.roi !== undefined && stats.roi >= 0 ? '+' : ''}
+                  icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />}
+                />
+              </>
+            )}
           </div>
 
           {/* Charts Row */}

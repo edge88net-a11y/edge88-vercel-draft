@@ -129,6 +129,30 @@ export type Database = {
         }
         Relationships: []
       }
+      betting_slips: {
+        Row: {
+          added_at: string | null
+          id: string
+          prediction_id: string
+          removed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          id?: string
+          prediction_id: string
+          removed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          id?: string
+          prediction_id?: string
+          removed_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       blog_articles: {
         Row: {
           accuracy_pct: number | null
@@ -223,6 +247,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      community_votes: {
+        Row: {
+          id: string
+          prediction_id: string
+          user_id: string
+          voted_at: string | null
+          voted_team: string
+        }
+        Insert: {
+          id?: string
+          prediction_id: string
+          user_id: string
+          voted_at?: string | null
+          voted_team: string
+        }
+        Update: {
+          id?: string
+          prediction_id?: string
+          user_id?: string
+          voted_at?: string | null
+          voted_team?: string
+        }
+        Relationships: []
       }
       contact_messages: {
         Row: {
@@ -407,80 +455,6 @@ export type Database = {
             foreignKeyName: "event_comments_prediction_id_fkey"
             columns: ["prediction_id"]
             isOneToOne: false
-            referencedRelation: "predictions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_predictions_detailed: {
-        Row: {
-          away_record: string | null
-          coach_matchup_record: string | null
-          created_at: string | null
-          head_to_head_last_5: Json | null
-          historical_conditions: string | null
-          home_record: string | null
-          id: string
-          injury_report: Json | null
-          key_player_stats: Json | null
-          last_10_games_away: Json | null
-          last_10_games_home: Json | null
-          prediction_id: string | null
-          research_sources_count: number | null
-          research_summary: string | null
-          research_timestamp: string | null
-          rest_days_away: number | null
-          rest_days_home: number | null
-          travel_distance_km: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          away_record?: string | null
-          coach_matchup_record?: string | null
-          created_at?: string | null
-          head_to_head_last_5?: Json | null
-          historical_conditions?: string | null
-          home_record?: string | null
-          id?: string
-          injury_report?: Json | null
-          key_player_stats?: Json | null
-          last_10_games_away?: Json | null
-          last_10_games_home?: Json | null
-          prediction_id?: string | null
-          research_sources_count?: number | null
-          research_summary?: string | null
-          research_timestamp?: string | null
-          rest_days_away?: number | null
-          rest_days_home?: number | null
-          travel_distance_km?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          away_record?: string | null
-          coach_matchup_record?: string | null
-          created_at?: string | null
-          head_to_head_last_5?: Json | null
-          historical_conditions?: string | null
-          home_record?: string | null
-          id?: string
-          injury_report?: Json | null
-          key_player_stats?: Json | null
-          last_10_games_away?: Json | null
-          last_10_games_home?: Json | null
-          prediction_id?: string | null
-          research_sources_count?: number | null
-          research_summary?: string | null
-          research_timestamp?: string | null
-          rest_days_away?: number | null
-          rest_days_home?: number | null
-          travel_distance_km?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_predictions_detailed_prediction_id_fkey"
-            columns: ["prediction_id"]
-            isOneToOne: true
             referencedRelation: "predictions"
             referencedColumns: ["id"]
           },
@@ -836,95 +810,6 @@ export type Database = {
         }
         Relationships: []
       }
-      numerology_analysis: {
-        Row: {
-          astrological_forecast: string | null
-          astrology_prediction: string | null
-          away_city_astrology: string | null
-          away_team_numerology: number | null
-          combined_insight: string | null
-          confidence_modifier: number | null
-          created_at: string | null
-          date_significance: string | null
-          game_date_numerology: number | null
-          historical_date_significance: string | null
-          home_city_astrology: string | null
-          home_team_numerology: number | null
-          id: string
-          key_players_zodiac: Json | null
-          moon_phase: string | null
-          moon_phase_win_rate: number | null
-          number_patterns_historic: Json | null
-          numerology_patterns: string | null
-          numerology_prediction: string | null
-          planetary_alignments: string | null
-          prediction_id: string | null
-          team_away_founding_date: string | null
-          team_home_founding_date: string | null
-          winning_dates_pattern: string | null
-        }
-        Insert: {
-          astrological_forecast?: string | null
-          astrology_prediction?: string | null
-          away_city_astrology?: string | null
-          away_team_numerology?: number | null
-          combined_insight?: string | null
-          confidence_modifier?: number | null
-          created_at?: string | null
-          date_significance?: string | null
-          game_date_numerology?: number | null
-          historical_date_significance?: string | null
-          home_city_astrology?: string | null
-          home_team_numerology?: number | null
-          id?: string
-          key_players_zodiac?: Json | null
-          moon_phase?: string | null
-          moon_phase_win_rate?: number | null
-          number_patterns_historic?: Json | null
-          numerology_patterns?: string | null
-          numerology_prediction?: string | null
-          planetary_alignments?: string | null
-          prediction_id?: string | null
-          team_away_founding_date?: string | null
-          team_home_founding_date?: string | null
-          winning_dates_pattern?: string | null
-        }
-        Update: {
-          astrological_forecast?: string | null
-          astrology_prediction?: string | null
-          away_city_astrology?: string | null
-          away_team_numerology?: number | null
-          combined_insight?: string | null
-          confidence_modifier?: number | null
-          created_at?: string | null
-          date_significance?: string | null
-          game_date_numerology?: number | null
-          historical_date_significance?: string | null
-          home_city_astrology?: string | null
-          home_team_numerology?: number | null
-          id?: string
-          key_players_zodiac?: Json | null
-          moon_phase?: string | null
-          moon_phase_win_rate?: number | null
-          number_patterns_historic?: Json | null
-          numerology_patterns?: string | null
-          numerology_prediction?: string | null
-          planetary_alignments?: string | null
-          prediction_id?: string | null
-          team_away_founding_date?: string | null
-          team_home_founding_date?: string | null
-          winning_dates_pattern?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "numerology_analysis_prediction_id_fkey"
-            columns: ["prediction_id"]
-            isOneToOne: true
-            referencedRelation: "predictions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       odds_history: {
         Row: {
           away_odds: number | null
@@ -1078,9 +963,11 @@ export type Database = {
           features_used: Json | null
           game_id: string | null
           graded_at: string | null
+          h2h_history: Json | null
           id: string
           is_correct: boolean | null
           model_version: string | null
+          mystical_analysis: Json | null
           perplexity_queries_used: number | null
           predicted_spread: number | null
           predicted_total: number | null
@@ -1096,9 +983,11 @@ export type Database = {
           features_used?: Json | null
           game_id?: string | null
           graded_at?: string | null
+          h2h_history?: Json | null
           id?: string
           is_correct?: boolean | null
           model_version?: string | null
+          mystical_analysis?: Json | null
           perplexity_queries_used?: number | null
           predicted_spread?: number | null
           predicted_total?: number | null
@@ -1114,9 +1003,11 @@ export type Database = {
           features_used?: Json | null
           game_id?: string | null
           graded_at?: string | null
+          h2h_history?: Json | null
           id?: string
           is_correct?: boolean | null
           model_version?: string | null
+          mystical_analysis?: Json | null
           perplexity_queries_used?: number | null
           predicted_spread?: number | null
           predicted_total?: number | null
@@ -1134,48 +1025,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          display_name: string | null
-          favorite_sports: string[] | null
-          id: string
-          notifications_enabled: boolean | null
-          odds_format: string | null
-          onboarding_completed: boolean | null
-          subscription_tier: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          favorite_sports?: string[] | null
-          id?: string
-          notifications_enabled?: boolean | null
-          odds_format?: string | null
-          onboarding_completed?: boolean | null
-          subscription_tier?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          favorite_sports?: string[] | null
-          id?: string
-          notifications_enabled?: boolean | null
-          odds_format?: string | null
-          onboarding_completed?: boolean | null
-          subscription_tier?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
       }
       referrals: {
         Row: {
