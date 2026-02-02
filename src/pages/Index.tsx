@@ -20,6 +20,10 @@ import { useWinStreak } from '@/hooks/useWinStreak';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HeroMeshBackground } from '@/components/HeroMeshBackground';
 import { FloatingPredictionCards } from '@/components/FloatingPredictionCards';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
+import { StreakFire } from '@/components/ui/StreakFire';
+import { LiveBadge } from '@/components/ui/LiveBadge';
+import { ConfidenceRing } from '@/components/ui/ConfidenceRing';
 
 // Animated counter hook
 function useAnimatedCounter(target: number, duration: number = 2000) {
