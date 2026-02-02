@@ -1,23 +1,22 @@
 import { useEffect, useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, RefreshCw, PieChart, Flame } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Activity, Loader2, Zap, PieChart, Flame } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { StatCard } from '@/components/StatCard';
 import { PredictionCard } from '@/components/PredictionCard';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { AccuracyChart } from '@/components/charts/AccuracyChart';
 import { SportPerformanceChart } from '@/components/charts/SportPerformanceChart';
 import { SportDistributionChart } from '@/components/charts/SportDistributionChart';
 import { TonightsGames } from '@/components/TonightsGames';
-import { TeamLogo } from '@/components/TeamLogo';
 import { MaintenanceState } from '@/components/MaintenanceState';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { ReferralWidget } from '@/components/dashboard/ReferralWidget';
 import { TelegramWidget } from '@/components/dashboard/TelegramWidget';
+import { SlimWelcomeBar } from '@/components/dashboard/SlimWelcomeBar';
+import { EnhancedStatCard } from '@/components/dashboard/EnhancedStatCard';
+import { ProfitPill } from '@/components/dashboard/ProfitPill';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
-import { useUserTier } from '@/hooks/useUserTier';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
-import { normalizeConfidence } from '@/lib/confidenceUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -34,8 +33,6 @@ export default function DashboardPage() {
   const { data: predictions, isLoading: predictionsLoading, isError, refetch, isMaintenanceMode } = useActivePredictions();
   const { data: stats, isLoading: statsLoading, isMaintenanceMode: statsMaintenanceMode } = useStats();
   const { stats: savedStats } = useSavedPicks();
-  const userTier = useUserTier();
-  const tierLabel = language === 'cz' ? userTier.labelCz : userTier.label;
   // Handle checkout success from URL
   useEffect(() => {
     const checkoutResult = searchParams.get('checkout');
@@ -102,33 +99,16 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t.welcomeBack}, {profile?.display_name || user?.email?.split('@')[0] || 'Analyst'}
-          </h1>
-          {userTier.isLoading ? (
-            <Skeleton className="h-7 w-24 rounded-full" />
-          ) : (
-            <span className={cn(
-              "px-3 py-1 rounded-full text-sm font-bold border",
-              userTier.bgColor,
-              userTier.color,
-              userTier.borderColor
-            )}>
-              {userTier.icon} {tierLabel}
-            </span>
-          )}
-        </div>
-        <p className="mt-2 text-muted-foreground">
-          {t.performanceOverview}
-        </p>
-      </div>
+      {/* Slim Welcome Bar */}
+      <SlimWelcomeBar 
+        picksToday={stats?.picksToday || 0} 
+        currentStreak={stats?.winStreak || 0}
+        isLoading={statsLoading}
+      />
 
       {/* Your Picks Summary */}
       {savedStats.total > 0 && (
-        <div className="mb-8 glass-card p-4 bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className="mb-6 glass-card p-4 bg-gradient-to-r from-primary/5 to-accent/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="text-2xl">📊</span>
@@ -167,7 +147,7 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Stats Grid */}
-          <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+          <div className="mb-4 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             {statsLoading ? (
               <>
                 <Skeleton className="h-28 rounded-xl" />
@@ -177,32 +157,53 @@ export default function DashboardPage() {
               </>
             ) : (
               <>
-                <StatCard
+                <EnhancedStatCard
                   title={t.totalPredictions}
                   value={stats?.totalPredictions ?? 0}
                   icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  gradient="blue"
                 />
-                <StatCard
+                <EnhancedStatCard
                   title={t.accuracyRate}
-                  value={stats?.accuracy !== null && stats?.accuracy !== undefined ? stats.accuracy : '—'}
-                  suffix={stats?.accuracy !== null && stats?.accuracy !== undefined ? '%' : ''}
+                  value={stats?.accuracy !== null && stats?.accuracy !== undefined && stats.accuracy > 0 ? stats.accuracy : '—'}
+                  suffix={stats?.accuracy !== null && stats?.accuracy !== undefined && stats.accuracy > 0 ? '%' : ''}
                   icon={<Target className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  gradient="dynamic"
+                  dynamicValue={stats?.accuracy ?? 0}
                 />
-                <StatCard
+                <EnhancedStatCard
                   title={t.activePredictions}
                   value={stats?.activePredictions ?? activePredictions.length}
                   icon={<Activity className="h-4 w-4 sm:h-5 sm:w-5" />}
                   isLive
+                  gradient="cyan"
                 />
-                <StatCard
+                <EnhancedStatCard
                   title={t.roi}
-                  value={stats?.roi !== null && stats?.roi !== undefined ? stats.roi : '—'}
-                  suffix={stats?.roi !== null && stats?.roi !== undefined ? '%' : ''}
-                  prefix={stats?.roi !== null && stats?.roi !== undefined && stats.roi >= 0 ? '+' : ''}
+                  value={stats?.roi !== null && stats?.roi !== undefined && stats.roi !== 0 ? stats.roi : '—'}
+                  suffix={stats?.roi !== null && stats?.roi !== undefined && stats.roi !== 0 ? '%' : ''}
+                  prefix={stats?.roi !== null && stats?.roi !== undefined && stats.roi > 0 ? '+' : ''}
                   icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  gradient={stats?.roi && stats.roi >= 0 ? 'amber' : 'red'}
                 />
               </>
             )}
+          </div>
+
+          {/* Profit Tracker Pills */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+            <ProfitPill 
+              label={language === 'cz' ? 'Dnes' : 'Today'} 
+              amount={null} 
+            />
+            <ProfitPill 
+              label={language === 'cz' ? 'Tento týden' : 'This week'} 
+              amount={null} 
+            />
+            <ProfitPill 
+              label={language === 'cz' ? 'Tento měsíc' : 'This month'} 
+              amount={null} 
+            />
           </div>
 
           {/* Charts Row */}
@@ -399,10 +400,8 @@ export default function DashboardPage() {
                         )}>
                           {prediction.result === 'win' ? '✓' : '✗'}
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <TeamLogo teamName={prediction.awayTeam} sport={prediction.sport} size="sm" />
-                          <span className="text-[10px] text-muted-foreground">@</span>
-                          <TeamLogo teamName={prediction.homeTeam} sport={prediction.sport} size="sm" />
+                        <div className="flex items-center gap-1 shrink-0 text-sm">
+                          <span>{getSportEmoji(prediction.sport)}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">
