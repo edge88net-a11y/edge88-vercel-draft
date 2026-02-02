@@ -16,6 +16,8 @@ import { EnhancedStatCard } from '@/components/dashboard/EnhancedStatCard';
 import { ProfitPill } from '@/components/dashboard/ProfitPill';
 import { HeroNextGame } from '@/components/dashboard/HeroNextGame';
 import { HotPicksCarousel } from '@/components/dashboard/HotPicksCarousel';
+import { BettingSlipWidget } from '@/components/dashboard/BettingSlipWidget';
+import { StreakSportWidget } from '@/components/dashboard/StreakSportWidget';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
@@ -226,66 +228,19 @@ export default function DashboardPage() {
             <HotPicksCarousel predictions={deduplicatedPredictions} isLoading={predictionsLoading} />
           </div>
 
-          {/* Charts Row */}
-          <div className="mb-6 sm:mb-8 grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {/* Accuracy Over Time Chart */}
-            <div className="glass-card overflow-hidden animate-fade-in">
-              <div className="border-b border-border p-3 sm:p-4 flex items-center justify-between">
-                <h3 className="font-semibold text-sm sm:text-base">{t.accuracyOverTime}</h3>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">{t.last30Days}</span>
-              </div>
-              <div className="p-3 sm:p-4">
-                {stats?.dailyAccuracy ? (
-                  <div className="h-[180px] sm:h-[200px]">
-                    <AccuracyChart data={stats.dailyAccuracy} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[180px] sm:h-[200px] text-muted-foreground text-sm">
-                    {t.noChartData}
-                  </div>
-                )}
-              </div>
+          {/* Betting Slip + Streak/Sport Accuracy Row */}
+          <div className="mb-6 sm:mb-8 grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-5">
+            {/* Left: Betting Slip (60%) */}
+            <div className="lg:col-span-3">
+              <BettingSlipWidget />
             </div>
-
-            {/* Sport Performance Chart */}
-            <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '100ms' }}>
-              <div className="border-b border-border p-3 sm:p-4 flex items-center justify-between">
-                <h3 className="font-semibold text-sm sm:text-base">{t.performanceBySport}</h3>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">{t.allTime}</span>
-              </div>
-              <div className="p-3 sm:p-4">
-                {stats?.bySport && stats.bySport.length > 0 ? (
-                  <div className="h-[180px] sm:h-[200px]">
-                    <SportPerformanceChart data={stats.bySport} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[180px] sm:h-[200px] text-muted-foreground text-sm">
-                    {t.noSportData}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sport Distribution Donut Chart */}
-            <div className="glass-card overflow-hidden animate-fade-in md:col-span-2 lg:col-span-1" style={{ animationDelay: '200ms' }}>
-              <div className="border-b border-border p-3 sm:p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <PieChart className="h-4 w-4 text-primary" />
-                  <h3 className="font-semibold text-sm sm:text-base">{t.sport} Distribution</h3>
-                </div>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">{t.activePredictions}</span>
-              </div>
-              <div className="p-3 sm:p-4">
-                {sportDistribution.length > 0 ? (
-                  <div className="h-[180px] sm:h-[200px]">
-                    <SportDistributionChart data={sportDistribution} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[180px] sm:h-[200px] text-muted-foreground text-sm">
-                    {t.noSportData}
-                  </div>
-                )}
-              </div>
+            
+            {/* Right: Streak + Sport Accuracy (40%) */}
+            <div className="lg:col-span-2">
+              <StreakSportWidget 
+                predictions={deduplicatedPredictions} 
+                winStreak={stats?.winStreak ?? 0} 
+              />
             </div>
           </div>
 
