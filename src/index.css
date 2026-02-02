@@ -1291,3 +1291,127 @@ body {
   background: linear-gradient(90deg, #06b6d4, #0891b2);
   animation: border-glow 2s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* MOBILE OPTIMIZATIONS */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Touch-friendly tap targets (minimum 44x44px) */
+@media (max-width: 768px) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Reduce animation intensity on mobile for performance */
+  .animate-float-slow,
+  .animate-premium-shimmer,
+  .animate-gradient-shift {
+    animation-duration: 30s !important;
+  }
+
+  /* Disable parallax on mobile for better performance */
+  [data-parallax] {
+    transform: none !important;
+  }
+
+  /* Optimize prediction cards for mobile */
+  .prediction-card {
+    min-height: auto;
+  }
+
+  /* Better spacing for mobile */
+  .glass-card {
+    padding: 1rem;
+  }
+
+  /* Sticky header optimization */
+  .sticky-filters {
+    position: sticky;
+    top: 64px;
+    z-index: 40;
+    background: hsl(var(--background) / 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Small mobile (< 640px) */
+@media (max-width: 640px) {
+  /* Reduce font sizes slightly */
+  h1 { font-size: 1.75rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.25rem !important; }
+
+  /* Stack elements vertically */
+  .stat-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  /* Hide less important info on very small screens */
+  .hide-on-tiny {
+    display: none !important;
+  }
+
+  /* Make modals full-screen on mobile */
+  [role="dialog"] {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Performance: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode optimizations for OLED */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 0 0% 0%; /* True black for OLED */
+  }
+
+  .glass-card {
+    background: hsl(var(--background) / 0.8);
+  }
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Skeleton loading pulse */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
