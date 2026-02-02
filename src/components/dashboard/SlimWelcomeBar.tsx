@@ -2,6 +2,7 @@ import { useUserTier } from '@/hooks/useUserTier';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 
 interface SlimWelcomeBarProps {
   picksToday?: number;
