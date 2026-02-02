@@ -14,6 +14,8 @@ import { TelegramWidget } from '@/components/dashboard/TelegramWidget';
 import { SlimWelcomeBar } from '@/components/dashboard/SlimWelcomeBar';
 import { EnhancedStatCard } from '@/components/dashboard/EnhancedStatCard';
 import { ProfitPill } from '@/components/dashboard/ProfitPill';
+import { HeroNextGame } from '@/components/dashboard/HeroNextGame';
+import { HotPicksCarousel } from '@/components/dashboard/HotPicksCarousel';
 import { useActivePredictions, useStats } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
@@ -204,6 +206,24 @@ export default function DashboardPage() {
               label={language === 'cz' ? 'Tento měsíc' : 'This month'} 
               amount={null} 
             />
+          </div>
+
+          {/* Hero Next Game */}
+          <div className="mb-6">
+            <HeroNextGame predictions={deduplicatedPredictions} isLoading={predictionsLoading} />
+          </div>
+
+          {/* HOT Picks Carousel */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                🔥 {language === 'cz' ? 'Dnešní HOT tipy' : "Today's HOT Picks"}
+              </h3>
+              <Link to="/predictions" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
+                {language === 'cz' ? 'Zobrazit vše →' : 'View all →'}
+              </Link>
+            </div>
+            <HotPicksCarousel predictions={deduplicatedPredictions} isLoading={predictionsLoading} />
           </div>
 
           {/* Charts Row */}
