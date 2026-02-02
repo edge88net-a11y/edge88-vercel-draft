@@ -511,14 +511,18 @@ export function usePrediction(id: string) {
 }
 
 // Fetch detailed game data by prediction ID
+// Note: game_predictions_detailed view doesn't exist, use predictions + games join
 export function useGameDetails(predictionId: string) {
   return useQuery({
     queryKey: ['game-details', predictionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('game_predictions_detailed')
-        .select('*')
-        .eq('prediction_id', predictionId)
+        .from('predictions')
+        .select(`
+          *,
+          games (*)
+        `)
+        .eq('id', predictionId)
         .maybeSingle();
 
       if (error) throw error;
@@ -529,18 +533,19 @@ export function useGameDetails(predictionId: string) {
 }
 
 // Fetch numerology analysis for a prediction
+// Note: Uses mystical_analysis JSONB field from predictions table
 export function useNumerologyAnalysis(predictionId: string) {
   return useQuery({
     queryKey: ['numerology', predictionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('numerology_analysis')
-        .select('*')
-        .eq('prediction_id', predictionId)
+        .from('predictions')
+        .select('mystical_analysis')
+        .eq('id', predictionId)
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data?.mystical_analysis || null;
     },
     enabled: !!predictionId,
   });

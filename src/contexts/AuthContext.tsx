@@ -1,19 +1,24 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
+// Profile interface matching user_profiles table
 interface Profile {
-  id: string;
-  user_id: string;
+  id: string;  // This IS the user_id in user_profiles
   display_name: string | null;
   avatar_url: string | null;
-  subscription_tier: string | null;
-  onboarding_completed: boolean | null;
-  favorite_sports: string[] | null;
-  odds_format: string | null;
-  notifications_enabled: boolean | null;
+  username: string | null;
+  bio: string | null;
+  reputation: number | null;
+  total_comments: number | null;
+  total_upvotes: number | null;
+  // Extended fields we store locally (from subscriptions table or defaults)
+  subscription_tier?: string | null;
+  onboarding_completed?: boolean | null;
+  favorite_sports?: string[] | null;
+  odds_format?: string | null;
+  notifications_enabled?: boolean | null;
 }
 
 interface AuthContextType {
@@ -35,18 +40,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+    try {
+      // Fetch from user_profiles table (id = user_id)
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      // Fetch subscription tier separately
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('tier, status')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        // Return basic profile if user_profiles entry doesn't exist yet
+        return {
+          id: userId,
+          display_name: null,
+          avatar_url: null,
+          username: null,
+          bio: null,
+          reputation: 0,
+          total_comments: 0,
+          total_upvotes: 0,
+          subscription_tier: subData?.tier || null,
+          onboarding_completed: false,
+        };
+      }
+
+      return {
+        ...profileData,
+        subscription_tier: subData?.tier || null,
+        onboarding_completed: true, // Assume completed if profile exists
+      } as Profile;
+    } catch (err) {
+      console.error('Error in fetchProfile:', err);
       return null;
     }
-    return data as Profile;
   };
 
   useEffect(() => {

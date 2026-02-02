@@ -40,11 +40,9 @@ export function NotificationPermission() {
       const permission = await Notification.requestPermission();
       
       if (permission === 'granted' && user) {
-        // Save preference to profile
-        await supabase
-          .from('profiles')
-          .update({ notifications_enabled: true })
-          .eq('user_id', user.id);
+        // Note: notifications_enabled would need to be added to user_profiles
+        // For now, just store in localStorage as a client-side preference
+        localStorage.setItem('notifications_enabled', 'true');
       }
     } catch (err) {
       console.error('Notification permission error:', err);

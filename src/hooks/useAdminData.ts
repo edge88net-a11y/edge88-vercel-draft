@@ -45,9 +45,9 @@ export function useAdminStats() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Fetch user count from Supabase
+        // Fetch user count from Supabase (use user_profiles table)
         const { count: userCount } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('*', { count: 'exact', head: true });
 
         // Fetch active subscribers
