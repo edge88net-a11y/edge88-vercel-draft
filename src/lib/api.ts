@@ -324,6 +324,112 @@ class Edge88API {
   }
 
   // ============================================================================
+  // BETTING SLIP
+  // ============================================================================
+
+  /**
+   * Get user's betting slip
+   * Used on: Betting slip page, dashboard widget
+   */
+  async getBettingSlip(userId: string) {
+    return this.fetch<any[]>(`/betting-slip/${userId}`);
+  }
+
+  /**
+   * Add prediction to betting slip
+   * Used on: Prediction cards "Add to slip" button
+   */
+  async addToSlip(userId: string, predictionId: string) {
+    return this.fetch('/betting-slip/add', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, prediction_id: predictionId })
+    });
+  }
+
+  /**
+   * Remove prediction from betting slip
+   * Used on: Betting slip management "Remove" button
+   */
+  async removeFromSlip(userId: string, predictionId: string) {
+    return this.fetch('/betting-slip/remove', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, prediction_id: predictionId })
+    });
+  }
+
+  // ============================================================================
+  // COMMUNITY & VOTES
+  // ============================================================================
+
+  /**
+   * Get community votes for a prediction
+   * Used on: Prediction cards (show agree/disagree counts)
+   */
+  async getCommunityVotes(predictionId: string) {
+    return this.fetch<any>(`/community-votes/${predictionId}`);
+  }
+
+  /**
+   * Submit a community vote
+   * Used on: Prediction cards "Agree/Disagree" buttons
+   */
+  async vote(predictionId: string, userId: string, team: string) {
+    return this.fetch('/community-votes/vote', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        prediction_id: predictionId, 
+        user_id: userId, 
+        voted_team: team 
+      })
+    });
+  }
+
+  // ============================================================================
+  // AFFILIATE PROGRAM
+  // ============================================================================
+
+  /**
+   * Get affiliate stats for a user
+   * Used on: Affiliate page, referral dashboard
+   */
+  async getAffiliateStats(userId: string) {
+    return this.fetch<any>(`/affiliate/stats/${userId}`);
+  }
+
+  // ============================================================================
+  // ODDS MOVEMENT
+  // ============================================================================
+
+  /**
+   * Get odds movement for a prediction
+   * Used on: Prediction detail page (line tracking)
+   */
+  async getOddsMovement(predictionId: string) {
+    return this.fetch<any>(`/predictions/${predictionId}/odds-movement`);
+  }
+
+  // ============================================================================
+  // CHECKOUT & PAYMENTS
+  // ============================================================================
+
+  /**
+   * Create Stripe checkout session
+   * Used on: Pricing page "Upgrade" buttons
+   */
+  async createCheckoutSession(params: {
+    tier: string;
+    billing_period: string;
+    user_id: string;
+    email: string;
+    locale: string;
+  }) {
+    return this.fetch<{ url: string }>('/checkout/create-session', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  // ============================================================================
   // HEALTH CHECK
   // ============================================================================
 

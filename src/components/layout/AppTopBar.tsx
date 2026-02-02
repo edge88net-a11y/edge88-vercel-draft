@@ -99,7 +99,7 @@ export function AppTopBar({ onMenuClick, showMenuButton }: AppTopBarProps) {
       { 
         id: 3, 
         title: language === 'cz' ? 'Komunita' : 'Community', 
-        description: language === 'cz' ? 'Petr M. odpověděl na váš komentář' : 'Peter M. replied to your comment', 
+        description: language === 'cz' ? 'Nový komentář ve vaší diskuzi' : 'New comment on your discussion', 
         time: language === 'cz' ? 'před 2h' : '2h ago', 
         unread: false, 
         type: 'community',
