@@ -1,65 +1,61 @@
-// Edge88 Service Worker for PWA
 const CACHE_NAME = 'edge88-v1';
-const OFFLINE_URL = '/offline.html';
-
-// Assets to cache
-const ASSETS_TO_CACHE = [
+const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg',
-  '/icon-192.png',
-  '/icon-512.png'
 ];
 
-// Install event - cache assets
+// Install service worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[SW] Opened cache');
+      return cache.addAll(urlsToCache);
+    })
   );
+  self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// Activate service worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch strategy: Network first, fall back to cache
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip API calls
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('supabase')) {
-    return;
-  }
+  // Skip API calls (always fresh)
+  if (event.request.url.includes('/api/')) return;
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clone response for caching
-        const responseClone = response.clone();
+        // Clone the response
+        const responseToCache = response.clone();
+
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
+          cache.put(event.request, responseToCache);
         });
+
         return response;
       })
       .catch(() => {
-        // Return cached response
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || caches.match('/');
-        });
+        // If network fails, try cache
+        return caches.match(event.request);
       })
   );
 });
