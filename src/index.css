@@ -483,6 +483,34 @@
   }
 }
 
+/* Sidebar border pulse animation */
+@keyframes sidebar-border-pulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Logo shimmer animation */
+@keyframes logo-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-sidebar-pulse {
+  animation: sidebar-border-pulse 3s ease-in-out infinite;
+}
+
+.animate-logo-shimmer {
+  animation: logo-shimmer 3s ease-in-out infinite;
+}
+
 /* Ticker animation */
 .animate-ticker {
   animation: ticker 30s linear infinite;
