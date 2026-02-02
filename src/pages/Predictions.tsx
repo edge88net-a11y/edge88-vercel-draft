@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Filter, RefreshCw, Zap, Grid3X3, List, Search, ArrowUpDown, Flame, Target, Trophy } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Filter, RefreshCw, Zap, Grid3X3, List, Search, ArrowUpDown, Flame, Target, Trophy, Clock, Calendar } from 'lucide-react';
 import { PredictionCardSimple } from '@/components/PredictionCardSimple';
 import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
@@ -16,19 +16,29 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { isAdminUser, hasFullAccess } from '@/lib/adminAccess';
+import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
+import { differenceInHours, isToday, isTomorrow, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 
 const sports = ['All', 'NFL', 'NBA', 'NHL', 'MLB', 'Soccer', 'EPL', 'UFC'];
 const confidenceLevels = [
-  { label: 'All', min: 0, icon: null },
-  { label: '🔒 Lock 75%+', min: 75, color: 'success' },
-  { label: '🔥 High 65%+', min: 65, color: 'warning' },
-  { label: '📊 Medium 55%+', min: 55, color: 'orange' },
+  { label: 'All', labelCz: 'Vše', min: 0, icon: null },
+  { label: '🔒 Lock 75%+', labelCz: '🔒 Lock 75%+', min: 75, color: 'gold' },
+  { label: '🔥 High 65%+', labelCz: '🔥 High 65%+', min: 65, color: 'orange' },
+  { label: '📊 Medium 55%+', labelCz: '📊 Medium 55%+', min: 55, color: 'cyan' },
 ];
 const predictionTypes = ['All', 'Moneyline', 'Spread', 'Over/Under', 'Prop'];
+const timeFilters = [
+  { value: 'all', labelCz: 'Vše', labelEn: 'All' },
+  { value: 'live', labelCz: 'Živě teď', labelEn: 'Live Now' },
+  { value: 'today', labelCz: 'Dnes', labelEn: 'Today' },
+  { value: 'tomorrow', labelCz: 'Zítra', labelEn: 'Tomorrow' },
+  { value: 'week', labelCz: 'Tento týden', labelEn: 'This Week' },
+];
 const sortOptions = [
-  { value: 'confidence', labelKey: 'confidence' },
-  { value: 'gameTime', labelKey: 'type' },
-  { value: 'sport', labelKey: 'sport' },
+  { value: 'confidence', labelCz: 'Podle jistoty', labelEn: 'By Confidence' },
+  { value: 'gameTime', labelCz: 'Podle času', labelEn: 'By Time' },
+  { value: 'odds', labelCz: 'Podle kurzu', labelEn: 'By Odds' },
+  { value: 'ev', labelCz: 'Podle hodnoty (EV)', labelEn: 'By EV' },
 ];
 
 const FREE_PICKS_LIMIT = 3;
@@ -37,10 +47,14 @@ const Predictions = () => {
   const [selectedSport, setSelectedSport] = useState('All');
   const [selectedConfidence, setSelectedConfidence] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
+  const [selectedTime, setSelectedTime] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('confidence');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [autoRefreshCounter, setAutoRefreshCounter] = useState(30);
+  const [isSticky, setIsSticky] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
   
   const { user, profile } = useAuth();
   const { t, language } = useLanguage();
@@ -52,19 +66,42 @@ const Predictions = () => {
                 profile?.subscription_tier === 'pro' || 
                 profile?.subscription_tier === 'elite';
 
+  // Auto-refresh countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAutoRefreshCounter(prev => {
+        if (prev <= 1) {
+          refetch();
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [refetch]);
+
+  // Sticky filters on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (filtersRef.current) {
+        const rect = filtersRef.current.getBoundingClientRect();
+        setIsSticky(rect.top <= 80);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleRefresh = () => {
     refetch();
+    setAutoRefreshCounter(30);
   };
 
   const toggleSortOrder = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
-  // Debug: Log predictions data
-  console.log('[Predictions Page] Raw predictions:', predictions);
-  console.log('[Predictions Page] Total count:', predictions?.length);
-
-  // Deduplicate predictions by game (homeTeam-awayTeam-date) - keep ALL, don't filter by result
+  // Deduplicate predictions by game
   const allPredictions = useMemo(() => {
     if (!predictions || predictions.length === 0) return [];
     
@@ -73,25 +110,26 @@ const Predictions = () => {
     predictions.forEach(p => {
       const key = `${p.homeTeam}-${p.awayTeam}-${p.gameTime.split('T')[0]}`;
       const existing = seenGames.get(key);
-      // Keep the most recent prediction
       if (!existing || new Date(p.gameTime) > new Date(existing.gameTime)) {
         seenGames.set(key, p);
       }
     });
     
-    const deduped = Array.from(seenGames.values());
-    console.log('[Predictions Page] After dedup:', deduped.length);
-    return deduped;
+    return Array.from(seenGames.values());
   }, [predictions]);
 
-  // Active (pending) predictions for filtering
-  const activePredictions = useMemo(() => {
-    const pending = allPredictions.filter((p) => p.result === 'pending');
-    console.log('[Predictions Page] Pending predictions:', pending.length);
-    return pending;
+  // Check for live games
+  const hasLiveGames = useMemo(() => {
+    return allPredictions.some(p => {
+      const gameDate = new Date(p.gameTime);
+      const now = new Date();
+      const diffMs = now.getTime() - gameDate.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours >= 0 && diffHours < 4;
+    });
   }, [allPredictions]);
 
-  // Calculate stats - use allPredictions for accurate count
+  // Calculate stats
   const stats = useMemo(() => {
     const total = allPredictions.length;
     const highConfidence = allPredictions.filter(p => normalizeConfidence(p.confidence) >= 70).length;
@@ -99,20 +137,24 @@ const Predictions = () => {
     return { total, highConfidence, locks };
   }, [allPredictions]);
 
+  // Animated counters
+  const animatedTotal = useAnimatedCounter(stats.total, { duration: 1200 });
+  const animatedHighConf = useAnimatedCounter(stats.highConfidence, { duration: 1200, delay: 100 });
+  const animatedLocks = useAnimatedCounter(stats.locks, { duration: 1200, delay: 200 });
+
   const filteredAndSortedPredictions = useMemo(() => {
-    // Use ALL predictions (including pending and completed) for display
     let filtered = allPredictions.filter((prediction) => {
-      // Infer sport from team names if UUID
       const sportName = prediction.sport?.includes('-') 
         ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
         : prediction.sport;
       const normalizedConfidence = normalizeConfidence(prediction.confidence);
+      const gameDate = new Date(prediction.gameTime);
+      const now = new Date();
       
-      // Sport filter - more lenient matching
+      // Sport filter
       if (selectedSport !== 'All') {
         const sportMatch = (sportName || '').toLowerCase();
         const filterMatch = selectedSport.toLowerCase();
-        // Check if sport contains the filter or filter contains the sport
         if (!sportMatch.includes(filterMatch) && !filterMatch.includes(sportMatch)) {
           return false;
         }
@@ -127,6 +169,22 @@ const Predictions = () => {
       // Type filter
       if (selectedType !== 'All' && prediction.prediction.type !== selectedType) {
         return false;
+      }
+
+      // Time filter
+      if (selectedTime !== 'all') {
+        const diffMs = now.getTime() - gameDate.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        const isLive = diffHours >= 0 && diffHours < 4;
+        
+        if (selectedTime === 'live' && !isLive) return false;
+        if (selectedTime === 'today' && !isToday(gameDate)) return false;
+        if (selectedTime === 'tomorrow' && !isTomorrow(gameDate)) return false;
+        if (selectedTime === 'week') {
+          const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+          const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+          if (!isWithinInterval(gameDate, { start: weekStart, end: weekEnd })) return false;
+        }
       }
       
       // Search filter
@@ -143,8 +201,6 @@ const Predictions = () => {
       return true;
     });
 
-    console.log('[Predictions Page] After filtering:', filtered.length);
-
     // Sort
     filtered.sort((a, b) => {
       let comparison = 0;
@@ -155,8 +211,15 @@ const Predictions = () => {
         case 'gameTime':
           comparison = new Date(a.gameTime).getTime() - new Date(b.gameTime).getTime();
           break;
-        case 'sport':
-          comparison = (a.sport || '').localeCompare(b.sport || '');
+        case 'odds':
+          const oddsA = parseFloat(a.prediction.odds.replace('+', '')) || 0;
+          const oddsB = parseFloat(b.prediction.odds.replace('+', '')) || 0;
+          comparison = oddsA - oddsB;
+          break;
+        case 'ev':
+          const evA = typeof a.expectedValue === 'string' ? parseFloat(a.expectedValue) : a.expectedValue;
+          const evB = typeof b.expectedValue === 'string' ? parseFloat(b.expectedValue) : b.expectedValue;
+          comparison = evA - evB;
           break;
         default:
           comparison = normalizeConfidence(b.confidence) - normalizeConfidence(a.confidence);
@@ -165,22 +228,21 @@ const Predictions = () => {
     });
 
     return filtered;
-  }, [allPredictions, selectedSport, selectedConfidence, selectedType, searchQuery, sortBy, sortOrder]);
+  }, [allPredictions, selectedSport, selectedConfidence, selectedType, selectedTime, searchQuery, sortBy, sortOrder]);
 
   // Admin users NEVER see locked predictions
   const shouldLockPrediction = (index: number) => {
-    if (isAdmin) return false; // Admin always has full access
+    if (isAdmin) return false;
     if (isPro) return false;
-    if (user) return index >= FREE_PICKS_LIMIT * 2; // Logged in users get 6
-    return index >= FREE_PICKS_LIMIT; // Non-logged in get 3
+    if (user) return index >= FREE_PICKS_LIMIT * 2;
+    return index >= FREE_PICKS_LIMIT;
   };
 
   // Get translated sort options
-  const translatedSortOptions = [
-    { value: 'confidence', label: t.confidence },
-    { value: 'gameTime', label: 'Game Time' },
-    { value: 'sport', label: t.sport },
-  ];
+  const translatedSortOptions = sortOptions.map(opt => ({
+    value: opt.value,
+    label: language === 'cz' ? opt.labelCz : opt.labelEn
+  }));
 
   return (
     <div className="space-y-6">
@@ -198,16 +260,16 @@ const Predictions = () => {
 
       {/* Header with Stats */}
       <div className="mb-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-black tracking-tight">{t.predictions}</h1>
-              <div className="live-badge">
+              <div className="live-badge flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/20 border border-success/30">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                 </span>
-                <span>LIVE</span>
+                <span className="text-xs font-bold text-success">LIVE</span>
               </div>
             </div>
             <p className="text-muted-foreground">
@@ -247,32 +309,35 @@ const Predictions = () => {
           </div>
         </div>
 
-        {/* Quick Stats Row */}
+        {/* Animated gradient line */}
+        <div className="h-1 rounded-full bg-gradient-to-r from-cyan-500 via-emerald-500 to-cyan-500 animate-premium-shimmer mb-6" />
+
+        {/* Quick Stats Row - Animated */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-          <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
+          <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-l-4 border-l-primary hover:scale-[1.02] transition-transform">
             <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/20 shrink-0">
               <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
             <div className="min-w-0">
-              <div className="font-mono text-lg sm:text-2xl font-black text-foreground">{stats.total}</div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground truncate">Active Picks</div>
+              <div className="font-mono text-lg sm:text-2xl font-black text-foreground stat-glow-cyan">{Math.round(animatedTotal)}</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground truncate">{language === 'cz' ? 'Aktivní tipy' : 'Active Picks'}</div>
             </div>
           </div>
-          <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
+          <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-l-4 border-l-success hover:scale-[1.02] transition-transform">
             <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-success/20 shrink-0">
               <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
             </div>
             <div className="min-w-0">
-              <div className="font-mono text-lg sm:text-2xl font-black text-success">{stats.highConfidence}</div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground truncate">High Conf.</div>
+              <div className="font-mono text-lg sm:text-2xl font-black text-success stat-glow-green">{Math.round(animatedHighConf)}</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground truncate">{language === 'cz' ? 'Vysoká jistota' : 'High Conf.'}</div>
             </div>
           </div>
-          <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
+          <div className="stat-card flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-l-4 border-l-warning hover:scale-[1.02] transition-transform">
             <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-warning/20 shrink-0">
               <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
             </div>
             <div className="min-w-0">
-              <div className="font-mono text-lg sm:text-2xl font-black text-warning">{stats.locks}</div>
+              <div className="font-mono text-lg sm:text-2xl font-black text-warning stat-glow-gold">{Math.round(animatedLocks)}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground truncate">🔒 Locks</div>
             </div>
           </div>
@@ -309,14 +374,48 @@ const Predictions = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="glass-card mb-6 sm:mb-8 p-3 sm:p-5">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 sm:mb-4">
-          <Filter className="h-4 w-4 text-primary" />
-          <span className="font-semibold">{t.filter}</span>
+      {/* Filters - Sticky on scroll */}
+      <div 
+        ref={filtersRef}
+        className={cn(
+          "glass-card mb-6 sm:mb-8 p-3 sm:p-5 transition-all duration-300",
+          isSticky && "sticky top-20 z-40 shadow-lg shadow-primary/5 border-primary/20"
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground mb-3 sm:mb-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-primary" />
+            <span className="font-semibold">{t.filter}</span>
+          </div>
+          {/* Auto-refresh indicator with animated ring */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className="relative h-6 w-6">
+              <svg className="h-6 w-6 -rotate-90" viewBox="0 0 36 36">
+                <circle
+                  cx="18" cy="18" r="15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="text-muted/30"
+                />
+                <circle
+                  cx="18" cy="18" r="15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray={`${(autoRefreshCounter / 30) * 94} 94`}
+                  strokeLinecap="round"
+                  className="text-primary transition-all duration-1000"
+                />
+              </svg>
+            </div>
+            <span className="text-muted-foreground">
+              {language === 'cz' ? `Auto-obnovení za ${autoRefreshCounter}s` : `Auto-refresh in ${autoRefreshCounter}s`}
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-4 sm:space-y-0 sm:grid sm:gap-5 sm:grid-cols-3">
+        <div className="space-y-4 sm:space-y-0 sm:grid sm:gap-5 sm:grid-cols-4">
           {/* Sport Filter */}
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -330,11 +429,11 @@ const Predictions = () => {
                   className={cn(
                     'flex items-center gap-1 sm:gap-1.5 rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
                     selectedSport === sport
-                      ? 'filter-chip-active'
-                      : 'filter-chip'
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                      : 'filter-chip hover:bg-muted'
                   )}
                 >
-                  {sport !== 'All' && <span>{getSportEmoji(sport)}</span>}
+                  {sport !== 'All' && <span className="text-base">{getSportEmoji(sport)}</span>}
                   {sport === 'All' ? t.all : sport}
                 </button>
               ))}
@@ -353,12 +452,44 @@ const Predictions = () => {
                   onClick={() => setSelectedConfidence(level.label)}
                   className={cn(
                     'rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
-                    selectedConfidence === level.label
-                      ? 'filter-chip-active'
-                      : 'filter-chip'
+                    selectedConfidence === level.label && level.color === 'gold' && 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-lg shadow-amber-500/20',
+                    selectedConfidence === level.label && level.color === 'orange' && 'bg-orange-500/20 text-orange-400 border border-orange-500/40 shadow-lg shadow-orange-500/20',
+                    selectedConfidence === level.label && level.color === 'cyan' && 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-lg shadow-cyan-500/20',
+                    selectedConfidence === level.label && !level.color && 'bg-primary text-primary-foreground',
+                    selectedConfidence !== level.label && 'filter-chip hover:bg-muted'
                   )}
                 >
                   {level.label === 'All' ? t.all : level.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Time Filter - NEW */}
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              ⏰ {language === 'cz' ? 'Čas' : 'Time'}
+            </label>
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap scrollbar-hide -mx-1 px-1">
+              {timeFilters.map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setSelectedTime(filter.value)}
+                  className={cn(
+                    'flex items-center gap-1 rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
+                    filter.value === 'live' && hasLiveGames && selectedTime !== 'live' && 'border-2 border-red-500/50',
+                    selectedTime === filter.value && filter.value === 'live' && 'bg-red-500/20 text-red-400 border border-red-500/40 shadow-lg shadow-red-500/20',
+                    selectedTime === filter.value && filter.value !== 'live' && 'bg-primary text-primary-foreground',
+                    selectedTime !== filter.value && 'filter-chip hover:bg-muted'
+                  )}
+                >
+                  {filter.value === 'live' && (
+                    <span className="relative flex h-2 w-2 mr-1">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                  )}
+                  {language === 'cz' ? filter.labelCz : filter.labelEn}
                 </button>
               ))}
             </div>
@@ -377,8 +508,8 @@ const Predictions = () => {
                   className={cn(
                     'rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0 min-h-[44px]',
                     selectedType === type
-                      ? 'filter-chip-active'
-                      : 'filter-chip'
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                      : 'filter-chip hover:bg-muted'
                   )}
                 >
                   {type === 'All' ? t.all : type}
@@ -422,7 +553,7 @@ const Predictions = () => {
         </div>
       )}
 
-      {/* Predictions Grid - Consistent card heights with CSS Grid */}
+      {/* Predictions Grid */}
       {isLoading && !isMaintenanceMode ? (
         <div className={cn(
           'grid gap-4 md:gap-6',
@@ -467,6 +598,7 @@ const Predictions = () => {
               setSelectedSport('All');
               setSelectedConfidence('All');
               setSelectedType('All');
+              setSelectedTime('all');
               setSearchQuery('');
             }}
             className="mt-6 border-primary/30 hover:bg-primary/10 hover:border-primary"
