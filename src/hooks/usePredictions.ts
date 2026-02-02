@@ -111,6 +111,10 @@ export interface APIPrediction {
   venue?: string;
   keyFactorsList?: string[];
   keyFactorsList_cs?: string[];
+  // Database fields
+  ai_analysis?: string;
+  mystical_analysis?: Record<string, unknown>;
+  odds_decimal?: number;
 }
 
 export interface DailyAccuracy {
@@ -232,7 +236,7 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     },
     confidence: Number(raw.confidence) || 0.65,
     expectedValue: Number(raw.expected_value ?? predObj?.expectedValue ?? raw.ev ?? 0),
-    reasoning: String(raw.reasoning || raw.analysis || ''),
+    reasoning: String(raw.reasoning || raw.analysis || raw.ai_analysis || ''),
     reasoning_cs: raw.reasoning_cs ? String(raw.reasoning_cs) : undefined,
     result: status === 'completed' || status === 'settled' 
       ? (raw.is_correct === true || raw.result === 'win' ? 'win' : raw.is_correct === false || raw.result === 'loss' ? 'loss' : 'pending')
@@ -245,9 +249,12 @@ function transformPrediction(raw: Record<string, unknown>): APIPrediction {
     sourcesAnalyzed: Number(featuresUsed?.sources_scanned || 0),
     keyFactorsList,
     keyFactorsList_cs,
-    fullReasoning: String(raw.reasoning || ''),
+    fullReasoning: String(raw.reasoning || raw.ai_analysis || ''),
     fullReasoning_cs: raw.reasoning_cs ? String(raw.reasoning_cs) : undefined,
     venue: gamesData ? `${gamesData.home_team} Stadium` : undefined,
+    ai_analysis: raw.ai_analysis ? String(raw.ai_analysis) : undefined,
+    mystical_analysis: raw.mystical_analysis as Record<string, unknown> | undefined,
+    odds_decimal: Number(raw.odds_decimal || 0),
   };
 }
 
@@ -297,18 +304,11 @@ export function useActivePredictions() {
           console.log(`[API] Prediction ${i + 1}: ${p.homeTeam} vs ${p.awayTeam}, sport=${p.sport}, result=${p.result}`);
         });
         
-        if (predictions.length > 0) {
-          toastShownRef.current = false;
-          return predictions;
-        }
-        
-        throw new MaintenanceError('No predictions available');
+        // Always return array, even if empty
+        toastShownRef.current = false;
+        return predictions;
       } catch (error) {
-        if (error instanceof MaintenanceError) {
-          throw error;
-        }
-        
-        console.error('[API] All retries exhausted:', error);
+        console.error('[API] Error fetching predictions:', error);
         
         if (!toastShownRef.current) {
           toast({
@@ -319,7 +319,8 @@ export function useActivePredictions() {
           toastShownRef.current = true;
         }
         
-        throw new MaintenanceError('Prediction engine is currently processing data');
+        // Return empty array instead of throwing
+        return [];
       }
     },
     staleTime: Infinity,
@@ -407,13 +408,40 @@ export function useStats() {
           return stats;
         }
         
-        throw new MaintenanceError('No stats available');
+        // Return default stats instead of throwing
+        return {
+          totalPredictions: 0,
+          accuracy: 0,
+          activePredictions: 0,
+          roi: 0,
+          winStreak: 0,
+          picksToday: 0,
+          byConfidence: {
+            lock: { total: 0, wins: 0 },
+            high: { total: 0, wins: 0 },
+            medium: { total: 0, wins: 0 },
+            low: { total: 0, wins: 0 },
+          },
+          bySport: [],
+        };
       } catch (error) {
-        if (error instanceof MaintenanceError) {
-          throw error;
-        }
         console.warn('[API] Stats error:', error);
-        throw new MaintenanceError('Stats engine is currently processing data');
+        // Return default stats instead of throwing
+        return {
+          totalPredictions: 0,
+          accuracy: 0,
+          activePredictions: 0,
+          roi: 0,
+          winStreak: 0,
+          picksToday: 0,
+          byConfidence: {
+            lock: { total: 0, wins: 0 },
+            high: { total: 0, wins: 0 },
+            medium: { total: 0, wins: 0 },
+            low: { total: 0, wins: 0 },
+          },
+          bySport: [],
+        };
       }
     },
     staleTime: 60 * 1000,
