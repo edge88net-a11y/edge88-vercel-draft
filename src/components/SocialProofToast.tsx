@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 // Czech city names for realism
@@ -14,8 +16,25 @@ const ENGLISH_NAMES = ['John', 'Mike', 'David', 'James', 'Chris', 'Alex', 'Dan',
 const LAST_INITIALS = ['K.', 'M.', 'N.', 'P.', 'R.', 'S.', 'T.', 'V.', 'H.', 'J.', 'L.', 'B.', 'D.', 'F.', 'Z.'];
 
 // Amount ranges for realistic wins
-const WIN_AMOUNTS = [2500, 3800, 4200, 5500, 6700, 7200, 8500, 9800, 11200, 12500, 15000, 18000, 23000, 28000, 35000];
-const WEEKLY_AMOUNTS = [15000, 18500, 23000, 28000, 35000, 42000, 55000, 68000];
+const WIN_AMOUNTS = [1200, 1800, 2400, 3200, 4500, 5800, 7200, 8500, 9800, 12500, 15000, 18000];
+const WEEKLY_AMOUNTS = [15000, 18500, 23000, 28000, 35000, 42000, 55000];
+
+// Teams for predictions
+const TEAMS = {
+  NHL: ['Detroit', 'Colorado', 'Vegas', 'Toronto', 'Boston', 'Tampa Bay', 'Edmonton', 'Carolina'],
+  NBA: ['Lakers', 'Celtics', 'Warriors', 'Bucks', 'Heat', 'Nuggets', 'Suns', 'Nets'],
+  NFL: ['Chiefs', 'Eagles', 'Bills', '49ers', 'Cowboys', 'Ravens', 'Dolphins', 'Lions'],
+};
+
+// Sport colors for accent
+const SPORT_COLORS: Record<string, string> = {
+  NHL: 'border-l-blue-500',
+  NBA: 'border-l-orange-500',
+  NFL: 'border-l-green-500',
+  soccer: 'border-l-emerald-500',
+  UFC: 'border-l-red-500',
+  default: 'border-l-primary',
+};
 
 function getRandomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -25,44 +44,105 @@ function formatCzechAmount(amount: number): string {
   return amount.toLocaleString('cs-CZ').replace(/\s/g, ' ');
 }
 
-type MessageGenerator = (language: 'en' | 'cz') => { emoji: string; text: string };
+type MessageData = { 
+  emoji: string; 
+  text: string; 
+  sport?: string;
+  link?: string;
+};
+
+type MessageGenerator = (language: 'en' | 'cz') => MessageData;
 
 const MESSAGE_GENERATORS: MessageGenerator[] = [
-  // Win notification
+  // Win notification - user just won
   (lang) => {
     const name = lang === 'cz' ? getRandomItem(CZECH_NAMES) : getRandomItem(ENGLISH_NAMES);
     const initial = getRandomItem(LAST_INITIALS);
-    const city = lang === 'cz' ? getRandomItem(CZECH_CITIES) : getRandomItem(ENGLISH_CITIES);
     const amount = getRandomItem(WIN_AMOUNTS);
     return {
-      emoji: '🎉',
+      emoji: '🎯',
       text: lang === 'cz' 
-        ? `${name} ${initial} z ${city === 'Praha' ? 'Prahy' : city === 'Brno' ? 'Brna' : city} právě vyhrál +${formatCzechAmount(amount)} Kč!`
-        : `${name} ${initial} from ${city} just won +${formatCzechAmount(amount)} Kč!`
+        ? `${name} ${initial} právě vyhrál +${formatCzechAmount(amount)} Kč!`
+        : `${name} ${initial} just won +${formatCzechAmount(amount)} Kč!`,
+      link: '/results',
     };
   },
-  // Daily picks hit
+  // Current win streak
   (lang) => {
-    const hits = Math.floor(Math.random() * 3) + 3; // 3-5
+    const streak = Math.floor(Math.random() * 10) + 15; // 15-24
+    return {
+      emoji: '🔥',
+      text: lang === 'cz'
+        ? `Aktuální série: ${streak} výher v řadě!`
+        : `Current streak: ${streak} wins in a row!`,
+      link: '/results',
+    };
+  },
+  // Sport-specific accuracy this week
+  (lang) => {
+    const sport = getRandomItem(['NHL', 'NBA', 'NFL']);
+    const accuracy = Math.floor(Math.random() * 10) + 72; // 72-81%
+    return {
+      emoji: sport === 'NHL' ? '🏒' : sport === 'NBA' ? '🏀' : '🏈',
+      text: lang === 'cz'
+        ? `${sport} přesnost tento týden: ${accuracy}%!`
+        : `${sport} accuracy this week: ${accuracy}%!`,
+      sport,
+      link: '/results',
+    };
+  },
+  // New prediction just added
+  (lang) => {
+    const sport = getRandomItem(['NHL', 'NBA', 'NFL']) as keyof typeof TEAMS;
+    const teams = TEAMS[sport];
+    const home = getRandomItem(teams);
+    let away = getRandomItem(teams);
+    while (away === home) away = getRandomItem(teams);
+    const confidence = Math.floor(Math.random() * 10) + 70; // 70-79%
+    return {
+      emoji: '⚡',
+      text: lang === 'cz'
+        ? `Nový tip: ${away} @ ${home} — ${confidence}% jistota`
+        : `New pick: ${away} @ ${home} — ${confidence}% confidence`,
+      sport,
+      link: '/predictions',
+    };
+  },
+  // Top earners this month
+  (lang) => {
+    const amount = getRandomItem([25000, 32000, 45000, 58000, 72000]);
+    return {
+      emoji: '🏆',
+      text: lang === 'cz'
+        ? `Top sázkaři tento měsíc vydělali přes ${formatCzechAmount(amount)} Kč`
+        : `Top bettors this month earned over ${formatCzechAmount(amount)} Kč`,
+      link: '/community',
+    };
+  },
+  // Users watching
+  (lang) => {
+    const count = Math.floor(Math.random() * 200) + 250; // 250-449
+    return {
+      emoji: '👀',
+      text: lang === 'cz'
+        ? `${count} uživatelů právě sleduje predikce`
+        : `${count} users watching predictions right now`,
+      link: '/predictions',
+    };
+  },
+  // Daily picks hit rate
+  (lang) => {
+    const hits = Math.floor(Math.random() * 3) + 4; // 4-6
     const total = hits + Math.floor(Math.random() * 2); // hits or hits+1
     return {
       emoji: '✅',
       text: lang === 'cz' 
         ? `${hits} z ${total} dnešních tipů vyšly!`
-        : `${hits} out of ${total} picks hit today!`
+        : `${hits} out of ${total} picks hit today!`,
+      link: '/results',
     };
   },
-  // New user signup
-  (lang) => {
-    const city = lang === 'cz' ? getRandomItem(CZECH_CITIES) : getRandomItem(ENGLISH_CITIES);
-    return {
-      emoji: '🔥',
-      text: lang === 'cz'
-        ? `Nový uživatel z ${city === 'Praha' ? 'Prahy' : city === 'Brno' ? 'Brna' : city} se právě zaregistroval`
-        : `New user from ${city} just signed up`
-    };
-  },
-  // Weekly earnings
+  // Weekly earnings for random user
   (lang) => {
     const name = lang === 'cz' ? getRandomItem(CZECH_NAMES) : getRandomItem(ENGLISH_NAMES);
     const initial = getRandomItem(LAST_INITIALS);
@@ -71,139 +151,126 @@ const MESSAGE_GENERATORS: MessageGenerator[] = [
       emoji: '💰',
       text: lang === 'cz'
         ? `${name} ${initial} vydělal tento týden +${formatCzechAmount(amount)} Kč`
-        : `${name} ${initial} earned +${formatCzechAmount(amount)} Kč this week`
+        : `${name} ${initial} earned +${formatCzechAmount(amount)} Kč this week`,
+      link: '/community',
     };
   },
-  // Win streak
+  // New tips just added
   (lang) => {
-    const name = lang === 'cz' ? getRandomItem(CZECH_NAMES) : getRandomItem(ENGLISH_NAMES);
-    const initial = getRandomItem(LAST_INITIALS);
-    const streak = Math.floor(Math.random() * 5) + 5; // 5-9
-    return {
-      emoji: '🏆',
-      text: lang === 'cz'
-        ? `${name} ${initial} má sérii ${streak} výher za sebou!`
-        : `${name} ${initial} is on a ${streak}-pick win streak!`
-    };
-  },
-  // Pro upgrade
-  (lang) => {
-    const count = Math.floor(Math.random() * 30) + 25; // 25-54
+    const count = Math.floor(Math.random() * 8) + 5; // 5-12
     return {
       emoji: '🚀',
       text: lang === 'cz'
-        ? `${count} lidí upgradovalo na Pro tento týden!`
-        : `${count} people upgraded to Pro this week!`
-    };
-  },
-  // Sport-specific win
-  (lang) => {
-    const sports = lang === 'cz' 
-      ? ['NHL', 'NBA', 'NFL', 'fotbalový', 'UFC']
-      : ['NHL', 'NBA', 'NFL', 'soccer', 'UFC'];
-    const sport = getRandomItem(sports);
-    const odds = ['+145', '+165', '+180', '+210', '+250'][Math.floor(Math.random() * 5)];
-    return {
-      emoji: '🏒',
-      text: lang === 'cz'
-        ? `${sport} tip vyhrál při kurzu ${odds}!`
-        : `${sport} pick won at ${odds} odds!`
-    };
-  },
-  // Accuracy update
-  (lang) => {
-    const accuracy = Math.floor(Math.random() * 8) + 70; // 70-77%
-    return {
-      emoji: '🎯',
-      text: lang === 'cz'
-        ? `Dnešní přesnost: ${accuracy}% - výborný den!`
-        : `Today's accuracy: ${accuracy}% - great day!`
-    };
-  },
-  // Referral bonus
-  (lang) => {
-    const name = lang === 'cz' ? getRandomItem(CZECH_NAMES) : getRandomItem(ENGLISH_NAMES);
-    const initial = getRandomItem(LAST_INITIALS);
-    const tips = Math.floor(Math.random() * 3) + 2; // 2-4
-    return {
-      emoji: '🎁',
-      text: lang === 'cz'
-        ? `${name} ${initial} získal ${tips} tipy zdarma za doporučení!`
-        : `${name} ${initial} earned ${tips} free tips from referrals!`
-    };
-  },
-  // Live picks update
-  (lang) => {
-    const count = Math.floor(Math.random() * 10) + 8; // 8-17
-    return {
-      emoji: '⚡',
-      text: lang === 'cz'
         ? `${count} nových tipů právě přidáno!`
-        : `${count} new picks just added!`
+        : `${count} new picks just added!`,
+      link: '/predictions',
+    };
+  },
+  // High value pick
+  (lang) => {
+    const sport = getRandomItem(['NHL', 'NBA', 'NFL']) as keyof typeof TEAMS;
+    const confidence = Math.floor(Math.random() * 8) + 78; // 78-85%
+    return {
+      emoji: '🔒',
+      text: lang === 'cz'
+        ? `🔥 LOCK TIP: ${sport} — ${confidence}% jistota právě zveřejněn!`
+        : `🔥 LOCK PICK: ${sport} — ${confidence}% confidence just released!`,
+      sport,
+      link: '/predictions',
     };
   },
 ];
 
 export function SocialProofToast() {
   const { language } = useLanguage();
-  const [currentMessage, setCurrentMessage] = useState<{ emoji: string; text: string } | null>(null);
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const [currentMessage, setCurrentMessage] = useState<MessageData | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [progress, setProgress] = useState(100);
 
-  const generateMessage = () => {
+  const generateMessage = useCallback(() => {
     const generator = getRandomItem(MESSAGE_GENERATORS);
     return generator(language as 'en' | 'cz');
-  };
+  }, [language]);
 
-  useEffect(() => {
-    // Initial delay before first toast (5-8 seconds)
-    const initialDelay = setTimeout(() => {
-      showNextToast();
-    }, 5000 + Math.random() * 3000);
-
-    return () => clearTimeout(initialDelay);
-  }, []);
-
-  useEffect(() => {
-    if (!currentMessage) return;
-
-    // Auto-dismiss after 4 seconds
-    const dismissTimer = setTimeout(() => {
-      setIsVisible(false);
-    }, 4000);
-
-    // Schedule next toast (20-30 seconds)
-    const nextTimer = setTimeout(() => {
-      showNextToast();
-    }, 20000 + Math.random() * 10000);
-
-    return () => {
-      clearTimeout(dismissTimer);
-      clearTimeout(nextTimer);
-    };
-  }, [currentMessage]);
-
-  const showNextToast = () => {
+  const showNextToast = useCallback(() => {
     const message = generateMessage();
     setCurrentMessage(message);
     setIsVisible(true);
+    setProgress(100);
+  }, [generateMessage]);
+
+  useEffect(() => {
+    // Don't show toasts on mobile
+    if (isMobile) return;
+
+    // Initial delay before first toast (8-12 seconds)
+    const initialDelay = setTimeout(() => {
+      showNextToast();
+    }, 8000 + Math.random() * 4000);
+
+    return () => clearTimeout(initialDelay);
+  }, [isMobile, showNextToast]);
+
+  useEffect(() => {
+    if (!currentMessage || isMobile) return;
+
+    // Progress bar animation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => Math.max(0, prev - 2));
+    }, 100);
+
+    // Auto-dismiss after 5 seconds
+    const dismissTimer = setTimeout(() => {
+      setIsVisible(false);
+    }, 5000);
+
+    // Schedule next toast (45-60 seconds)
+    const nextTimer = setTimeout(() => {
+      showNextToast();
+    }, 45000 + Math.random() * 15000);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearTimeout(dismissTimer);
+      clearTimeout(nextTimer);
+    };
+  }, [currentMessage, isMobile, showNextToast]);
+
+  const handleClick = () => {
+    if (currentMessage?.link) {
+      navigate(currentMessage.link);
+    }
+    setIsVisible(false);
   };
 
-  if (!currentMessage) return null;
+  // Don't render on mobile
+  if (isMobile || !currentMessage) return null;
+
+  const accentColor = currentMessage.sport 
+    ? SPORT_COLORS[currentMessage.sport] || SPORT_COLORS.default
+    : SPORT_COLORS.default;
 
   return (
     <div
       className={cn(
-        'fixed bottom-20 md:bottom-6 left-4 z-50 max-w-sm transition-all duration-500 transform',
+        'fixed bottom-6 left-4 z-50 max-w-sm transition-all duration-500 transform cursor-pointer',
         isVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
       )}
+      onClick={handleClick}
     >
-      <div className="relative overflow-hidden rounded-xl border border-success/30 bg-background/95 backdrop-blur-xl shadow-2xl">
-        {/* Accent border glow */}
-        <div className="absolute inset-0 bg-gradient-to-r from-success/10 via-primary/5 to-transparent pointer-events-none" />
+      <div className={cn(
+        "relative overflow-hidden rounded-xl border border-white/10 bg-background/95 backdrop-blur-xl shadow-2xl",
+        "border-l-4",
+        accentColor
+      )}>
+        {/* Glass morphism overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-transparent to-transparent pointer-events-none" />
         
         <div className="relative p-4">
           <div className="flex items-start gap-3">
-            <span className="text-2xl animate-bounce shrink-0">{currentMessage.emoji}</span>
+            <span className="text-2xl shrink-0">{currentMessage.emoji}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground leading-snug">{currentMessage.text}</p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -211,12 +278,23 @@ export function SocialProofToast() {
               </p>
             </div>
             <button
-              onClick={() => setIsVisible(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsVisible(false);
+              }}
               className="text-muted-foreground hover:text-foreground text-lg leading-none shrink-0 p-1"
             >
               ×
             </button>
           </div>
+        </div>
+        
+        {/* Progress bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted/30">
+          <div 
+            className="h-full bg-primary/70 transition-all duration-100 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
     </div>
