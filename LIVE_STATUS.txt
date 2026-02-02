@@ -1,0 +1,29 @@
+# Edge88 Vercel Draft - LIVE STATUS
+
+Deployed: https://edge88-vercel-draft.vercel.app
+Last Deploy: 2026-02-02 14:30 UTC
+Auto-Deploy: Enabled (every git push)
+
+## Backend Connection
+- API: https://api.edge88.net ✅
+- Health: Operational
+- Stats: 92.4% accuracy, 34-win streak, 80 predictions
+- Active Predictions: 2 (displaying on site)
+
+## Data Flow
+Dashboard → useActivePredictions() → API → Shows 2 predictions
+Predictions → useActivePredictions() → API → Shows 2 predictions  
+Results → useStats() → API → Shows 92.4% accuracy, 73W-6L
+
+## Clean Status
+✅ No fake users (removed Community.OLD.tsx)
+✅ No unused mock data
+✅ All pages use real API via hooks
+✅ Build succeeds every time
+✅ Vercel auto-deploys on push
+
+## Next Improvements
+- Better loading states
+- Animations
+- Performance optimization
+- Mobile polish
