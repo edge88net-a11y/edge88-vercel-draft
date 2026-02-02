@@ -41,7 +41,7 @@ function CollapsibleSection({ icon: Icon, title, color, children, defaultOpen = 
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
+    <div className="rounded-lg border border-border bg-card">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
@@ -51,17 +51,14 @@ function CollapsibleSection({ icon: Icon, title, color, children, defaultOpen = 
           <span className="font-semibold text-sm md:text-base">{title}</span>
         </div>
         <ChevronDown className={cn(
-          'h-4 w-4 text-muted-foreground transition-transform duration-300',
+          'h-4 w-4 text-muted-foreground transition-transform duration-200',
           isOpen && 'rotate-180'
         )} />
       </button>
-      <div className={cn(
-        'overflow-hidden transition-all duration-300',
-        isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-      )}>
-        <div className="p-4 pt-0 text-sm">
+      {isOpen && (
+        <div className="p-4 pt-0 text-sm border-t border-border">
           {isLoading ? (
-            <div className="space-y-2">
+            <div className="space-y-2 py-4">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
@@ -70,7 +67,7 @@ function CollapsibleSection({ icon: Icon, title, color, children, defaultOpen = 
             children
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
