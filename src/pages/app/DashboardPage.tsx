@@ -29,6 +29,9 @@ import { StreakFire } from '@/components/ui/StreakFire';
 import { ProfitDisplay } from '@/components/ui/ProfitDisplay';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import { LiveTicker } from '@/components/ui/LiveTicker';
+import { ProfitMeter } from '@/components/ui/ProfitMeter';
+import { HotPickIndicator } from '@/components/ui/HotPickIndicator';
 
 export default function DashboardPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -90,6 +93,19 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Live Ticker */}
+      {!isLoading && !showMaintenanceState && stats && (
+        <LiveTicker
+          items={[
+            { text: `🔥 ${stats.winStreak || 0}-game win streak active`, type: 'win' },
+            { text: `💰 ${stats.profitToday ? `+${stats.profitToday.toLocaleString()} Kč` : '0 Kč'} profit today`, type: stats.profitToday > 0 ? 'win' : 'info' },
+            { text: `⚡ ${stats.accuracy?.toFixed(1) || 0}% accuracy rate`, type: 'win' },
+            { text: `🎯 ${stats.activePredictions || 0} active predictions`, type: 'info' },
+            { text: `💎 ${stats.wins || 0} total wins`, type: 'win' },
+          ]}
+        />
+      )}
+      
       {/* Slim Welcome Bar */}
       <SlimWelcomeBar 
         picksToday={stats?.picksToday || 0} 
