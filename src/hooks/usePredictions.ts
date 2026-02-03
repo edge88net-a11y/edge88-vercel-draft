@@ -132,6 +132,9 @@ export interface APIStats {
   roi: number;
   winStreak: number;
   picksToday?: number;
+  profitToday?: number;
+  profitWeek?: number;
+  profitMonth?: number;
   byConfidence: {
     lock: { total: number; wins: number };
     high: { total: number; wins: number };
@@ -379,6 +382,9 @@ function extractStats(data: unknown): APIStats | null {
       roi: Number(statsData.roi || 0),
       winStreak: currentStreak,
       picksToday,
+      profitToday: Number(statsData.profit_today || statsData.profitToday || 0),
+      profitWeek: Number(statsData.profit_week || statsData.profitWeek || 0),
+      profitMonth: Number(statsData.profit_month || statsData.profitMonth || 0),
       byConfidence: (statsData.byConfidence || statsData.by_confidence) as APIStats['byConfidence'] || {
         lock: { total: 0, wins: 0 },
         high: { total: 0, wins: 0 },

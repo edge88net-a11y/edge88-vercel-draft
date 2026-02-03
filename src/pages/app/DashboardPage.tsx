@@ -6,8 +6,6 @@ import { PredictionCardSkeletonList } from '@/components/PredictionCardSkeleton'
 import { TonightsGames } from '@/components/TonightsGames';
 import { MaintenanceState } from '@/components/MaintenanceState';
 import { OnboardingFlow } from '@/components/OnboardingFlow';
-import { ReferralWidget } from '@/components/dashboard/ReferralWidget';
-import { TelegramWidget } from '@/components/dashboard/TelegramWidget';
 import { SlimWelcomeBar } from '@/components/dashboard/SlimWelcomeBar';
 import { EnhancedStatCard } from '@/components/dashboard/EnhancedStatCard';
 import { ProfitPill } from '@/components/dashboard/ProfitPill';
@@ -201,15 +199,15 @@ export default function DashboardPage() {
           <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
             <ProfitPill 
               label={language === 'cz' ? 'Dnes' : 'Today'} 
-              amount={null} 
+              amount={stats?.profitToday ?? null} 
             />
             <ProfitPill 
               label={language === 'cz' ? 'Tento týden' : 'This week'} 
-              amount={null} 
+              amount={stats?.profitWeek ?? null} 
             />
             <ProfitPill 
               label={language === 'cz' ? 'Tento měsíc' : 'This month'} 
-              amount={null} 
+              amount={stats?.profitMonth ?? null} 
             />
           </div>
 
@@ -256,9 +254,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
+          <div className="grid gap-6 sm:gap-8">
             {/* Live Predictions */}
-            <div className="lg:col-span-2">
+            <div>
               <div className="mb-4 sm:mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg sm:text-xl font-semibold">{t.activePredictions}</h2>
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -297,18 +295,6 @@ export default function DashboardPage() {
                   <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">{t.checkBackSoon}</p>
                 </div>
               )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Referral Widget */}
-              <ReferralWidget />
-
-              {/* Telegram Widget */}
-              <TelegramWidget />
-
-              {/* Telegram Widget */}
-              <TelegramWidget />
             </div>
           </div>
         </>

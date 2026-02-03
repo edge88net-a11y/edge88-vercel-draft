@@ -94,9 +94,16 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
     ? getSportFromTeams(prediction.homeTeam, prediction.awayTeam)
     : prediction.sport;
     
-  const expectedValue = typeof prediction.expectedValue === 'string' 
+  let expectedValue = typeof prediction.expectedValue === 'string' 
     ? parseFloat(prediction.expectedValue) 
-    : prediction.expectedValue;
+    : (prediction.expectedValue || 0);
+  
+  // Calculate EV if not provided or is 0
+  if (expectedValue === 0 || expectedValue === null || expectedValue === undefined) {
+    const winProb = confidencePercent / 100;
+    const decimalOdds = toDecimalOdds(prediction.prediction.odds);
+    expectedValue = (winProb * (decimalOdds - 1) - (1 - winProb)) * 100;
+  }
 
   // Get confidence color class
   const getConfidenceColorClass = () => {
