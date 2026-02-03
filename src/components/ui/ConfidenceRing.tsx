@@ -55,7 +55,7 @@ export function ConfidenceRing({
       {showLabel && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span 
-            className="text-3xl font-bold"
+            className="text-3xl font-bold drop-shadow-lg"
             style={{ color: getColor() }}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -63,7 +63,7 @@ export function ConfidenceRing({
           >
             {Math.round(confidence)}%
           </motion.span>
-          <span className="text-xs text-gray-500 uppercase">Confidence</span>
+          <span className="text-xs text-foreground/80 uppercase font-semibold drop-shadow-md">Confidence</span>
         </div>
       )}
     </div>
