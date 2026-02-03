@@ -283,6 +283,30 @@ function extractPredictionsArray(data: unknown): APIPrediction[] {
 }
 
 // Fetch active predictions from API with detailed data
+export function useRecentResults(limit: number = 10) {
+  const query = useQuery({
+    queryKey: ['predictions', 'results', limit],
+    queryFn: async (): Promise<APIPrediction[]> => {
+      const url = `${API_BASE_URL}/predictions/results?limit=${limit}`;
+      
+      try {
+        const data = await fetchWithRetry(url);
+        return extractPredictions(data);
+      } catch (error) {
+        console.error('[API] Error fetching results:', error);
+        return [];
+      }
+    },
+    refetchInterval: 60000, // Refetch every 60 seconds
+    retry: 3,
+  });
+
+  return {
+    ...query,
+    isMaintenanceMode: query.isError && query.error instanceof Error && query.error.message.includes('maintenance'),
+  };
+}
+
 export function useActivePredictions() {
   const { toast } = useToast();
   const previousCount = useRef<number>(0);

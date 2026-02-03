@@ -14,7 +14,7 @@ import { HotPicksCarousel } from '@/components/dashboard/HotPicksCarousel';
 import { BettingSlipWidget } from '@/components/dashboard/BettingSlipWidget';
 import { StreakSportWidget } from '@/components/dashboard/StreakSportWidget';
 import { RecentResultsWidget } from '@/components/dashboard/RecentResultsWidget';
-import { useActivePredictions, useStats } from '@/hooks/usePredictions';
+import { useActivePredictions, useStats, useRecentResults } from '@/hooks/usePredictions';
 import { useSavedPicks } from '@/hooks/useSavedPicks';
 import { getSportEmoji, getSportFromTeams } from '@/lib/sportEmoji';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [searchParams] = useSearchParams();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { data: predictions, isLoading: predictionsLoading, isError, refetch, isMaintenanceMode } = useActivePredictions();
+  const { data: recentResults } = useRecentResults(10);
   const { data: stats, isLoading: statsLoading, isMaintenanceMode: statsMaintenanceMode } = useStats();
   const { stats: savedStats } = useSavedPicks();
   // Handle checkout success from URL
@@ -246,7 +247,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Results Section */}
-          <RecentResultsWidget predictions={deduplicatedPredictions} />
+          <RecentResultsWidget predictions={recentResults || []} />
 
           {/* Tonight's Games Section */}
           <div className="mb-8">

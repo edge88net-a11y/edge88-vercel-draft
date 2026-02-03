@@ -282,9 +282,6 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
           {/* Confidence Column */}
           <div className="flex flex-col items-center gap-1 sm:gap-2 pl-2 sm:pl-4 border-l border-border shrink-0">
             <ConfidenceMeter value={confidencePercent} size="md" />
-            <span className={cn('font-mono text-lg sm:text-2xl font-black', getConfidenceColorClass())}>
-              {confidencePercent}%
-            </span>
             <span className="text-[10px] sm:text-xs text-muted-foreground">{t.confidence}</span>
           </div>
         </div>
