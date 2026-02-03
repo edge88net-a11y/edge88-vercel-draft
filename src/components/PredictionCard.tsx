@@ -123,7 +123,27 @@ export function PredictionCard({ prediction, isLocked = false, gameNumber, showF
     const now = new Date();
     const diffMs = now.getTime() - gameDate.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
-    return diffHours >= 0 && diffHours < 4;
+    
+    // Game must have started (diffHours >= 0)
+    if (diffHours < 0) return false;
+    
+    // Sport-specific game durations (in hours)
+    const sportDurations: Record<string, number> = {
+      'NHL': 2.5,
+      'NBA': 2.5,
+      'NFL': 3.5,
+      'MLB': 3,
+      'Soccer': 2,
+      'EPL': 2,
+      'La Liga': 2,
+      'Serie A': 2,
+      'Bundesliga': 2,
+    };
+    
+    const gameDuration = sportDurations[sportName || ''] || 3; // Default 3 hours
+    
+    // Game is live if it started and hasn't exceeded typical duration
+    return diffHours < gameDuration;
   };
 
   // Check time urgency
